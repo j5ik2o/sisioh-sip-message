@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{NetObject, SipURI}
-import org.sisioh.sip.util.{Encodable, Encoder, NameValuePairList}
+import org.sisioh.sip.util.{Host, Encodable, Encoder, NameValuePairList}
 import org.sisioh.sip.core.Separators
 
 object SipUri {
@@ -21,26 +21,24 @@ object SipUri {
 class SipUri
 (uriString: String,
  schemeParam: Option[String],
- val userName: Option[String],
- val userPassword: Option[String],
- val host: String,
- val port: Option[Int],
- val authority: Option[Authority],
+ val authority: Authority,
  private val uriParms: NameValuePairList[Any] = NameValuePairList(),
  private val qheaders: NameValuePairList[Any] = NameValuePairList("&"),
  private val encoder: Encoder[Any])
   extends GenericURI(uriString, schemeParam) with SipURI {
 
-  val isSecure: Boolean = scheme.equalsIgnoreCase(NetObject.SIPS)
+  override val userName = authority.userInfo.map(_.name)
+  override val userPassword = authority.userInfo.map(_.password.get)
+  override val host = authority.host.get.hostName.get
+  override val port = authority.port
+
+  override val isSecure: Boolean = scheme.equalsIgnoreCase(NetObject.SIPS)
+
   override val isSipURI: Boolean = true
 
   def setHeader(name: String, value: String) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms,
       qheaders.add(name, value),
@@ -50,10 +48,6 @@ class SipUri
   def setParamter(name: String, value: String) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms.add(name, value),
       qheaders,
@@ -67,10 +61,6 @@ class SipUri
   def setTransport(transport: String) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms.add(NetObject.TRANSPORT, transport.toLowerCase),
       qheaders,
@@ -80,10 +70,6 @@ class SipUri
   def setTtl(ttl: Int) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms.add(NetObject.TTL, ttl),
       qheaders,
@@ -93,10 +79,6 @@ class SipUri
   def setSecure(secure: Boolean) = {
     new SipUri(uriString,
       Some(if (secure) NetObject.SIPS else NetObject.SIP),
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms,
       qheaders,
@@ -106,10 +88,6 @@ class SipUri
   def clearUriParms =
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       NameValuePairList(),
       qheaders,
@@ -118,10 +96,6 @@ class SipUri
   def clearQheaders =
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms,
       NameValuePairList("&"),
@@ -129,12 +103,9 @@ class SipUri
 
 
   private def userWithHostWithPort =
-    authority.map {
-      a =>
-        (a.userInfo.map(_.name),
-          a.host.map(_.encode),
-          a.port)
-    }.get
+    (authority.userInfo.map(_.name),
+      authority.host.map(_.encode),
+      authority.port)
 
   def getUserAtHost = {
     "%s%s".format(
@@ -163,34 +134,24 @@ class SipUri
   def removeUserType = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms.remove(NetObject.USER),
       qheaders,
       encoder)
   }
+
   def remvoeHeaders = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms,
       NameValuePairList("&"),
       encoder)
   }
+
   def removeHeader(name: String) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms,
       qheaders.remove(name),
@@ -200,10 +161,6 @@ class SipUri
   def removeParameter(name: String) = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
       authority,
       uriParms.remove(name),
       qheaders,
@@ -213,11 +170,7 @@ class SipUri
   def removePort = {
     new SipUri(uriString,
       schemeParam,
-      userName,
-      userPassword,
-      host,
-      port,
-      authority.map(_.removePort),
+      authority.removePort,
       uriParms,
       qheaders,
       encoder)
