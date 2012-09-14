@@ -1,0 +1,26 @@
+package org.sisioh.sip.core
+
+object Separators {
+  val SEMICOLON = ";"
+  val COLON = ":"
+  val COMMA = ","
+  val SLASH = "/"
+  val SP = " "
+  val EQUALS = "="
+  val STAR = "*"
+  val NEWLINE = "\r\n"
+  val RETURN = "\n"
+  val LESS_THAN = "<"
+  val GREATER_THAN = ">"
+  val AT = "@"
+  val DOT = "."
+  val QUESTION = "?"
+  val POUND = "#"
+  val AND = "&"
+  val LPAREN = "("
+  val RPAREN = ")"
+  val DOUBLE_QUOTE = "\""
+  val QUOTE = "\'"
+  val HT = "\t"
+  val PERCENT = "%"
+}
