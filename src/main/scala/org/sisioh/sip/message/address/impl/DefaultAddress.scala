@@ -7,16 +7,22 @@ object AddressType extends Enumeration {
 }
 
 case class DefaultAddress
-(uri: URI,
- displayName: Option[String] = None,
- isWildcard: Boolean = false) extends Address {
+(uri: SipUri,
+ addressTypeParam: Option[AddressType.ValueSet],
+ displayName: Option[String] = None) extends Address {
 
-  if (displayName.isDefined) {
-
+  val addressType = addressTypeParam.getOrElse {
+    AddressType.NAME
   }
 
+  val isWildcard: Boolean = addressType == AddressType.WILD_CARD
 
 
+  //  def removeDisplayName: DefaultAddress =
+  //    DefaultAddress(uri, None, isWildcard)
 
+  def hasDisplayName: Boolean = displayName.isDefined
+
+  val isSipURI = uri.isSipURI
 
 }

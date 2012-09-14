@@ -15,15 +15,15 @@ trait SipURI extends URI with Parameters {
 
   def getHeaderNames: Iterator[String]
 
-  val transportHeaderValue: Option[String] = getHeader("transport")
+  def getTransport: Option[String] = getHeader("transport")
 
-  val ttlHeaderValue: Option[String] = getHeader("ttl")
+  def getTtl: Option[String] = getHeader("ttl")
 
-  val methodHeaderValue: Option[String] = getHeader("method")
+  def getMethod: Option[String] = getHeader("method")
 
-  val userHeaderValue: Option[String] = getHeader("user")
+  def getUser: Option[String] = getHeader("user")
 
-  val mAddrHeaderValue: Option[String] = getHeader("maddr")
+  def getMAddr: Option[String] = getHeader("maddr")
 
-  val hasLrHeaderValue: Option[String] = getHeader("lr")
+  def hasLr: Option[String] = getHeader("lr")
 }
