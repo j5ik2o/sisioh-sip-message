@@ -18,11 +18,14 @@ object UserInfo {
   implicit object DefaultUserInfoEncoder extends Encoder[UserInfo] {
 
     def encode(model: UserInfo, builder: StringBuilder): StringBuilder = {
-      model.password.map {
-        builder.append(model.name).append(Separators.COLON).append(_)
+      import net.liftweb.json._
+      import net.liftweb.json.JsonDSL._
+      val json = JObject(model.password.map { e =>
+        JField("name", model.name) :: JField("password", JString(e)) :: Nil
       }.getOrElse {
-        builder.append(model.name)
-      }
+        JField("name", model.name) :: Nil
+      })
+      builder.append(compact(render(json)))
     }
 
   }
@@ -50,9 +53,8 @@ class UserInfo
     }
   }
 
-  override def hashCode() = {
+  override def hashCode() =
     31 * name.## + 31 * password.## + 31 * userType.##
-  }
 
   override def equals(obj: Any) = obj match {
     case that: UserInfo =>
@@ -70,5 +72,14 @@ class UserInfo
         }
       }
     case _ => false
+  }
+
+  def encode(builder: StringBuilder) = {
+    builder.append(password.map{
+      e =>
+        "%s%s%s".format(name, Separators.COLON, e)
+    }.getOrElse{
+      name
+    })
   }
 }

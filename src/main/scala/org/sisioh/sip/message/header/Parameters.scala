@@ -6,7 +6,7 @@ trait Parameters {
 
   def parameterNames: Iterator[String]
 
-  def getParameter(name: String): Option[String]
+  def getParameter(name: String): Option[Any]
 
   def removeParameter(name :String): Parameters
 

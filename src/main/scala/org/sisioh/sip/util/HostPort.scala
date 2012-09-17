@@ -1,20 +1,24 @@
 package org.sisioh.sip.util
 
+import org.sisioh.sip.core.GenericObject
+
 /**
  * [[org.sisioh.sip.util.HostPort]]のコンパニオンオブジェクト
  */
 object HostPort {
 
   /**
-   * デフォルトエンコーダー。
+   * Jsonエンコーダー。
    */
-  implicit object DefaultHostPortEncoder extends Encoder[HostPort] {
+  object JsonEncoder extends Encoder[HostPort] {
     def encode(model: HostPort, builder: StringBuilder) = {
-      builder.append(model.host.encode)
-      if (model.port.isDefined){
-        builder.append(":").append(model.port.get)
-      }
-      builder
+      import net.liftweb.json._
+      import net.liftweb.json.JsonDSL._
+      val json =
+        ("host" -> model.host.encode()) ~
+          ("port" -> model.port)
+      val jsonText = compact(render(json))
+      builder.append(jsonText)
     }
   }
 
@@ -26,11 +30,14 @@ object HostPort {
  * @param host [[org.sisioh.sip.util.Host]]
  * @param port ポート
  */
-case class HostPort(host: Host, port: Option[Int]) extends Encodable[HostPort] {
+case class HostPort(host: Host, port: Option[Int]) extends GenericObject[HostPort] {
 
   val inetAddress = host.inetAddress
 
   def removePort =
     HostPort(host, None)
 
+  override def toString = encode
+
+  def encode(builder: StringBuilder) = builder.append(port.map("%s:%s".format(host.encode(), _)).getOrElse(host.toString))
 }

@@ -31,7 +31,7 @@ class AuthoritySpec extends Specification {
       authority.port must_== Some(port)
     }
     "エンコード文字列を取得できる" in {
-      authority.encode must_== "%s:%s@%s:%d".format(userName, password, host, port)
+      authority.encode() must_== """KATO:password@localhost:8080"""
     }
     "HostPortが取得できる" in {
       authority.hostPort must_== Some(HostPort(Host(host), Some(port)))

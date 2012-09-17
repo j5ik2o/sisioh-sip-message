@@ -2,6 +2,7 @@ package org.sisioh.sip.util
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
 import java.util.regex.Pattern
+import org.sisioh.sip.core.GenericObject
 
 object AddressType extends Enumeration {
   val HOST_NAME, IPV4_ADDRESS, IPV6_ADDRESS = Value
@@ -18,21 +19,6 @@ object Host {
 
   def unapply(host: Host): Option[(String, AddressType.Value)] = Some(host.hostNameOrIpAddressParam, host.addressType)
 
-  /**
-   * デフォルトのエンコーダー
-   */
-  implicit object DefaultHostEncoder extends Encoder[Host] {
-    def encode(model: Host, builder: StringBuilder) = {
-      val encodedModel = if (model.addressType == AddressType.IPV6_ADDRESS
-        && !model.isIPv6Reference(model.hostNameOrIpAddressParam)) {
-        "[" + model.hostNameOrIpAddressParam + "]"
-      } else {
-        model.hostNameOrIpAddressParam
-      }
-      new StringBuilder(encodedModel)
-    }
-  }
-
 }
 
 /**
@@ -42,7 +28,7 @@ object Host {
  * @param addressTypeParam [[org.sisioh.sip.util.AddressType.Value]]
  */
 class Host(val hostNameOrIpAddressParam: String, addressTypeParam: Option[AddressType.Value] = None)
-  extends Encodable[Host] {
+  extends GenericObject[Host] {
 
   val inetAddress: InetAddress =
     InetAddress.getByName(hostNameOrIpAddressParam)
@@ -98,4 +84,13 @@ class Host(val hostNameOrIpAddressParam: String, addressTypeParam: Option[Addres
   private def isIPv6Reference(address: String): Boolean =
     address.charAt(0) == '[' && address.charAt(address.length() - 1) == ']'
 
+  def encode(builder: StringBuilder) = {
+    val encodedModel = if (addressType == AddressType.IPV6_ADDRESS
+      && !isIPv6Reference(hostNameOrIpAddressParam)) {
+      "[" + hostNameOrIpAddressParam + "]"
+    } else {
+      hostNameOrIpAddressParam
+    }
+    builder.append(encodedModel)
+  }
 }

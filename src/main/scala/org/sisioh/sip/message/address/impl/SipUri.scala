@@ -2,109 +2,105 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{NetObject, SipURI}
 import org.sisioh.sip.util.{Host, Encodable, Encoder, NameValuePairList}
-import org.sisioh.sip.core.Separators
+import org.sisioh.sip.core.{GenericObject, Separators}
 
 object SipUri {
 
-  implicit object DefaultSipUriEncoder extends Encoder[SipUri] {
-    def encode(model: SipUri, builder: StringBuilder) = {
-      builder.append(model.scheme)
-    }
-  }
+  def apply(authority: Authority, scheme: String = NetObject.SIP) = new SipUri(authority, scheme)
 
-  implicit object StringEncoder extends Encoder[String] {
-    def encode(model: String, builder: StringBuilder) = builder.append(model)
+  implicit object JsonEncoder extends Encoder[SipUri] {
+    def encode(model: SipUri, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("scheme", JString(model.scheme)) ::
+        JField("authority", parse(model.authority.encode)) ::
+        JField("uriParams", parse(model.uriParms.encode)) ::
+        JField("qheaders", parse(model.qheaders.encode)) :: Nil)
+      builder.append(compact(render(json)))
+    }
   }
 
 }
 
 class SipUri
-(uriString: String,
- schemeParam: Option[String],
- val authority: Authority,
- private val uriParms: NameValuePairList[Any] = NameValuePairList(),
- private val qheaders: NameValuePairList[Any] = NameValuePairList("&"),
- private val encoder: Encoder[Any])
-  extends GenericURI(uriString, schemeParam) with SipURI {
+(val authority: Authority,
+ val scheme: String = NetObject.SIP,
+ private val uriParms: NameValuePairList = NameValuePairList(),
+ private val qheaders: NameValuePairList = NameValuePairList("&"))
+  extends SipURI with GenericObject[SipUri] {
 
   override val userName = authority.userInfo.map(_.name)
   override val userPassword = authority.userInfo.map(_.password.get)
   override val host = authority.host.get.hostName.get
   override val port = authority.port
-
   override val isSecure: Boolean = scheme.equalsIgnoreCase(NetObject.SIPS)
-
   override val isSipURI: Boolean = true
 
-  def setHeader(name: String, value: String) = {
-    new SipUri(uriString,
-      schemeParam,
+  def withHeader(name: String, value: Any) = {
+    new SipUri(
       authority,
+      scheme,
       uriParms,
-      qheaders.add(name, value),
-      encoder)
+      qheaders.add(name, value))
   }
 
-  def setParamter(name: String, value: String) = {
-    new SipUri(uriString,
-      schemeParam,
+  def withParamter(name: String, value: Any) = {
+    new SipUri(
       authority,
+      scheme,
       uriParms.add(name, value),
-      qheaders,
-      encoder)
+      qheaders)
   }
 
-  def setMethod(method: String) = setParamter("method", method)
+  def withUser(user: String) = withParamter(NetObject.USER, user)
 
-  def setMAddr(maddr: String) = setParamter("maddr", maddr)
+  override def getUser = getParameter(NetObject.USER).map(_.asInstanceOf[String])
 
-  def setTransport(transport: String) = {
-    new SipUri(uriString,
-      schemeParam,
-      authority,
-      uriParms.add(NetObject.TRANSPORT, transport.toLowerCase),
-      qheaders,
-      encoder)
-  }
+  def withMethod(method: String) = withParamter(NetObject.METHOD, method)
 
-  def setTtl(ttl: Int) = {
-    new SipUri(uriString,
-      schemeParam,
-      authority,
-      uriParms.add(NetObject.TTL, ttl),
-      qheaders,
-      encoder)
-  }
+  override def getMethod = getParameter(NetObject.METHOD).map(_.asInstanceOf[String])
+
+  def withMAddr(maddr: String) = withParamter(NetObject.MADDR, maddr)
+
+  override def getMAddr = getParameter(NetObject.MADDR).map(_.asInstanceOf[String])
+
+  def setTransport(transport: String) = withParamter(NetObject.TRANSPORT, transport.toLowerCase)
+
+  override def getTransport = getParameter(NetObject.TRANSPORT).map(_.asInstanceOf[String])
+
+  def withTtl(ttl: Int) = withParamter(NetObject.TTL, ttl)
+
+  override def getTtl = getParameter(NetObject.TTL).map(_.asInstanceOf[Int])
+
+  def withHasLr(flag: Boolean) = withParamter(NetObject.LR, flag)
+
+  override def hasLr = getParameter(NetObject.LR).map(_.asInstanceOf[Boolean])
 
   def setSecure(secure: Boolean) = {
-    new SipUri(uriString,
-      Some(if (secure) NetObject.SIPS else NetObject.SIP),
+    new SipUri(
       authority,
+      if (secure) NetObject.SIPS else NetObject.SIP,
       uriParms,
-      qheaders,
-      encoder)
+      qheaders)
   }
 
   def clearUriParms =
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       NameValuePairList(),
-      qheaders,
-      encoder)
+      qheaders)
 
   def clearQheaders =
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       uriParms,
-      NameValuePairList("&"),
-      encoder)
+      NameValuePairList())
 
 
   private def userWithHostWithPort =
     (authority.userInfo.map(_.name),
-      authority.host.map(_.encode),
+      authority.host.map(_.encode()),
       authority.port)
 
   def getUserAtHost = {
@@ -124,64 +120,63 @@ class SipUri
 
   def parameterNames = uriParms.names
 
-  def getParameter(name: String): Option[String] = {
-    uriParms.getValue(name).map {
-      e =>
-        encoder.encode(e, new StringBuilder).result()
-    }
-  }
+  def getParameter(name: String): Option[Any] = uriParms.getValue(name)
 
   def removeUserType = {
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       uriParms.remove(NetObject.USER),
-      qheaders,
-      encoder)
+      qheaders)
   }
 
   def remvoeHeaders = {
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       uriParms,
-      NameValuePairList("&"),
-      encoder)
+      NameValuePairList())
   }
 
   def removeHeader(name: String) = {
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       uriParms,
-      qheaders.remove(name),
-      encoder)
+      qheaders.remove(name))
   }
 
   def removeParameter(name: String) = {
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority,
+      scheme,
       uriParms.remove(name),
-      qheaders,
-      encoder)
+      qheaders)
   }
 
   def removePort = {
-    new SipUri(uriString,
-      schemeParam,
+    new SipUri(
       authority.removePort,
+      scheme,
       uriParms,
-      qheaders,
-      encoder)
+      qheaders)
   }
 
-  def getHeader(name: String) = qheaders.getValue(name).map {
-    e =>
-      encoder.encode(e, new StringBuilder).result()
-  }
+  def getHeader(name: String) = qheaders.getValue(name)
 
   def getHeaderNames = qheaders.names
 
-
+  def encode(builder: StringBuilder) = {
+    builder.append(scheme).append(Separators.COLON)
+    authority.encode(builder)
+    if (!uriParms.isEmpty) {
+      builder.append(Separators.SEMICOLON)
+      uriParms.encode(builder)
+    }
+    if (!qheaders.isEmpty) {
+      builder.append(Separators.QUESTION)
+      qheaders.encode(builder)
+    }
+    builder
+  }
 }

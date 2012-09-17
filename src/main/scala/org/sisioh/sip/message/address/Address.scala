@@ -1,5 +1,7 @@
 package org.sisioh.sip.message.address
 
+import org.sisioh.sip.util.Encodable
+
 @cloneable
 trait Address extends Serializable {
 

@@ -11,6 +11,7 @@ class UserInfoSpec extends Specification {
         bob.name must_== "bob"
         bob.password must_== Some("abc")
         bob.userType must_== UserType.USER
+        bob.encode() must_== """bob:abc"""
       }
     }
     "電話番号購読者" in {
@@ -19,6 +20,7 @@ class UserInfoSpec extends Specification {
         phoneNumber.name must_== "0#1;"
         phoneNumber.password must_== None
         phoneNumber.userType must_== UserType.TELHPHONE_SUBSCRIBER
+        phoneNumber.encode() must_== """0#1;"""
       }
 
     }
