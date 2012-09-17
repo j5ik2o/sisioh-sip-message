@@ -10,33 +10,12 @@ object AddressType extends Enumeration {
 
 object DefaultAddress {
 
-  implicit object DefaultDefaultAddressEncoder extends Encoder[DefaultAddress] {
-    def encode(model: DefaultAddress, builder: StringBuilder) = {
-      if (model.addressType == AddressType.WILD_CARD) {
-        builder.append('*')
-      } else {
-        if (model.displayName.isDefined) {
-          builder.append(Separators.DOUBLE_QUOTE)
-            .append(model.displayName)
-            .append(Separators.DOUBLE_QUOTE)
-            .append(Separators.SP)
-        }
-        if (model.addressType == AddressType.NAME_ADDRESS || model.displayName.isDefined)
-          builder.append(Separators.LESS_THAN)
-        model.uri.encode(builder)
-        if (model.addressType == AddressType.NAME_ADDRESS || model.displayName.isDefined)
-          builder.append(Separators.GREATER_THAN)
-      }
-      builder
-    }
-  }
-
 }
 
 case class DefaultAddress
 (uri: SipUri,
- addressTypeParam: Option[AddressType.Value],
- displayName: Option[String] = None) extends Address with Encodable[DefaultAddress] {
+ displayName: Option[String] = None,
+ addressTypeParam: Option[AddressType.Value] = None) extends Address with Encodable[DefaultAddress] {
 
   val addressType: AddressType.Value = addressTypeParam.getOrElse {
     AddressType.NAME_ADDRESS
@@ -44,13 +23,30 @@ case class DefaultAddress
 
   val isWildcard: Boolean = addressType == AddressType.WILD_CARD
 
-
   def removeDisplayName: DefaultAddress =
-    DefaultAddress(uri, None)
+    DefaultAddress(uri, None, Some(addressType))
 
   def hasDisplayName: Boolean = displayName.isDefined
 
   val isSipURI = uri.isSipURI
 
-  def encode(builder: StringBuilder) = null
+  def encode(builder: StringBuilder) = {
+    if (isWildcard) {
+      builder.append('*')
+    } else {
+      if (displayName.isDefined) {
+        builder.append(Separators.DOUBLE_QUOTE)
+          .append(displayName.get)
+          .append(Separators.DOUBLE_QUOTE)
+          .append(Separators.SP)
+      }
+      if (addressType == AddressType.NAME_ADDRESS || displayName.isDefined)
+        builder.append(Separators.LESS_THAN)
+      uri.encode(builder)
+      if (addressType == AddressType.NAME_ADDRESS || displayName.isDefined)
+        builder.append(Separators.GREATER_THAN)
+    }
+    builder
+  }
+
 }

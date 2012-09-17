@@ -66,8 +66,8 @@ class UserInfo
         (password, that.password) match {
           case (Some(_), None) => false
           case (None, Some(_)) => false
-          case (l, r) if (l.eq(r)) => true
-          case (l, r) if (l == r) => true
+          case (Some(l), Some(r)) if (l.eq(r)) => true
+          case (Some(l), Some(r)) if (l == r) => true
           case _ => false
         }
       }

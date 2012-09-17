@@ -6,11 +6,13 @@ import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
 object NameValuePair {
   def apply[A]
   (name: Option[String],
-   valueParam: Option[A],
-   isFlagValueType: Boolean = false) = new NameValuePair(name, valueParam, isFlagValueType)
+   value: Option[A],
+   separator: String = Separators.EQUALS,
+   quotes: String = "",
+   isQuotedString: Boolean = false) = new NameValuePair(name, value, separator, quotes, isQuotedString)
 
-  def unapply[A](nameValuePair: NameValuePair): Option[(Option[String], Option[Any], Boolean)] =
-    Some(nameValuePair.name, nameValuePair.value, nameValuePair.isFlagValueType)
+  def unapply[A](nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
+    Some(nameValuePair.name, nameValuePair.value)
 
   class JsonEncoder[A] extends Encoder[NameValuePair] {
     def encode(model: NameValuePair, builder: StringBuilder) = {
@@ -36,12 +38,11 @@ object NameValuePair {
 
 class NameValuePair
 (val name: Option[String],
- valueParam: Option[Any],
- val isFlagValueType: Boolean = false,
- val separator: String = Separators.EQUALS)
-  extends Tuple2[Option[String], Option[Any]](name, valueParam) with GenericObject[NameValuePair] {
-
-  val value: Option[Any] = if (isFlagValueType) None else valueParam
+ val value: Option[Any],
+ val separator: String = Separators.EQUALS,
+ val quotes: String = "",
+ val isQuotedString: Boolean = false)
+  extends Tuple2[Option[String], Option[Any]](name, value) with GenericObject[NameValuePair] {
 
   override def hashCode() =
     31 * name.## + 31 * value.##
@@ -55,25 +56,35 @@ class NameValuePair
   override def toString() = encode()
 
   def encode(builder: StringBuilder) = {
-    (name, value, isFlagValueType) match {
-      case (Some(n), Some(v), false) =>
-        val encodeValue = if (v.isInstanceOf[GenericObject[_]]) {
-          v.asInstanceOf[GenericObject[_]].encode()
+    (name, value) match {
+      case (Some(n), Some(v)) if (v.isInstanceOf[Boolean] == false) =>
+        if (v.isInstanceOf[GenericObject[_]]) {
+          builder.append(n).append(separator).append(quotes)
+          v.asInstanceOf[GenericObject[_]].encode(builder)
+          builder.append(quotes)
         } else if (v.isInstanceOf[GenericObjectList[_]]) {
-          v.asInstanceOf[GenericObjectList[_]].encode()
+          builder.append(n).append(separator).append(v.asInstanceOf[GenericObjectList[_]].encode())
+        } else if (v.toString.size == 0) {
+          if (isQuotedString) {
+            builder.append(n).append(separator).append(quotes).append(quotes)
+          } else {
+            builder.append(n).append(separator)
+          }
         } else {
-          v.toString
+          builder.append(n).append(separator).append(quotes).append(v.toString).append(quotes)
         }
-        builder.append("%s%s%s".format(n, separator, encodeValue))
-      case (None, Some(v), _) =>
-        val encodeValue = if (v.isInstanceOf[GenericObject[_]]) {
-          v.asInstanceOf[GenericObject[_]].encode()
+      case (None, Some(v)) =>
+        if (v.isInstanceOf[GenericObject[_]]) {
+          builder.append(v.asInstanceOf[GenericObject[_]].encode())
         } else if (v.isInstanceOf[GenericObjectList[_]]) {
-          v.asInstanceOf[GenericObjectList[_]].encode()
+          builder.append(v.asInstanceOf[GenericObjectList[_]].encode())
         } else {
-          v.toString
+          builder.append(quotes).append(v.toString).append(quotes)
         }
-        builder.append(encodeValue)
+      case (Some(n), Some(v)) if (v.isInstanceOf[Boolean] && v.asInstanceOf[Boolean]) =>
+        builder.append(n)
+      case _ =>
+        builder
     }
 
   }

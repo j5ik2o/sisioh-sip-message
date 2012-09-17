@@ -9,7 +9,11 @@ object GenericURI {
   def unapply(genericUri: GenericURI): Option[(String, String)] = Some(genericUri.uriString, genericUri.scheme)
 }
 
-class GenericURI(val uriString: String, schemeParam: Option[String] = None) extends URI with GenericObject[GenericURI] {
+class GenericURI
+(val uriString: String,
+ schemeParam: Option[String] = None)
+  extends URI with GenericObject[GenericURI] {
+
   private val i = uriString.indexOf(":")
   require(i != -1)
   val scheme = schemeParam.getOrElse(uriString.substring(0, i))
@@ -24,7 +28,7 @@ class GenericURI(val uriString: String, schemeParam: Option[String] = None) exte
     case _ => false
   }
 
-  def encode(builder: StringBuilder) = {
+  def encode(builder: StringBuilder) =
     builder.append(uriString)
-  }
+
 }
