@@ -15,7 +15,7 @@ class HostSpec extends Specification {
       host.ipAddress.isDefined must_== false
       host.inetAddress must_== InetAddress.getByName(hostName)
       host.resolvedIpAddress must_== "127.0.0.1"
-      host.toString must_== "Host(127.0.0.1, localhost)"
+      host.toString must_== "localhost"
       host.encode() must_== "localhost"
     }
   }

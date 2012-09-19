@@ -2,16 +2,67 @@ package org.sisioh.sip.util
 
 import scala.Tuple2
 import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
+import util.parsing.combinator.RegexParsers
+import javax.swing.plaf.OptionPaneUI
+
+object NameValuePairDecoder {
+
+  def apply(separator: String = Separators.EQUALS,
+            quotes: String = "",
+            isQuotedString: Boolean = false) = new NameValuePairDecoder(separator, quotes, isQuotedString)
+
+}
+
+
+class NameValuePairDecoder
+(separator: String,
+ quotes: String,
+ isQuotedString: Boolean)
+  extends Decoder[NameValuePair] with NameValuePairParser {
+
+  def decode(source: String) = parseAll(nameValuePair(separator, quotes, isQuotedString), source) match {
+    case Success(result, _) => result
+    case Failure(msg, _) => throw new ParseException(Some(msg))
+    case Error(msg, _) => throw new ParseException(Some(msg))
+  }
+
+}
+
+trait NameValuePairParser extends RegexParsers {
+
+  def nameValuePair(separator: String, quotes: String, isQuotedString: Boolean): Parser[NameValuePair] =
+    NAME ~ separator ~ quotes ~ VALUE ~ quotes ^^ {
+      case name ~ sp ~ lq ~ value ~ rq =>
+        NameValuePair(Some(name), Some(value), sp, lq)
+    } ||| NAME ~ separator ~ quotes ~ quotes ^^ {
+      case name ~ sp ~ lq ~ rq =>
+        NameValuePair(Some(name), Some(""), sp, lq, true)
+    } ||| NAME ~ separator ^^ {
+      case name ~ sp =>
+        NameValuePair(Some(name), Some(""), sp, "", false)
+    }
+
+  lazy val NAME = """[a-zA-Z.]+""".r
+  lazy val VALUE = """[a-zA-Z.]+""".r
+
+}
 
 object NameValuePair {
-  def apply[A]
+
+  def apply
   (name: Option[String],
-   value: Option[A],
+   value: Option[Any],
    separator: String = Separators.EQUALS,
    quotes: String = "",
    isQuotedString: Boolean = false) = new NameValuePair(name, value, separator, quotes, isQuotedString)
 
-  def unapply[A](nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
+  def decode
+  (source: String,
+   separator: String = Separators.EQUALS,
+   quotes: String = "",
+   isQuotedString: Boolean = false) = new NameValuePairDecoder(separator, quotes, isQuotedString).decode(source)
+
+  def unapply(nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
     Some(nameValuePair.name, nameValuePair.value)
 
   class JsonEncoder[A] extends Encoder[NameValuePair] {
@@ -43,6 +94,18 @@ class NameValuePair
  val quotes: String = "",
  val isQuotedString: Boolean = false)
   extends Tuple2[Option[String], Option[Any]](name, value) with GenericObject[NameValuePair] {
+
+  def getValueAsObject(stripQuotes: Boolean): Option[String] =
+    value.map {
+      v =>
+        if (v.isInstanceOf[Boolean]) {
+          ""
+        } else if (!stripQuotes && isQuotedString) {
+          quotes + v.toString() + quotes; // add the quotes for quoted string
+        } else {
+          v.toString
+        }
+    }
 
   override def hashCode() =
     31 * name.## + 31 * value.##

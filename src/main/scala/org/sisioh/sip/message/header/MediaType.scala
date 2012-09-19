@@ -10,5 +10,5 @@ package org.sisioh.sip.message.header
 trait MediaType {
   val contentType: String
 
-  val contentSubType: String
+  val contentSubType: Option[String]
 }

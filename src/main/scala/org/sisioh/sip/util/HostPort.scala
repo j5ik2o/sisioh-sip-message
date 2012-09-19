@@ -1,11 +1,42 @@
 package org.sisioh.sip.util
 
 import org.sisioh.sip.core.GenericObject
+import util.parsing.combinator.RegexParsers
+
+object HostPortDecoder {
+  def apply() = new HostPortDecoder()
+}
+
+class HostPortDecoder extends HostPortParser {
+
+  def parse(source: String) = parseAll(hostPort, source) match {
+    case Success(result, _) => result
+    case Failure(msg, _) => throw new ParseException(Some(msg))
+    case Error(msg, _) => throw new ParseException(Some(msg))
+  }
+
+}
+
+trait HostPortParser extends RegexParsers with HostParser {
+
+  def hostPort: Parser[HostPort] = host ~ opt(COLON ~> PORT) ^^ {
+    case host ~ port =>
+      new HostPort(host, port.map(_.toInt))
+  }
+
+  lazy val COLON = ":"
+  lazy val PORT = """[0-9]+""".r
+
+}
 
 /**
  * [[org.sisioh.sip.util.HostPort]]のコンパニオンオブジェクト
  */
 object HostPort {
+
+  def apply(host: Host, port: Option[Int]) = new HostPort(host, port)
+
+  def decode(source: String) = HostPortDecoder().parse(source)
 
   /**
    * Jsonエンコーダー。
@@ -30,7 +61,7 @@ object HostPort {
  * @param host [[org.sisioh.sip.util.Host]]
  * @param port ポート
  */
-case class HostPort(host: Host, port: Option[Int]) extends GenericObject[HostPort] {
+class HostPort(val host: Host, val port: Option[Int]) extends GenericObject[HostPort] {
 
   val inetAddress = host.inetAddress
 

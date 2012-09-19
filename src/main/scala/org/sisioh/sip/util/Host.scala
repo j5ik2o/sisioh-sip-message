@@ -1,12 +1,42 @@
 package org.sisioh.sip.util
 
-import java.net.{Inet4Address, Inet6Address, InetAddress}
+import java.net.InetAddress
 import java.util.regex.Pattern
 import org.sisioh.sip.core.GenericObject
+import util.parsing.combinator.RegexParsers
 
 object AddressType extends Enumeration {
   val HOST_NAME, IPV4_ADDRESS, IPV6_ADDRESS = Value
 }
+
+object HostDecoder {
+  def apply() = new HostDecoder
+}
+
+class HostDecoder extends HostParser {
+
+  def decode(source: String) = parseAll(host, source) match {
+    case Success(result, _) => result
+    case Failure(msg, _) => throw new ParseException(Some(msg))
+    case Error(msg, _) => throw new ParseException(Some(msg))
+  }
+
+}
+
+trait HostParser extends RegexParsers {
+
+  def host: Parser[Host] = hostNameOrIpAddress ^^ {
+    h => Host(h)
+  }
+
+  lazy val L_BRACKET = """\[""".r
+  lazy val R_BRACKET = """\]""".r
+  lazy val HOSTNAME = """[a-zA-z_]+""".r
+  lazy val ipV4Address = ("(" + Host.v4Partial + ")(\\.(" + Host.v4Partial + ")){3}").r
+  lazy val ipV6Address = L_BRACKET ~> (Host.v6PattenBase + "{7}").r <~ R_BRACKET
+  lazy val hostNameOrIpAddress = HOSTNAME ||| ipV4Address ||| ipV6Address
+}
+
 
 /**
  * [[org.sisioh.sip.util.Host]]のコンパニオンオブジェクト。
@@ -15,36 +45,40 @@ object AddressType extends Enumeration {
  */
 object Host {
 
-  def apply(hostNameOrIpAddressParam: String, addressTypeParam: Option[AddressType.Value] = None) = new Host(hostNameOrIpAddressParam, addressTypeParam)
+  def apply(hostNameOrIpAddress: String, addressTypeParam: Option[AddressType.Value] = None) = new Host(hostNameOrIpAddress, addressTypeParam)
 
-  def unapply(host: Host): Option[(String, AddressType.Value)] = Some(host.hostNameOrIpAddressParam, host.addressType)
+  def decode(source: String) = HostDecoder().decode(source)
+
+  def unapply(host: Host): Option[(String, AddressType.Value)] = Some(host.hostNameOrIpAddress, host.addressType)
+
+  val v4Partial = "25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d"
+  val v4Pattern = Pattern.compile("(" + v4Partial + ")(\\.(" + v4Partial + ")){3}")
+  val v6Partial = "[0-9a-f]{1,4}"
+  val v6PattenBase = "(" + v6Partial + ")(:(" + v6Partial + "))"
+  val v6Pattern = Pattern.compile(v6PattenBase + "{7}")
+
 
 }
 
 /**
  * ホストを表す値オブジェクト。
  *
- * @param hostNameOrIpAddressParam ホスト名もしくはIPアドレス
+ * @param hostNameOrIpAddress ホスト名もしくはIPアドレス
  * @param addressTypeParam [[org.sisioh.sip.util.AddressType.Value]]
  */
-class Host(val hostNameOrIpAddressParam: String, addressTypeParam: Option[AddressType.Value] = None)
+class Host(val hostNameOrIpAddress: String, addressTypeParam: Option[AddressType.Value] = None)
   extends GenericObject[Host] {
 
   val inetAddress: InetAddress =
-    InetAddress.getByName(hostNameOrIpAddressParam)
+    InetAddress.getByName(hostNameOrIpAddress)
 
-  private val v4Partial = "25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d"
-  private val v4Pattern = Pattern.compile("(" + v4Partial + ")(\\.(" + v4Partial + ")){3}");
-  private val v6Partial = "[0-9a-f]{1,4}"
-  private val v6PattenBase = "(" + v6Partial + ")(:(" + v6Partial + "))"
-  private val v6Pattern = Pattern.compile(v6PattenBase + "{7}")
 
-  private def isIpV4AddressText(text: String) = v4Pattern.matcher(text).matches()
+  private def isIpV4AddressText(text: String) = Host.v4Pattern.matcher(text).matches()
 
-  private def isIpV6AddressText(text: String) = v6Pattern.matcher(text).matches()
+  private def isIpV6AddressText(text: String) = Host.v6Pattern.matcher(text).matches()
 
   val addressType = addressTypeParam.getOrElse {
-    hostNameOrIpAddressParam match {
+    hostNameOrIpAddress match {
       case s if isIpV4AddressText(s) => AddressType.IPV4_ADDRESS
       case s if isIpV6AddressText(s) => AddressType.IPV6_ADDRESS
       case _ => AddressType.HOST_NAME
@@ -57,39 +91,39 @@ class Host(val hostNameOrIpAddressParam: String, addressTypeParam: Option[Addres
 
   val hostName: Option[String] = addressType match {
     case AddressType.IPV4_ADDRESS | AddressType.IPV6_ADDRESS => None
-    case _ => Some(hostNameOrIpAddressParam)
+    case _ => Some(hostNameOrIpAddress)
   }
 
   val ipAddress: Option[String] = addressType match {
-    case AddressType.IPV4_ADDRESS | AddressType.IPV6_ADDRESS => Some(hostNameOrIpAddressParam)
+    case AddressType.IPV4_ADDRESS | AddressType.IPV6_ADDRESS => Some(hostNameOrIpAddress)
     case _ => None
   }
 
   val resolvedIpAddress: String = addressType match {
-    case AddressType.IPV4_ADDRESS | AddressType.IPV6_ADDRESS => hostNameOrIpAddressParam
+    case AddressType.IPV4_ADDRESS | AddressType.IPV6_ADDRESS => hostNameOrIpAddress
     case AddressType.HOST_NAME => inetAddress.getHostAddress
   }
 
   override def equals(other: Any) = other match {
     case that: Host =>
-      this.hostNameOrIpAddressParam == that.hostNameOrIpAddressParam && this.addressType == that.addressType
+      this.hostNameOrIpAddress == that.hostNameOrIpAddress && this.addressType == that.addressType
     case _ => false
   }
 
   override def hashCode: Int =
-    31 * hostNameOrIpAddressParam.## + 31 * addressType.##
+    31 * hostNameOrIpAddress.## + 31 * addressType.##
 
-  override def toString = "Host(%s, %s)".format(inetAddress.getHostAddress, inetAddress.getHostName)
+  override def toString = encode()
 
   private def isIPv6Reference(address: String): Boolean =
     address.charAt(0) == '[' && address.charAt(address.length() - 1) == ']'
 
   def encode(builder: StringBuilder) = {
     val encodedModel = if (addressType == AddressType.IPV6_ADDRESS
-      && !isIPv6Reference(hostNameOrIpAddressParam)) {
-      "[" + hostNameOrIpAddressParam + "]"
+      && !isIPv6Reference(hostNameOrIpAddress)) {
+      "[" + hostNameOrIpAddress + "]"
     } else {
-      hostNameOrIpAddressParam
+      hostNameOrIpAddress
     }
     builder.append(encodedModel)
   }
