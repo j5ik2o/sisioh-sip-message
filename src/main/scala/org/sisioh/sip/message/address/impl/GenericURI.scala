@@ -1,18 +1,61 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.URI
-import org.sisioh.sip.util.{Encoder, Encodable}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.GenericObject
+import util.parsing.combinator.RegexParsers
+import org.sisioh.sip.util.ParseException
+import scala.Some
 
-object GenericURI {
-  def apply(uriString: String, schemeParam: Option[String]) = new GenericURI(uriString, schemeParam)
-  def unapply(genericUri: GenericURI): Option[(String, String)] = Some(genericUri.uriString, genericUri.scheme)
+/**
+ * [[org.sisioh.sip.message.address.impl.GenericURIDecoder]]のコンパニオンオブジェクト。
+ */
+object DefaultGenericURIDecoder {
+  /**
+   * ファクトリメソッド。
+   *
+   * @return [[org.sisioh.sip.message.address.impl.GenericURIDecoder]]
+   */
+  def apply() = new DefaultGenericURIDecoder
 }
 
-class GenericURI
+/**
+ * [[org.sisioh.sip.message.address.impl.GenericURI]]のための[[org.sisioh.sip.util.Decoder]]
+ */
+class DefaultGenericURIDecoder extends Decoder[GenericURI] with DefaultGenericURIParser {
+
+  def decode(source: String): GenericURI = decodeTarget(source, genericURI)
+
+}
+
+trait DefaultGenericURIParser extends RegexParsers {
+
+  def genericURI: Parser[GenericURI] = URI ^^ {
+    uri => DefaultGenericURI(uri)
+  }
+
+  lazy val URI = """.+""".r
+}
+
+
+object DefaultGenericURI {
+
+  def apply(uriString: String, schemeParam: Option[String] = None) = new DefaultGenericURI(uriString, schemeParam)
+
+  def unapply(genericUri: GenericURI): Option[(String, String)] = Some(genericUri.uriString, genericUri.scheme)
+
+  def decode(source: String) = DefaultGenericURIDecoder().decode(source)
+
+}
+
+trait GenericURI extends URI with GenericObject {
+  val uriString: String
+}
+
+class DefaultGenericURI
 (val uriString: String,
  schemeParam: Option[String] = None)
-  extends URI with GenericObject[GenericURI] {
+  extends GenericURI {
 
   private val i = uriString.indexOf(":")
   require(i != -1)
@@ -30,5 +73,7 @@ class GenericURI
 
   def encode(builder: StringBuilder) =
     builder.append(uriString)
+
+  override def toString = encode()
 
 }

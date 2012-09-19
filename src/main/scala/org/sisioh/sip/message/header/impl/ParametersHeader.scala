@@ -10,6 +10,7 @@ trait ParametersHeader extends Parameters {
 
   val parameters: NameValuePairList
 
+
   def getParameter(name: String, stripQuotes: Boolean) = {
     parameters.getParameter(name, stripQuotes)
   }

@@ -7,14 +7,9 @@ object HostPortDecoder {
   def apply() = new HostPortDecoder()
 }
 
-class HostPortDecoder extends HostPortParser {
+class HostPortDecoder extends Decoder[HostPort] with HostPortParser {
 
-  def parse(source: String) = parseAll(hostPort, source) match {
-    case Success(result, _) => result
-    case Failure(msg, _) => throw new ParseException(Some(msg))
-    case Error(msg, _) => throw new ParseException(Some(msg))
-  }
-
+  def decode(source: String): HostPort = decodeTarget(source, hostPort)
 }
 
 trait HostPortParser extends RegexParsers with HostParser {
@@ -36,7 +31,7 @@ object HostPort {
 
   def apply(host: Host, port: Option[Int]) = new HostPort(host, port)
 
-  def decode(source: String) = HostPortDecoder().parse(source)
+  def decode(source: String) = HostPortDecoder().decode(source)
 
   /**
    * Jsonエンコーダー。
@@ -61,7 +56,7 @@ object HostPort {
  * @param host [[org.sisioh.sip.util.Host]]
  * @param port ポート
  */
-class HostPort(val host: Host, val port: Option[Int]) extends GenericObject[HostPort] {
+class HostPort(val host: Host, val port: Option[Int]) extends GenericObject {
 
   val inetAddress = host.inetAddress
 
@@ -71,4 +66,13 @@ class HostPort(val host: Host, val port: Option[Int]) extends GenericObject[Host
   override def toString = encode
 
   def encode(builder: StringBuilder) = builder.append(port.map("%s:%s".format(host.encode(), _)).getOrElse(host.toString))
+
+  override def hashCode() = 31 * host.## + 31 * port.##
+
+  override def equals(obj: Any) = obj match {
+    case that : HostPort =>
+      host == that.host && port == that.port
+    case _ => false
+  }
+
 }

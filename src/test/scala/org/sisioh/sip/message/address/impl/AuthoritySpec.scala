@@ -10,19 +10,18 @@ class AuthoritySpec extends Specification {
     val port = 8080
     val userName = "KATO"
     val password = "password"
+    val hostPort = HostPort(
+      host = Host(host),
+      port = Some(port)
+    )
+    val userInfo = UserInfo(
+      name = userName,
+      password = Some(password)
+    )
+
     val authority = Authority(
-      hostPort = Some(
-        HostPort(
-          host = Host(host),
-          port = Some(port)
-        )
-      ),
-      userInfo = Some(
-        UserInfo(
-          name = userName,
-          password = Some(password)
-        )
-      )
+      hostPort = Some(hostPort),
+      userInfo = Some(userInfo)
     )
     "ホスト名を取得できる" in {
       authority.host must_== Some(Host(host))
@@ -34,7 +33,10 @@ class AuthoritySpec extends Specification {
       authority.encode() must_== """KATO:password@localhost:8080"""
     }
     "HostPortが取得できる" in {
-      authority.hostPort must_== Some(HostPort(Host(host), Some(port)))
+      authority.hostPort must_== Some(hostPort)
+    }
+    "UserInfoが取得できる" in {
+      authority.userInfo must_== Some(userInfo)
     }
   }
 

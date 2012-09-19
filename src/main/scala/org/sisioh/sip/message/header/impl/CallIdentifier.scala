@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.util.Encodable
-import org.sisioh.sip.core.Separators
+import org.sisioh.sip.core.{GenericObject, Separators}
 
 object CallIdentifier {
 
@@ -18,7 +18,7 @@ object CallIdentifier {
 
 }
 
-case class CallIdentifier(localId: String, host: Option[String] = None) extends Encodable[CallIdentifier] {
+case class CallIdentifier(localId: String, host: Option[String] = None) extends GenericObject {
 
   def encode(builder: StringBuilder) = {
     host.map {

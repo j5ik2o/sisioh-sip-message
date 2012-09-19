@@ -5,21 +5,22 @@ import java.util.regex.Pattern
 import org.sisioh.sip.core.GenericObject
 import util.parsing.combinator.RegexParsers
 
+/**
+ * アドレスの種別を表す列挙型。
+ */
 object AddressType extends Enumeration {
   val HOST_NAME, IPV4_ADDRESS, IPV6_ADDRESS = Value
 }
 
 object HostDecoder {
+
   def apply() = new HostDecoder
+
 }
 
-class HostDecoder extends HostParser {
+class HostDecoder extends Decoder[Host] with HostParser {
 
-  def decode(source: String) = parseAll(host, source) match {
-    case Success(result, _) => result
-    case Failure(msg, _) => throw new ParseException(Some(msg))
-    case Error(msg, _) => throw new ParseException(Some(msg))
-  }
+  def decode(source: String): Host = decodeTarget(source, host)
 
 }
 
@@ -67,7 +68,7 @@ object Host {
  * @param addressTypeParam [[org.sisioh.sip.util.AddressType.Value]]
  */
 class Host(val hostNameOrIpAddress: String, addressTypeParam: Option[AddressType.Value] = None)
-  extends GenericObject[Host] {
+  extends GenericObject {
 
   val inetAddress: InetAddress =
     InetAddress.getByName(hostNameOrIpAddress)

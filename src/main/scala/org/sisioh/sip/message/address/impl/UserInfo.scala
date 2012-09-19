@@ -1,27 +1,45 @@
 package org.sisioh.sip.message.address.impl
 
-import org.sisioh.sip.core.Separators
+import org.sisioh.sip.core.{GenericObject, Separators}
 import org.sisioh.sip.util.{Encoder, Encodable}
 
 object UserType extends Enumeration {
   val TELHPHONE_SUBSCRIBER, USER = Value
 }
 
+/**
+ * [[org.sisioh.sip.message.address.impl.UserInfo]]のためのコンパニオンオブジェクト。
+ */
 object UserInfo {
 
+  /**
+   * ファクトリメソッド。
+   *
+   * @param name ユーザ名
+   * @param password パスワードのオプション
+   * @param userTypeParam [[org.sisioh.sip.message.address.impl.UserType.Value]]のオブション
+   * @return [[org.sisioh.sip.message.address.impl.UserInfo]]
+   */
   def apply(name: String, password: Option[String], userTypeParam: Option[UserType.Value] = None) =
     new UserInfo(name, password, userTypeParam)
 
+  /**
+   * 抽出子メソッド。
+   *
+   * @param userInfo [[org.sisioh.sip.message.address.impl.UserInfo]]
+   * @return Option[(ユーザ名, パスワードのオプション, [[org.sisioh.sip.message.address.impl.UserType.Value]]のオプション)]
+   */
   def unapply(userInfo: UserInfo): Option[(String, Option[String], Option[UserType.Value])] =
     Some(userInfo.name, userInfo.password, Some(userInfo.userType))
 
-  implicit object DefaultUserInfoEncoder extends Encoder[UserInfo] {
+  class JsonEncoder extends Encoder[UserInfo] {
 
     def encode(model: UserInfo, builder: StringBuilder): StringBuilder = {
       import net.liftweb.json._
       import net.liftweb.json.JsonDSL._
-      val json = JObject(model.password.map { e =>
-        JField("name", model.name) :: JField("password", JString(e)) :: Nil
+      val json = JObject(model.password.map {
+        e =>
+          JField("name", model.name) :: JField("password", JString(e)) :: Nil
       }.getOrElse {
         JField("name", model.name) :: Nil
       })
@@ -32,11 +50,18 @@ object UserInfo {
 
 }
 
+/**
+ * ユーザ情報を表す値オブジェクト。
+ *
+ * @param name ユーザ名
+ * @param password パスワードのオプション
+ * @param userTypeParam [[org.sisioh.sip.message.address.impl.UserType.Value]]のオブション
+ */
 class UserInfo
 (val name: String,
  val password: Option[String],
  userTypeParam: Option[UserType.Value] = None)
-  extends Encodable[UserInfo] {
+  extends GenericObject {
 
   require(name.size > 0)
   require {
@@ -52,6 +77,17 @@ class UserInfo
       UserType.USER
     }
   }
+
+  def encode(builder: StringBuilder) = {
+    builder.append(password.map {
+      e =>
+        "%s%s%s".format(name, Separators.COLON, e)
+    }.getOrElse {
+      name
+    })
+  }
+
+  override def toString = encode()
 
   override def hashCode() =
     31 * name.## + 31 * password.## + 31 * userType.##
@@ -74,12 +110,4 @@ class UserInfo
     case _ => false
   }
 
-  def encode(builder: StringBuilder) = {
-    builder.append(password.map{
-      e =>
-        "%s%s%s".format(name, Separators.COLON, e)
-    }.getOrElse{
-      name
-    })
-  }
 }

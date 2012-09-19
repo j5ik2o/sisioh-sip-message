@@ -20,12 +20,7 @@ class NameValuePairDecoder
  isQuotedString: Boolean)
   extends Decoder[NameValuePair] with NameValuePairParser {
 
-  def decode(source: String) = parseAll(nameValuePair(separator, quotes, isQuotedString), source) match {
-    case Success(result, _) => result
-    case Failure(msg, _) => throw new ParseException(Some(msg))
-    case Error(msg, _) => throw new ParseException(Some(msg))
-  }
-
+  def decode(source: String): NameValuePair = decodeTarget(source, nameValuePair(separator, quotes, isQuotedString))
 }
 
 trait NameValuePairParser extends RegexParsers {
@@ -72,9 +67,9 @@ object NameValuePair {
         e =>
           JField("name", JString(model.name.get)) :: JField("value", e match {
             case s: String => JString(s)
-            case v: GenericObject[_] =>
+            case v: GenericObject =>
               parse(v.encode())
-            case v: GenericObjectList[_] =>
+            case v: GenericObjectList =>
               parse(v.encode())
           }) :: Nil
       }.getOrElse {
@@ -93,7 +88,7 @@ class NameValuePair
  val separator: String = Separators.EQUALS,
  val quotes: String = "",
  val isQuotedString: Boolean = false)
-  extends Tuple2[Option[String], Option[Any]](name, value) with GenericObject[NameValuePair] {
+  extends Tuple2[Option[String], Option[Any]](name, value) with GenericObject {
 
   def getValueAsObject(stripQuotes: Boolean): Option[String] =
     value.map {
@@ -121,12 +116,12 @@ class NameValuePair
   def encode(builder: StringBuilder) = {
     (name, value) match {
       case (Some(n), Some(v)) if (v.isInstanceOf[Boolean] == false) =>
-        if (v.isInstanceOf[GenericObject[_]]) {
+        if (v.isInstanceOf[GenericObject]) {
           builder.append(n).append(separator).append(quotes)
-          v.asInstanceOf[GenericObject[_]].encode(builder)
+          v.asInstanceOf[GenericObject].encode(builder)
           builder.append(quotes)
-        } else if (v.isInstanceOf[GenericObjectList[_]]) {
-          builder.append(n).append(separator).append(v.asInstanceOf[GenericObjectList[_]].encode())
+        } else if (v.isInstanceOf[GenericObjectList]) {
+          builder.append(n).append(separator).append(v.asInstanceOf[GenericObjectList].encode())
         } else if (v.toString.size == 0) {
           if (isQuotedString) {
             builder.append(n).append(separator).append(quotes).append(quotes)
@@ -137,10 +132,10 @@ class NameValuePair
           builder.append(n).append(separator).append(quotes).append(v.toString).append(quotes)
         }
       case (None, Some(v)) =>
-        if (v.isInstanceOf[GenericObject[_]]) {
-          builder.append(v.asInstanceOf[GenericObject[_]].encode())
-        } else if (v.isInstanceOf[GenericObjectList[_]]) {
-          builder.append(v.asInstanceOf[GenericObjectList[_]].encode())
+        if (v.isInstanceOf[GenericObject]) {
+          builder.append(v.asInstanceOf[GenericObject].encode())
+        } else if (v.isInstanceOf[GenericObjectList]) {
+          builder.append(v.asInstanceOf[GenericObjectList].encode())
         } else {
           builder.append(quotes).append(v.toString).append(quotes)
         }

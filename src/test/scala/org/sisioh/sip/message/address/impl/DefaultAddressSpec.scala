@@ -25,7 +25,7 @@ class DefaultAddressSpec extends Specification {
       )
     )
     val sipuri = SipUri(authority)
-    val address = DefaultAddress(sipuri, Some("かとう"))
+    val address = DefaultAddress.fromURI(sipuri, Some("かとう"))
     println(address.encode())
     true must_== true
   }

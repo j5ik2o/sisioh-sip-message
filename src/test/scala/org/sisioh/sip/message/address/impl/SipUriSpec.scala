@@ -26,19 +26,36 @@ class SipUriSpec extends Specification {
     )
     "Authorityのみの場合" in {
       val sipuri = SipUri(authority)
-      sipuri.encode() must_== """sip:KATO:password@localhost:8080"""
+      val uri = """sip:KATO:password@localhost:8080"""
+      "URIが取得できること" in {
+        sipuri.encode() must_== uri
+        sipuri.toString() must_== uri
+        sipuri.uriString must_== uri
+      }
       "HeaderNamesのサイズは0" in {
         sipuri.getHeaderNames.toList must have size (0)
       }
     }
     "パラメータを指定した場合" in {
       val sipuri = SipUri(authority).withParamter("PARAM1", "param1")
-      sipuri.encode() must_== """sip:KATO:password@localhost:8080;PARAM1=param1"""
-      sipuri.getParameter("PARAM1") must beSome
+      val uri = """sip:KATO:password@localhost:8080;PARAM1=param1"""
+      "URIが取得できること" in {
+        sipuri.encode() must_== uri
+        sipuri.toString() must_== uri
+        sipuri.uriString must_== uri
+      }
+      "Parameterが取得できる" in{
+        sipuri.getParameter("PARAM1") must_== Some("param1")
+      }
     }
     "ヘッダーを指定した場合" in {
       val sipuri = SipUri(authority).withHeader("HEADER1", "header1")
-      sipuri.encode() must_== """sip:KATO:password@localhost:8080?HEADER1=header1"""
+      val uri = """sip:KATO:password@localhost:8080?HEADER1=header1"""
+      "URIが取得できること" in {
+        sipuri.encode() must_== uri
+        sipuri.toString() must_== uri
+        sipuri.uriString must_== uri
+      }
       sipuri.getHeader("HEADER1") must beSome
     }
   }

@@ -1,6 +1,6 @@
 package org.sisioh.sip.util
 
-import org.sisioh.sip.core.{GenericObject, Separators}
+import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
 
 
@@ -8,13 +8,10 @@ class NameValuePairListDecoder
 (separator: String = Separators.SEMICOLON,
  nameValuePairSeparator: String = Separators.EQUALS,
  quotes: String = "",
- isQuotedString: Boolean = false) extends NameValuePairListParser {
+ isQuotedString: Boolean = false) extends Decoder[NameValuePairList] with NameValuePairListParser {
 
-  def decode(source: String) = parseAll(nameValuePairList(separator, nameValuePairSeparator, quotes, isQuotedString), source) match {
-    case Success(result, _) => result
-    case Failure(msg, _) => throw new ParseException(Some(msg))
-    case Error(msg, _) => throw new ParseException(Some(msg))
-  }
+  def decode(source: String): NameValuePairList =
+    decodeTarget(source, nameValuePairList(separator, nameValuePairSeparator, quotes, isQuotedString))
 
 }
 
@@ -53,7 +50,7 @@ object NameValuePairList {
 class NameValuePairList
 (val separator: String = Separators.SEMICOLON,
  private val nameValuePairs: Map[String, NameValuePair] = Map.empty[String, NameValuePair])
-  extends Iterable[NameValuePair] with Encodable[NameValuePairList] {
+  extends Iterable[NameValuePair] with GenericObjectList {
 
   def add(nameValuePair: NameValuePair): NameValuePairList =
     new NameValuePairList(separator, nameValuePairs + (nameValuePair.name.get.toLowerCase -> nameValuePair))
@@ -77,32 +74,29 @@ class NameValuePairList
 
   def iterator = nameValuePairs.valuesIterator
 
-  def getParameter(name: String): Option[String] = {
+  def getParameter(name: String): Option[String] =
     getParameter(name, true);
-  }
 
-  def getValue(name: String, stripQuotes: Boolean): Option[String] = {
+  def getValue(name: String, stripQuotes: Boolean): Option[String] =
     getNameValuePair(name.toLowerCase()).flatMap(_.getValueAsObject(stripQuotes))
-  }
 
 
   def getParameter(name: String, stripQuotes: Boolean): Option[String] = {
     getValue(name, stripQuotes).map {
       e =>
-        if (e.isInstanceOf[GenericObject[_]]) {
-          e.asInstanceOf[GenericObject[_]].encode()
+        if (e.isInstanceOf[GenericObject]) {
+          e.asInstanceOf[GenericObject].encode()
         } else {
           e.toString
         }
     }
   }
 
-
   def encode(builder: StringBuilder) = {
     builder.append(this.map {
       e =>
-        val encodeValue = if (e.isInstanceOf[GenericObject[_]]) {
-          e.asInstanceOf[GenericObject[_]].encode()
+        val encodeValue = if (e.isInstanceOf[GenericObject]) {
+          e.asInstanceOf[GenericObject].encode()
         } else {
           e.toString()
         }

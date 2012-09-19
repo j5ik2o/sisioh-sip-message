@@ -1,11 +1,10 @@
 package org.sisioh.sip.util
 
 
-trait Encodable[A] {
-  this : A =>
+trait Encodable {
 
   def encode(): String = encode(new StringBuilder).result()
   def encode(builder: StringBuilder): StringBuilder
-  def encode(encoder: Encoder[A]): String = encode(new StringBuilder, encoder).result()
-  def encode(builder: StringBuilder, encoder: Encoder[A]):StringBuilder = encoder.encode(this, builder)
+  def encode[A](encoder: Encoder[A]): String = encode(new StringBuilder, encoder).result()
+  def encode[A](builder: StringBuilder, encoder: Encoder[A]):StringBuilder = encoder.encode(this.asInstanceOf[A], builder)
 }

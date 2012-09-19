@@ -14,6 +14,6 @@ trait AddressFactory {
 
   def createAddress(uri: URI): Address
 
-  def createAddress(displayName: String, uri: URI): Address
+  def createAddress(uri: URI, displayName: Option[String]): Address
 
 }
