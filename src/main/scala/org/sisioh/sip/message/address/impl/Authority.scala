@@ -1,12 +1,46 @@
 package org.sisioh.sip.message.address.impl
 
-import org.sisioh.sip.util.{Encodable, Encoder, HostPort}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
+import util.parsing.combinator.RegexParsers
+import scala.Some
+
+object AuthorityDecoder {
+  def apply() = new AuthorityDecoder
+}
+
+class AuthorityDecoder extends Decoder[Authority] with AuthorityParser {
+  def decode(source: String) = decodeTarget(source, authority)
+}
+
+
+trait AuthorityParser extends ParserBase with UserInfoParser with HostPortParser {
+
+  def regName: Parser[String] = rep1(unreserved | escaped | "$" | "," | ";" | ":" | "@" | "&" | "=" | "+") ^^ {
+    _.mkString
+  }
+
+  def authority: Parser[Authority] = srvr ^^ {
+    case s =>
+      Authority(Some(s._2), s._1)
+  }
+
+  def srvr: Parser[(Option[UserInfo], HostPort)] = opt(userInfo) ~ hostPort ^^ {
+    case userInfoOpt ~ hostPort =>
+      println("check1", userInfoOpt, hostPort)
+      (userInfoOpt, hostPort)
+  }
+}
+
 
 /**
  * [[org.sisioh.sip.message.address.impl.Authority]]のためのコンパニオンオブジェクト。
  */
 object Authority {
+
+  def apply(hostPort: Option[HostPort], userInfo: Option[UserInfo]):Authority = new Authority(hostPort, userInfo)
+
+  def decode(source: String) = AuthorityDecoder().decode(source)
 
   class JsonEncoder extends Encoder[Authority] {
     def encode(model: Authority, builder: StringBuilder) = {
@@ -33,7 +67,7 @@ object Authority {
  * @param hostPort [[org.sisioh.sip.util.HostPort]]のオプション
  * @param userInfo [[org.sisioh.sip.message.address.impl.UserInfo]]のオプション
  */
-case class Authority(hostPort: Option[HostPort], userInfo: Option[UserInfo]) extends GenericObject {
+class Authority(val hostPort: Option[HostPort], val userInfo: Option[UserInfo]) extends GenericObject {
   val userName = userInfo.map(_.name)
   val host = hostPort.map(_.host)
   val port: Option[Int] = hostPort.flatMap(_.port)
@@ -54,5 +88,13 @@ case class Authority(hostPort: Option[HostPort], userInfo: Option[UserInfo]) ext
       case _ =>
         builder
     }
+  }
+
+  override def hashCode() = 31 * hostPort.## + 31 * userInfo.##
+
+  override def equals(obj: Any) = obj match {
+    case that: Authority =>
+      hostPort == that.hostPort && userInfo == that.userInfo
+    case _ => false
   }
 }

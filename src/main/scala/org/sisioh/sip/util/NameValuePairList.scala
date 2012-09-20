@@ -29,9 +29,13 @@ trait NameValuePairListParser extends RegexParsers with NameValuePairParser {
 
 object NameValuePairList {
 
-  def apply(separator: String = Separators.SEMICOLON) = new NameValuePairList(separator)
+  def apply(separator: String = Separators.SEMICOLON): NameValuePairList = new NameValuePairList(separator)
 
   def decode(source: String) = NameValuePairDecoder().decode(source)
+
+  def fromValues(nameValuePairs: List[NameValuePair], separator: String = Separators.SEMICOLON): NameValuePairList = {
+    new NameValuePairList(separator, nameValuePairs.map(e => (e.name.get, e)).toMap)
+  }
 
   object JsonEncoder extends Encoder[NameValuePairList] {
     def encode(model: NameValuePairList, builder: StringBuilder) = {
@@ -103,4 +107,14 @@ class NameValuePairList
         encodeValue
     }.mkString(separator))
   }
+
+  override def hashCode() = 31 * separator.## + 31 * nameValuePairs.##
+
+  override def equals(obj: Any) = obj match {
+    case that: NameValuePairList =>
+        separator == that.separator && nameValuePairs == that.nameValuePairs
+    case _ => false
+  }
+
+  override def toString = encode()
 }

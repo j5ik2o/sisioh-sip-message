@@ -8,13 +8,13 @@ import org.sisioh.sip.util.ParseException
 import scala.Some
 
 /**
- * [[org.sisioh.sip.message.address.impl.GenericURIDecoder]]のコンパニオンオブジェクト。
+ * [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]のコンパニオンオブジェクト。
  */
 object DefaultGenericURIDecoder {
   /**
    * ファクトリメソッド。
    *
-   * @return [[org.sisioh.sip.message.address.impl.GenericURIDecoder]]
+   * @return [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]
    */
   def apply() = new DefaultGenericURIDecoder
 }
@@ -50,18 +50,6 @@ object DefaultGenericURI {
 
 trait GenericURI extends URI with GenericObject {
   val uriString: String
-}
-
-class DefaultGenericURI
-(val uriString: String,
- schemeParam: Option[String] = None)
-  extends GenericURI {
-
-  private val i = uriString.indexOf(":")
-  require(i != -1)
-  val scheme = schemeParam.getOrElse(uriString.substring(0, i))
-
-  val isSipURI = isInstanceOf[SipUri]
 
   override def hashCode() = 31 * uriString.## + 31 * scheme.##
 
@@ -75,5 +63,18 @@ class DefaultGenericURI
     builder.append(uriString)
 
   override def toString = encode()
+}
+
+class DefaultGenericURI
+(val uriString: String,
+ schemeParam: Option[String] = None)
+  extends GenericURI {
+
+  private val i = uriString.indexOf(":")
+  require(i != -1)
+  val scheme = schemeParam.getOrElse(uriString.substring(0, i))
+
+  val isSipURI = isInstanceOf[SipUri]
+
 
 }

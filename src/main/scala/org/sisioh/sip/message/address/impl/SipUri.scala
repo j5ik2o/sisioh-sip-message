@@ -3,7 +3,103 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.message.address.{NetObject, SipURI}
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
-import scala.Some
+
+object SipUriDecoder {
+  def apply() = new SipUriDecoder
+}
+
+class SipUriDecoder extends Decoder[SipUri] with SipUriParser {
+  def decode(source: String) = decodeTarget(source, sipuri)
+}
+
+trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
+
+  def sipuri: Parser[SipUri] = "sip:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+    case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
+      SipUri.fromUserInfoWithHostPort(userInfoOpt, Some(hostPort))
+  }
+
+
+  def headers: Parser[NameValuePairList] = "?" ~> rep1sep(header, "&") ^^ {
+    case hlist =>
+      NameValuePairList.fromValues(hlist)
+  }
+
+  def header: Parser[NameValuePair] = hname ~ "=" ~ hvalue ^^ {
+    case n ~ _ ~ v =>
+      NameValuePair(Some(n), Some(v))
+  }
+
+  def hname = rep1(hnvUnreserved | unreserved | escaped) ^^ {
+    _.mkString
+  }
+
+  def hnvUnreserved = "[" | "]" | "/" | "?" | ":" | "+" | "$"
+
+  def hvalue = rep(hnvUnreserved | unreserved | escaped) ^^ {
+    _.mkString
+  }
+
+  def uriParams: Parser[NameValuePairList] = rep(";" ~> uriParameter) ^^ {
+    case values =>
+      NameValuePairList.fromValues(values)
+  }
+
+  lazy val uriParameter: Parser[NameValuePair] = transportParam | userParam | methodParam | ttlParam | maddrParam | lrParam | otherParam
+
+  lazy val transportParam: Parser[NameValuePair] = "transport=" ~> ("udp" | "tcp" | "sctp" | "tls" | otherTransport) ^^ {
+    transport =>
+      NameValuePair(Some(NetObject.TRANSPORT), Some(transport))
+  }
+
+  lazy val otherTransport: Parser[String] = token
+
+  lazy val userParam: Parser[NameValuePair] = "user=" ~> ("phone" | "ip" | otherUser) ^^ {
+    user =>
+      NameValuePair(Some(NetObject.USER), Some(user))
+  }
+
+  lazy val otherUser: Parser[String] = token
+
+  lazy val methodParam: Parser[NameValuePair] = "method=" ~> Method ^^ {
+    method =>
+      NameValuePair(Some(NetObject.METHOD), Some(method))
+  }
+
+  lazy val ttlParam: Parser[NameValuePair] = "ttl=" ~> ttl ^^ {
+    ttl =>
+      NameValuePair(Some(NetObject.TTL), Some(ttl))
+  }
+
+  lazy val ttl = repN(3, DIGIT) ^^ {
+    _.mkString.toInt
+  }
+
+  lazy val maddrParam: Parser[NameValuePair] = "maddr=" ~> host ^^ {
+    case host =>
+      NameValuePair(Some(NetObject.MADDR), Some(host.toString))
+  }
+
+  lazy val lrParam: Parser[NameValuePair] = "lr" ^^ {
+    _ => NameValuePair(Some(NetObject.LR), Some(true))
+  }
+
+  lazy val otherParam: Parser[NameValuePair] = pname ~ opt("=" ~> pvalue) ^^ {
+    case pn ~ pv =>
+      NameValuePair(Some(pn), Some(pv))
+  }
+
+  lazy val pname = rep1(paramchar) ^^ {
+    _.mkString
+  }
+  lazy val pvalue = rep1(paramchar) ^^ {
+    _.mkString
+  }
+
+  lazy val paramchar = paramUnreserved | unreserved | escaped
+
+  lazy val paramUnreserved = "[" | "]" | "/" | ":" | "&" | "+" | "$"
+}
 
 object SipUri {
 
@@ -35,21 +131,6 @@ object SipUri {
     fromUserInfoWithHostPort(userInfo, hostPort, scheme)
   }
 
-  def encode(model: SipUri):String = {
-    val builder = new StringBuilder
-    builder.append(model.scheme).append(Separators.COLON)
-    model.authority.encode(builder)
-    if (!model.uriParms.isEmpty) {
-      builder.append(Separators.SEMICOLON)
-      model.uriParms.encode(builder)
-    }
-    if (!model.qheaders.isEmpty) {
-      builder.append(Separators.QUESTION)
-      model.qheaders.encode(builder)
-    }
-    builder.result()
-  }
-
   class JsonEncoder extends Encoder[SipUri] {
     def encode(model: SipUri, builder: StringBuilder) = {
       import net.liftweb.json._
@@ -71,7 +152,7 @@ class SipUri
   extends GenericURI with SipURI with GenericObject {
 
   override val userName = authority.userInfo.map(_.name)
-  override val userPassword = authority.userInfo.map(_.password.get)
+  override val userPassword = authority.userInfo.flatMap(_.password)
   override val host = authority.host.get.hostName.get
   override val port = authority.port
   override val isSecure: Boolean = scheme.equalsIgnoreCase(NetObject.SIPS)
@@ -107,7 +188,7 @@ class SipUri
 
   override def getMAddr = getParameter(NetObject.MADDR).map(_.asInstanceOf[String])
 
-  def setTransport(transport: String) = withParamter(NetObject.TRANSPORT, transport.toLowerCase)
+  def withTransport(transport: String) = withParamter(NetObject.TRANSPORT, transport.toLowerCase)
 
   override def getTransport = getParameter(NetObject.TRANSPORT).map(_.asInstanceOf[String])
 
@@ -210,7 +291,7 @@ class SipUri
 
   def getHeaderNames = qheaders.names
 
-  def encode(builder: StringBuilder) = {
+  override def encode(builder: StringBuilder) = {
     builder.append(scheme).append(Separators.COLON)
     authority.encode(builder)
     if (!uriParms.isEmpty) {

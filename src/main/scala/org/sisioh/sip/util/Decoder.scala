@@ -2,7 +2,7 @@ package org.sisioh.sip.util
 
 import util.parsing.combinator.RegexParsers
 
-trait Decoder[A] extends RegexParsers {
+trait Decoder[A] extends ParserBase {
 
   protected def decodeTarget(source: String, parser: Parser[A]): A = parseAll[A](parser, source) match {
     case Success(result, _) => result

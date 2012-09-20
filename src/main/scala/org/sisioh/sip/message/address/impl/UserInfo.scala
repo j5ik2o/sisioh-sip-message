@@ -1,7 +1,35 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.core.{GenericObject, Separators}
-import org.sisioh.sip.util.{Encoder, Encodable}
+import org.sisioh.sip.util.{Decoder, ParserBase, Encoder, Encodable}
+import util.parsing.combinator.RegexParsers
+
+object UserInfoDecoder {
+  def apply() = new UserInfoDecoder
+}
+
+class UserInfoDecoder extends Decoder[UserInfo] with UserInfoParser {
+  def decode(source: String) = decodeTarget(source, userInfo)
+}
+
+trait UserInfoParser extends RegexParsers with ParserBase {
+  def userUnreserved: Parser[String] = "&" | "=" | "+" | "$" | "," | ";" | "?" | "/"
+
+  def userInfo: Parser[UserInfo] = user ~ opt(":" ~> password) <~ "@" ^^ {
+    case user ~ passwordOp =>
+      UserInfo(user, passwordOp)
+  }
+
+  def password = rep(unreserved | escaped | "&" | "=" | "+" | "$" | ",") ^^ {
+    v => v.mkString
+  }
+
+  def user: Parser[String] = rep1(unreserved | escaped | userUnreserved) ^^ {
+    v => v.mkString
+  }
+
+}
+
 
 object UserType extends Enumeration {
   val TELHPHONE_SUBSCRIBER, USER = Value
@@ -94,19 +122,7 @@ class UserInfo
 
   override def equals(obj: Any) = obj match {
     case that: UserInfo =>
-      if (userType != that.userType) {
-        false
-      } else if (name.equalsIgnoreCase(that.name) == false) {
-        false
-      } else {
-        (password, that.password) match {
-          case (Some(_), None) => false
-          case (None, Some(_)) => false
-          case (Some(l), Some(r)) if (l.eq(r)) => true
-          case (Some(l), Some(r)) if (l == r) => true
-          case _ => false
-        }
-      }
+      name == that.name && password == that.password && userType == that.userType
     case _ => false
   }
 

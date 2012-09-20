@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{Address, URI}
-import org.sisioh.sip.util.{Encoder, Encodable}
+import org.sisioh.sip.util.{ParserBase, Encoder, Encodable}
 import org.sisioh.sip.core.{GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
 
@@ -19,23 +19,26 @@ object AddressType extends Enumeration {
   WILD_CARD = Value
 }
 
-trait DefaultAddressParser extends RegexParsers {
-  //def defaultAddress: Parser[DefaultAddress] = "*" ||| opt(DISPLAY_NAME) ~ opt(Separators.LESS_THAN) ~ URI ~ opt(Separators.GREATER_THAN)
+trait DefaultAddressParser extends ParserBase with SipUriParser {
 
-  lazy val DISPLAY_NAME = """[a-zA-Z.]""".r
+//  def defaultAddress: Parser[DefaultAddress] = "*" ||| opt(Separators.DOUBLE_QUOTE ~ DISPLAY_NAME ~ Separators.DOUBLE_QUOTE) ~ opt(Separators.LESS_THAN) ~ (sipuri) ~ opt(Separators.GREATER_THAN) ^^ {
+  //
+  //  }
+
+  lazy val DISPLAY_NAME = rep(token)
 
 }
 
 object DefaultAddress {
 
-  def apply(uri: AbstractGenericURI,
+  def apply(uri: GenericURI,
             displayName: Option[String] = None,
             addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
     new DefaultAddress(uri, displayName, addressTypeParam)
 
   def fromURI(uri: URI, displayName: Option[String] = None,
             addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
-    new DefaultAddress(uri.asInstanceOf[AbstractGenericURI], displayName, addressTypeParam)
+    new DefaultAddress(uri.asInstanceOf[GenericURI], displayName, addressTypeParam)
 
 }
 
@@ -47,7 +50,7 @@ object DefaultAddress {
  * @param addressTypeParam
  */
 class DefaultAddress
-(val uri: AbstractGenericURI,
+(val uri: GenericURI,
  val displayName: Option[String] = None,
  addressTypeParam: Option[AddressType.Value] = None) extends Address with GenericObject {
 

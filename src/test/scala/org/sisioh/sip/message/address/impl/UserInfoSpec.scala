@@ -22,10 +22,7 @@ class UserInfoSpec extends Specification {
         phoneNumber.userType must_== UserType.TELHPHONE_SUBSCRIBER
         phoneNumber.encode() must_== """0#1;"""
       }
-
     }
-
   }
-
 
 }

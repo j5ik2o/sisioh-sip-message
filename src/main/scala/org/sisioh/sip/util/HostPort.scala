@@ -14,13 +14,13 @@ class HostPortDecoder extends Decoder[HostPort] with HostPortParser {
 
 trait HostPortParser extends RegexParsers with HostParser {
 
-  def hostPort: Parser[HostPort] = host ~ opt(COLON ~> PORT) ^^ {
+  def hostPort: Parser[HostPort] = host ~ opt(COLON ~> rep1(PORT)) ^^ {
     case host ~ port =>
-      new HostPort(host, port.map(_.toInt))
+      new HostPort(host, port.map(_.mkString.toInt))
   }
 
   lazy val COLON = ":"
-  lazy val PORT = """[0-9]+""".r
+  lazy val PORT = DIGIT
 
 }
 

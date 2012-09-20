@@ -3,6 +3,9 @@ package org.sisioh.sip.message.address.impl
 import org.specs2.mutable.Specification
 import org.sisioh.sip.util.{Host, HostPort}
 
+/**
+ * [[org.sisioh.sip.message.address.impl.SipUri]]のためのスペック。
+ */
 class SipUriSpec extends Specification {
 
   "SipUri" should {
@@ -56,7 +59,9 @@ class SipUriSpec extends Specification {
         sipuri.toString() must_== uri
         sipuri.uriString must_== uri
       }
-      sipuri.getHeader("HEADER1") must beSome
+      "Parameterが取得できる" in{
+        sipuri.getParameter("HEADER1") must_== Some("header1")
+      }
     }
   }
 

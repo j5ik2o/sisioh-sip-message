@@ -1,6 +1,8 @@
 package org.sisioh.sip.util
 
-
+/**
+ * エンコードできる能力を表すトレイト。
+ */
 trait Encodable {
 
   def encode(): String = encode(new StringBuilder).result()

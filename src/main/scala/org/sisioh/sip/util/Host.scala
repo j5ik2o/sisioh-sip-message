@@ -3,7 +3,6 @@ package org.sisioh.sip.util
 import java.net.InetAddress
 import java.util.regex.Pattern
 import org.sisioh.sip.core.GenericObject
-import util.parsing.combinator.RegexParsers
 
 /**
  * アドレスの種別を表す列挙型。
@@ -24,18 +23,19 @@ class HostDecoder extends Decoder[Host] with HostParser {
 
 }
 
-trait HostParser extends RegexParsers {
+trait HostParser extends ParserBase {
 
   def host: Parser[Host] = hostNameOrIpAddress ^^ {
     h => Host(h)
   }
 
+  val HOSTNAME = """(([a-zA-Z]|([a-zA-Z0-9])([a-zA-Z0-9]|[-])*([a-zA-Z0-9]))[.])*(([a-zA-Z][a-zA-Z0-9]*[a-zA-Z])|[a-zA-Z])[.]?""".r
+
   lazy val L_BRACKET = """\[""".r
   lazy val R_BRACKET = """\]""".r
-  lazy val HOSTNAME = """[a-zA-z_]+""".r
   lazy val ipV4Address = ("(" + Host.v4Partial + ")(\\.(" + Host.v4Partial + ")){3}").r
   lazy val ipV6Address = L_BRACKET ~> (Host.v6PattenBase + "{7}").r <~ R_BRACKET
-  lazy val hostNameOrIpAddress = HOSTNAME ||| ipV4Address ||| ipV6Address
+  lazy val hostNameOrIpAddress = HOSTNAME | ipV4Address | ipV6Address
 }
 
 
@@ -107,7 +107,8 @@ class Host(val hostNameOrIpAddress: String, addressTypeParam: Option[AddressType
 
   override def equals(other: Any) = other match {
     case that: Host =>
-      this.hostNameOrIpAddress == that.hostNameOrIpAddress && this.addressType == that.addressType
+      this.hostNameOrIpAddress == that.hostNameOrIpAddress &&
+        this.addressType == that.addressType
     case _ => false
   }
 
