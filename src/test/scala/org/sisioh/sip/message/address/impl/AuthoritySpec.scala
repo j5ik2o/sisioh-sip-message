@@ -32,6 +32,9 @@ class AuthoritySpec extends Specification {
     "エンコード文字列を取得できる" in {
       authority.encode() must_== """KATO:password@localhost:8080"""
     }
+    "JSONによるエンコード文字列を取得できる" in {
+      authority.encodeByJson() must_== """{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}}"""
+    }
     "HostPortが取得できる" in {
       authority.hostPort must_== Some(hostPort)
     }

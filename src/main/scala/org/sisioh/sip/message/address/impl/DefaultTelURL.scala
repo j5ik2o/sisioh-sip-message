@@ -2,7 +2,7 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.TelURL
 import org.sisioh.sip.core.GenericObject
-import org.sisioh.sip.util.{Decoder, ParserBase}
+import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
 
 object DefaultTelURLDecoder {
   def apply() = new DefaultTelURLDecoder
@@ -28,6 +28,17 @@ object DefaultTelURL {
     Some(defaultTelURL.telephoneNumber, defaultTelURL.phoneContext)
 
   def decode(telephoneNumber: String) = DefaultTelURLDecoder().decode(telephoneNumber)
+
+  object JsonEncoder extends Encoder[DefaultTelURL]{
+    def encode(model: DefaultTelURL, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("scheme", JString(model.scheme)) ::
+        JField("isGlobal", JBool(model.isGlobal)) ::
+        JField("phoneNumber", JString(model.phoneNumber)) ::
+        JField("parameters", parse(model.params.encodeByJson())) :: Nil)
+      builder.append(compact(render(json)))
+    }
+  }
 }
 
 class DefaultTelURL
@@ -97,4 +108,6 @@ class DefaultTelURL
       telephoneNumber == that.telephoneNumber
     case _ => false
   }
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultTelURL.JsonEncoder)
 }

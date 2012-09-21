@@ -1,6 +1,6 @@
 package org.sisioh.sip.message.header.impl
 
-import org.sisioh.sip.util.Encodable
+import org.sisioh.sip.util.{Encoder, Encodable}
 import org.sisioh.sip.core.{GenericObject, Separators}
 
 object CallIdentifier {
@@ -16,6 +16,17 @@ object CallIdentifier {
     }
   }
 
+  object JsonEncoder extends Encoder[CallIdentifier] {
+    def encode(model: CallIdentifier, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(model.host.map{h =>
+        JField("localId", JString(model.localId)) :: JField("host", JString(h)) :: Nil
+      }.getOrElse(JField("localId", JString(model.localId)) :: Nil))
+      builder.append(compact(render(json)))
+    }
+
+  }
+
 }
 
 case class CallIdentifier(localId: String, host: Option[String] = None) extends GenericObject {
@@ -28,4 +39,5 @@ case class CallIdentifier(localId: String, host: Option[String] = None) extends 
     }
   }
 
+  def encodeByJson(builder: StringBuilder) = encode(builder, CallIdentifier.JsonEncoder)
 }

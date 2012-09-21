@@ -26,8 +26,12 @@ class DefaultAddressSpec extends Specification {
     )
     val sipuri = SipUri(authority)
     val address = DefaultAddress.fromURI(sipuri, Some("かとう"))
-    println(address.encode())
-    true must_== true
+    "エンコード文字列を取得できる" in {
+      address.encode() must_== """"かとう" <sip:KATO:password@localhost:8080>"""
+    }
+    "JSONによるエンコード文字列を取得できる" in {
+      address.encodeByJson() must_== """{"uri":{"scheme":"sip","authority":{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{}},"displayName":"かとう","addressType":0}"""
+    }
   }
 
 }

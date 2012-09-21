@@ -1,8 +1,9 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{Address, URI}
-import org.sisioh.sip.util.{Decoder, ParserBase}
+import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
 import org.sisioh.sip.core.{GenericObject, Separators}
+import net.liftweb.json.ext.{EnumNameSerializer, EnumSerializer}
 
 /**
  * アドレスの種別を表す列挙型。
@@ -54,6 +55,17 @@ object DefaultAddress {
               addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
     new DefaultAddress(uri.asInstanceOf[GenericURI], displayName, addressTypeParam)
 
+  object JsonEncoder extends Encoder[DefaultAddress] {
+    def encode(model: DefaultAddress, builder: StringBuilder) = {
+      import net.liftweb.json._
+      import net.liftweb.json.JsonDSL._
+      implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
+      val json = ("uri" -> parse(model.uri.encodeByJson())) ~
+        ("displayName" -> model.displayName) ~
+        ("addressType" -> JInt(model.addressType.id))
+      builder.append(compact(render(json)))
+    }
+  }
 }
 
 /**
@@ -116,4 +128,6 @@ class DefaultAddress
   }
 
   override def toString = encode()
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultAddress.JsonEncoder)
 }

@@ -17,7 +17,7 @@ class DefaultAddressFactory extends AddressFactory with AddressFactoryEx {
     }
   }
 
-  def createSipURI(user: Option[String], host: String): SipURI = {
+  def createSipURI(user: Option[String], host: String): SipUri = {
     val uriString = new StringBuilder("sip:")
     if (user.isDefined) {
       uriString.append(user.get)

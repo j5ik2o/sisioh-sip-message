@@ -1,7 +1,8 @@
 package org.sisioh.sip.message.address.impl
 
-import org.sisioh.sip.util.{NameValuePair, Decoder, ParserBase, NameValuePairList}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.{Separators, GenericObject}
+import scala.Some
 
 object TelephoneNumberDecoder {
   def apply() = new TelephoneNumberDecoder
@@ -23,7 +24,7 @@ trait TelephoneNumberParser extends ParserBase {
       val list = NameValuePairList.fromValues(afterOpts).add(area)
       val list2 = isdnOpt.map(e => list.add(e)).getOrElse(list)
       val list3 = postDialOpt.map(e => list2.add(e)).getOrElse(list2)
-      TelephoneNumber(d.mkString, false , list3)
+      TelephoneNumber(d.mkString, false, list3)
   }
 
   lazy val opts: Parser[NameValuePairList] = areaSpecifier ~ serviceProvider ^^ {
@@ -42,18 +43,6 @@ trait TelephoneNumberParser extends ParserBase {
       TelephoneNumber(baseNumber, true, list3)
   }
 
-  lazy val CHAR: Parser[Char] = chrRange(0x01, 0x7F)
-
-  lazy val quotedBodyChar: Parser[String] = """\""" ~ CHAR ^^ {
-    case f ~ s => f + s
-  } | (chrRange(0x20, 0x21) | chrRange(0x23, 0x7E) | chrRange(0x80, 0xFF)) ^^ {
-    case c => c.toString
-  }
-
-  lazy val quotedString: Parser[String] = chr(0x22) ~ rep(quotedBodyChar) ~ chr(0x22) ^^ {
-    case qs ~ bodyChars ~ qe =>
-      qs.toString + bodyChars.mkString + qe.toString
-  }
 
   lazy val futureExtension3: Parser[String] = rep1(tokenChar) ~ opt("?" ~ rep1(tokenChar)) ^^ {
     case tokenChars ~ tokenCharsOpt =>
@@ -63,7 +52,20 @@ trait TelephoneNumberParser extends ParserBase {
       }.getOrElse("")
   }
 
-  lazy val futureExtension2: Parser[String] = "=" ~> (futureExtension3 | quotedString)
+  lazy val CHAR: Parser[Char] = chrRange(0x01, 0x7F)
+
+  lazy val quotedBodyChar: Parser[String] = """\""" ~ CHAR ^^ {
+    case f ~ s => f + s
+  } | (chrRange(0x20, 0x21) | chrRange(0x23, 0x7E) | chrRange(0x80, 0xFF)) ^^ {
+    case c => c.toString
+  }
+
+  lazy val telQuotedString: Parser[String] = chr(0x22) ~ rep(quotedBodyChar) ~ chr(0x22) ^^ {
+    case qs ~ bodyChars ~ qe =>
+      qs.toString + bodyChars.mkString + qe.toString
+  }
+
+  lazy val futureExtension2: Parser[String] = "=" ~> (futureExtension3 | telQuotedString)
 
   lazy val futureExtension: Parser[NameValuePair] = ";" ~> rep1(tokenChar) ~ opt(futureExtension2) ^^ {
     case tokenChars ~ futureExtension2Opt =>
@@ -132,6 +134,20 @@ trait TelephoneNumberParser extends ParserBase {
   lazy val visualSeparator = "-" | "." | "(" | ")"
 }
 
+object TelephoneNumber {
+
+  object JsonEncoder extends Encoder[TelephoneNumber] {
+    def encode(model: TelephoneNumber, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("isGlobal", JBool(model.isGlobal)) ::
+        JField("phoneNumber", JString(model.phoneNumber)) ::
+          JField("parameters", parse(model.params.encodeByJson())) :: Nil)
+      builder.append(compact(render(json)))
+    }
+  }
+
+}
+
 
 case class TelephoneNumber
 (phoneNumber: String,
@@ -193,4 +209,6 @@ case class TelephoneNumber
     }
     builder
   }
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, TelephoneNumber.JsonEncoder)
 }

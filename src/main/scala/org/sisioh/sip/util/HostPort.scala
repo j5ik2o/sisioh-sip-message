@@ -76,4 +76,5 @@ class HostPort(val host: Host, val port: Option[Int]) extends GenericObject {
     case _ => false
   }
 
+  def encodeByJson(builder: StringBuilder) = encode(builder, HostPort.JsonEncoder)
 }

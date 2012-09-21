@@ -60,7 +60,7 @@ object UserInfo {
   def unapply(userInfo: UserInfo): Option[(String, Option[String], Option[UserType.Value])] =
     Some(userInfo.name, userInfo.password, Some(userInfo.userType))
 
-  class JsonEncoder extends Encoder[UserInfo] {
+  object JsonEncoder extends Encoder[UserInfo] {
 
     def encode(model: UserInfo, builder: StringBuilder): StringBuilder = {
       import net.liftweb.json._
@@ -126,4 +126,5 @@ class UserInfo
     case _ => false
   }
 
+  def encodeByJson(builder: StringBuilder) = encode(builder, UserInfo.JsonEncoder)
 }

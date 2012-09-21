@@ -13,8 +13,9 @@ class HostPortSpec extends Specification {
     "8080が取得できる" in {
       hostPort.port must_== port
     }
-    "エンコード結果としてlocalhost:8080が取得できる" in {
-      hostPort.encode() must_== """{"host":"localhost","port":8080}"""
+    "エンコード結果が取得できる" in {
+      hostPort.encode() must_== """localhost:8080"""
+      hostPort.encodeByJson() must_== """{"host":"localhost","port":8080}"""
     }
   }
 }

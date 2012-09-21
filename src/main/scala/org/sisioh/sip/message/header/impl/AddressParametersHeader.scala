@@ -6,6 +6,4 @@ trait AddressParametersHeader extends ParametersHeader {
 
   val address: DefaultAddress
 
-
-
 }

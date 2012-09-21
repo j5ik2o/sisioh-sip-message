@@ -44,12 +44,20 @@ trait NameValuePairParser extends RegexParsers {
 
 object NameValuePair {
 
+  implicit def stringToOption(value: String):Option[String] = Some(value)
+
+//  def apply
+//  (name: String, value: String,
+//   separator: String = Separators.EQUALS,
+//   quotes: String = "",
+//   isQuotedString: Boolean = false): NameValuePair = apply(Some(name), Some(value), separator, quotes, isQuotedString)
+
   def apply
   (name: Option[String],
    value: Option[Any],
    separator: String = Separators.EQUALS,
    quotes: String = "",
-   isQuotedString: Boolean = false) = new NameValuePair(name, value, separator, quotes, isQuotedString)
+   isQuotedString: Boolean = false): NameValuePair = new NameValuePair(name, value, separator, quotes, isQuotedString)
 
   def decode
   (source: String,
@@ -60,17 +68,18 @@ object NameValuePair {
   def unapply(nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
     Some(nameValuePair.name, nameValuePair.value)
 
-  class JsonEncoder[A] extends Encoder[NameValuePair] {
+  object JsonEncoder extends Encoder[NameValuePair] {
     def encode(model: NameValuePair, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(model.value.map {
         e =>
           JField("name", JString(model.name.get)) :: JField("value", e match {
+            case b: Boolean => JBool(b)
             case s: String => JString(s)
             case v: GenericObject =>
-              parse(v.encode())
+              parse(v.encodeByJson())
             case v: GenericObjectList =>
-              parse(v.encode())
+              parse(v.encodeByJson())
           }) :: Nil
       }.getOrElse {
         JField("name", JString(model.name.get)) :: Nil
@@ -146,4 +155,6 @@ class NameValuePair
     }
 
   }
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, NameValuePair.JsonEncoder)
 }

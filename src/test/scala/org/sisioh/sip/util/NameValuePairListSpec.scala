@@ -8,8 +8,8 @@ class NameValuePairListSpec extends Specification {
     var target = NameValuePairList()
     target = target.add("name", "kato")
     target = target.add("age", 40)
-    println(target.encode())
-    true must_== true
+    target.encode() must_== "name=kato;age=40"
+    target.encodeByJson() must_== """{"name":"kato","age":"40"}"""
   }
 
 }

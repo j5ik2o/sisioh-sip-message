@@ -57,6 +57,16 @@ object Host {
   val v6PattenBase = "(" + v6Partial + ")(:(" + v6Partial + "))"
   val v6Pattern = Pattern.compile(v6PattenBase + "{7}")
 
+  object JsonEncoder extends Encoder[Host] {
+    def encode(model: Host, builder: StringBuilder) = {
+      import net.liftweb.json._
+      import net.liftweb.json.JsonDSL._
+      val json = ("hostNameOrIpAddress" -> model.hostNameOrIpAddress) ~
+        ("addressTypeParam" -> model.addressType.id)
+      builder.append(compact(render(json)))
+    }
+
+  }
 
 }
 
@@ -128,4 +138,6 @@ class Host(val hostNameOrIpAddress: String, addressTypeParam: Option[AddressType
     }
     builder.append(encodedModel)
   }
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, Host.JsonEncoder)
 }

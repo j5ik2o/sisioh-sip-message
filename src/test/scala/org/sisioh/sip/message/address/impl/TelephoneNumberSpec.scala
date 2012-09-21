@@ -20,6 +20,7 @@ class TelephoneNumberSpec extends Specification {
       }
       "グローバルな電話番号としてのエンコード結果が得られる" in {
         target.encode() must_== "+09012345678"
+        target.encodeByJson() must_== """{"isGlobal":true,"phoneNumber":"09012345678","parameters":{}}"""
       }
     }
     "電話番号とパラメータを指定した場合" in {
@@ -38,24 +39,28 @@ class TelephoneNumberSpec extends Specification {
       }
       "グローバルなパラメータ付き電話番号としてのエンコード結果が得られる" in {
         target.encode() must_== "+09012345678;PARAM1=param1"
+        target.encodeByJson() must_== """{"isGlobal":true,"phoneNumber":"09012345678","parameters":{"PARAM1":"param1"}}"""
       }
     }
     "プライベートな電話番号を指定した場合" in {
       val target = TelephoneNumber("4321", false)
       "プライベートな電話番号としてのエンコード結果が得られる" in {
         target.encode() must_== "4321"
+        target.encodeByJson() must_== """{"isGlobal":false,"phoneNumber":"4321","parameters":{}}"""
       }
     }
     "ポストダイアルを指定した場合" in {
       val target = TelephoneNumber("4321",false).withPostDial("abc")
       "ポストダイアル付き電話番号としてのエンコード結果が得られる" in {
-        target.encode() must_== "4321;postdial=abc"
+        target.encode() must_== "4321;postd=abc"
+        target.encodeByJson() must_== """{"isGlobal":false,"phoneNumber":"4321","parameters":{"postd":"abc"}}"""
       }
     }
     "ISDNサブアドレスを指定した場合" in {
       val target = TelephoneNumber("4321",false).withIsdnSubaddress("0123")
       "ISDNサブアドレス付き電話番号としてのエンコード結果が得られる" in {
         target.encode() must_== "4321;isub=0123"
+        target.encodeByJson() must_== """{"isGlobal":false,"phoneNumber":"4321","parameters":{"isub":"0123"}}"""
       }
     }
 

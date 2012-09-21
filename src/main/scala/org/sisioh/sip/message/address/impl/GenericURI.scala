@@ -113,14 +113,28 @@ trait GenericURI extends URI with GenericObject {
     builder.append(uriString)
 
   override def toString = encode()
+
+  object JsonEncoder extends Encoder[GenericURI] {
+    def encode(model: GenericURI, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("uriString", JString(model.uriString)) :: Nil)
+      builder.append(compact(render(json)))
+    }
+  }
 }
 
-object WildCardURI extends WildCardURI
+
+
+object WildCardURI extends WildCardURI {
+
+}
 
 class WildCardURI extends GenericURI {
   val uriString = "*"
   val scheme = ""
   val isSipURI = false
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, JsonEncoder)
 }
 
 class DefaultGenericURI
@@ -134,4 +148,5 @@ class DefaultGenericURI
 
   val isSipURI = isInstanceOf[SipUri]
 
+  def encodeByJson(builder: StringBuilder) = encode(builder, JsonEncoder)
 }

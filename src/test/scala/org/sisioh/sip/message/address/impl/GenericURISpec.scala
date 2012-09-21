@@ -18,6 +18,7 @@ class GenericURISpec extends Specification {
     }
     "エンコード結果が正しいこと" in {
       target.encode() must_== uriString
+      target.encodeByJson() must_== """{"uriString":"test:abc"}"""
     }
   }
 }

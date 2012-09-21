@@ -12,8 +12,6 @@ trait ParametersHeader extends Parameters with ParametersHeaderExt with SIPHeade
 
   protected def createParametersHeader(duplicates: DuplicateNameValueList, parameters: NameValuePairList): ParametersHeader
 
-  def encodeBody(builder: StringBuilder): StringBuilder
-
   def getParameter(name: String, stripQuotes: Boolean) =
     parameters.getParameter(name, stripQuotes)
 

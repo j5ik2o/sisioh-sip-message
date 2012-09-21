@@ -45,7 +45,6 @@ object NameValuePairList {
         e => e.value.map(v => JField(e.name.get, v.toString))
       }.toList)
       builder.append(compact(render(json)))
-
     }
   }
 
@@ -120,4 +119,6 @@ class NameValuePairList
   }
 
   override def toString = encode()
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, NameValuePairList.JsonEncoder)
 }

@@ -138,13 +138,13 @@ object SipUri {
     fromUserInfoAndHostPort(userInfo, hostPort, scheme)
   }
 
-  class JsonEncoder extends Encoder[SipUri] {
+  object JsonEncoder extends Encoder[SipUri] {
     def encode(model: SipUri, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(JField("scheme", JString(model.scheme)) ::
-        JField("authority", parse(model.authority.encode())) ::
-        JField("uriParams", parse(model.uriParms.encode())) ::
-        JField("qheaders", parse(model.qheaders.encode())) :: Nil)
+        JField("authority", parse(model.authority.encodeByJson())) ::
+        JField("uriParams", parse(model.uriParms.encodeByJson())) ::
+        JField("qheaders", parse(model.qheaders.encodeByJson())) :: Nil)
       builder.append(compact(render(json)))
     }
   }
@@ -326,4 +326,5 @@ class SipUri
 
   override def toString = encode()
 
+  def encodeByJson(builder: StringBuilder) = encode(builder, SipUri.JsonEncoder)
 }

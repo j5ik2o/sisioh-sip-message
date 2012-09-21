@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ToHeader
-import org.sisioh.sip.util.{NameValuePairList, DuplicateNameValueList}
+import org.sisioh.sip.util.{Encoder, NameValuePairList, DuplicateNameValueList}
 import org.sisioh.sip.message.address.impl.{AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
 
@@ -12,6 +12,18 @@ object To {
 
   def fromFrom(from: From) =
     new To(from.address)
+
+  def unapply(to: To): Option[(DefaultAddress, NameValuePairList)] =
+    Some(to.address, to.parameters)
+
+  object JsonEncoder extends Encoder[To] {
+    def encode(model: To, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("address", parse(model.address.encodeByJson())) ::
+        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil)
+      builder.append(compact(render(json)))
+    }
+  }
 }
 
 class To
@@ -41,4 +53,16 @@ class To
     builder
   }
 
+  override def hashCode() = 31 * address.## + 31 * parameters.## + 31 * headerName.## + 31 * duplicates.##
+
+  override def equals(obj: Any) = obj match {
+    case that: To =>
+      address == that.address &&
+        parameters == that.parameters &&
+        headerName == that.headerName &&
+        duplicates == that.duplicates
+    case _ => false
+  }
+
+  def encodeByJson(builder: StringBuilder) = encode(builder, To.JsonEncoder)
 }
