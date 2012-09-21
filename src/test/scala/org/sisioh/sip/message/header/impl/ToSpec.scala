@@ -18,7 +18,7 @@ class ToSpec extends Specification {
     "アドレスとパラメータを指定した場合" in {
       val address = new DefaultAddressFactory().createAddress(SipUri.decode("sip:hoge@localhost"), Some("kato"))
       val params = NameValuePairList.fromValues(List(NameValuePair(Some("a"), Some("b"))))
-      val to = To(address, params)
+      val to = To(address, None, params)
       to.encode() must_== """To: "kato" <sip:hoge@localhost>;a=b""" + Separators.NEWLINE
       to.encodeByJson() must_== """{"address":{"uri":{"scheme":"sip","authority":{"hostPort":{"host":"localhost"},"userInfo":{"name":"hoge"}},"uriParams":{},"qheaders":{}},"displayName":"kato","addressType":0},"paramters":{"a":"b"}}"""
       to.address must_== address

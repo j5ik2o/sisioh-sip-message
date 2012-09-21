@@ -8,7 +8,8 @@ import org.sisioh.sip.core.Separators
 object To {
   def apply
   (address: DefaultAddress,
-   parameters: NameValuePairList = NameValuePairList()) = new To(address, parameters)
+   tag: Option[String] = None,
+   parameters: NameValuePairList = NameValuePairList()) = new To(address, tag, parameters)
 
   def fromFrom(from: From) =
     new To(from.address)
@@ -28,14 +29,18 @@ object To {
 
 class To
 (val address: DefaultAddress,
- val parameters: NameValuePairList = NameValuePairList())
-  extends AddressParametersHeader {
+ val tag: Option[String] = None,
+ parametersParam: NameValuePairList = NameValuePairList())
+  extends AddressParametersHeader with ToHeader {
+
+  val parameters = tag.map(t => parametersParam.add("tag",t)).getOrElse(parametersParam)
+
 
   val headerName = ToHeader.NAME
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
-    new To(address, _parameters)
+    new To(address, tag, _parameters)
   }
 
   def encodeBody(builder: StringBuilder) = {
@@ -65,4 +70,6 @@ class To
   }
 
   def encodeByJson(builder: StringBuilder) = encode(builder, To.JsonEncoder)
+
+  val name = ToHeader.NAME
 }

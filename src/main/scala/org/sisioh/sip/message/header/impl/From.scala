@@ -9,7 +9,8 @@ object From {
 
   def apply
   (address: DefaultAddress,
-   parameters: NameValuePairList = NameValuePairList()) = new From(address, parameters)
+   tag: Option[String] = None,
+   parameters: NameValuePairList = NameValuePairList()) = new From(address, tag, parameters)
 
   def fromTo(to: To) =
     new From(to.address)
@@ -30,14 +31,16 @@ object From {
 
 class From
 (val address: DefaultAddress,
- val parameters: NameValuePairList = NameValuePairList())
-  extends AddressParametersHeader {
+ val tag: Option[String] = None,
+ parametersParam: NameValuePairList = NameValuePairList())
+  extends AddressParametersHeader with FromHeader {
+  val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
 
   val headerName = FromHeader.NAME
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
-    new From(address, _parameters)
+    new From(address, tag, _parameters)
   }
 
   def encodeBody(builder: StringBuilder) = {
@@ -67,4 +70,6 @@ class From
   }
 
   def encodeByJson(builder: StringBuilder) = encode(builder, From.JsonEncoder)
+
+  val name = FromHeader.NAME
 }
