@@ -3,8 +3,6 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.message.address.URI
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.GenericObject
-import util.parsing.combinator.RegexParsers
-import org.sisioh.sip.util.ParseException
 import scala.Some
 
 /**
@@ -22,19 +20,71 @@ object DefaultGenericURIDecoder {
 /**
  * [[org.sisioh.sip.message.address.impl.GenericURI]]のための[[org.sisioh.sip.util.Decoder]]
  */
-class DefaultGenericURIDecoder extends Decoder[GenericURI] with DefaultGenericURIParser {
+class DefaultGenericURIDecoder extends Decoder with DefaultGenericURIParser {
 
   def decode(source: String): GenericURI = decodeTarget(source, genericURI)
 
 }
 
-trait DefaultGenericURIParser extends RegexParsers {
+trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
 
-  def genericURI: Parser[GenericURI] = URI ^^ {
+  lazy val genericURI: Parser[GenericURI] = absoluteURI ^^ {
     uri => DefaultGenericURI(uri)
   }
 
-  lazy val URI = """.+""".r
+  lazy val absoluteURI: Parser[String] = scheme ~ ":" ~ (hierPart | opaquePart) ^^ {
+    case scheme ~ colon ~ part =>
+      scheme + colon + part
+  }
+
+  lazy val scheme: Parser[String] = ALPHA ~ rep(ALPHA | DIGIT | "+" | "-" | ".") ^^ {
+    case f ~ s =>
+      f + s.mkString
+  }
+
+  lazy val hierPart: Parser[String] = (netPath | absPath) ~ opt("?" ~ query) ^^ {
+    case path ~ queryOpt =>
+      path + queryOpt.map {
+        case f ~ s => f + s
+      }.getOrElse("")
+  }
+
+  lazy val query: Parser[String] = rep(uric) ^^ {
+    _.mkString
+  }
+
+  lazy val opaquePart: Parser[String] = uricNoSlash ~ rep(uric) ^^ {
+    case uns ~ urics =>
+      uns + urics.mkString
+  }
+
+  lazy val uricNoSlash: Parser[String] = unreserved | escaped | ";" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
+
+  lazy val uric: Parser[String] = reserved | unreserved | escaped
+
+  lazy val netPath: Parser[String] = "//" ~ authority ~ "@" ~ opt(absPath) ^^ {
+    case slash ~ authority ~ at ~ absPathOpt =>
+      slash + authority.toString + at + absPathOpt.getOrElse("")
+  }
+
+  lazy val absPath: Parser[String] = "/" ~ pathSegments ^^ {
+    case f ~ s =>
+      f + s
+  }
+
+  lazy val pathSegments: Parser[String] = rep1sep(segment, "/") ^^ {
+    _.mkString("/")
+  }
+
+  lazy val segment: Parser[String] = rep1sep(param, ";") ^^ {
+    _.mkString(";")
+  }
+
+  lazy val param: Parser[String] = rep(pchar) ^^ {
+    _.mkString
+  }
+
+  lazy val pchar = unreserved | escaped | ":" | "@" | "&" | "=" | "+" | "$" | ","
 }
 
 
@@ -65,6 +115,14 @@ trait GenericURI extends URI with GenericObject {
   override def toString = encode()
 }
 
+object WildCardURI extends WildCardURI
+
+class WildCardURI extends GenericURI {
+  val uriString = "*"
+  val scheme = ""
+  val isSipURI = false
+}
+
 class DefaultGenericURI
 (val uriString: String,
  schemeParam: Option[String] = None)
@@ -75,6 +133,5 @@ class DefaultGenericURI
   val scheme = schemeParam.getOrElse(uriString.substring(0, i))
 
   val isSipURI = isInstanceOf[SipUri]
-
 
 }

@@ -6,6 +6,11 @@ trait ParserBase extends RegexParsers {
 
   lazy val ALPHA = """[a-zA-Z]""".r
   lazy val DIGIT = """\d""".r
+  lazy val HOSTNAME = """(([a-zA-Z]|([a-zA-Z0-9])([a-zA-Z0-9]|[-])*([a-zA-Z0-9]))[.])*(([a-zA-Z][a-zA-Z0-9]*[a-zA-Z])|[a-zA-Z])[.]?""".r
+
+  def chr(c: Char): Parser[Char] = c
+  def chrRange(f: Char, t: Char): Parser[Char] = elem("[]", c => f <= c && c <= t)
+
 
   def token: Parser[String] = alphanum | "-" | "." | "!" | "%" | "*" | "_" | "+" | "`" | "'" | "~"
 

@@ -8,7 +8,7 @@ object UserInfoDecoder {
   def apply() = new UserInfoDecoder
 }
 
-class UserInfoDecoder extends Decoder[UserInfo] with UserInfoParser {
+class UserInfoDecoder extends Decoder with UserInfoParser {
   def decode(source: String) = decodeTarget(source, userInfo)
 }
 

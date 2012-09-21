@@ -17,7 +17,7 @@ object HostDecoder {
 
 }
 
-class HostDecoder extends Decoder[Host] with HostParser {
+class HostDecoder extends Decoder with HostParser {
 
   def decode(source: String): Host = decodeTarget(source, host)
 
@@ -29,7 +29,6 @@ trait HostParser extends ParserBase {
     h => Host(h)
   }
 
-  val HOSTNAME = """(([a-zA-Z]|([a-zA-Z0-9])([a-zA-Z0-9]|[-])*([a-zA-Z0-9]))[.])*(([a-zA-Z][a-zA-Z0-9]*[a-zA-Z])|[a-zA-Z])[.]?""".r
 
   lazy val L_BRACKET = """\[""".r
   lazy val R_BRACKET = """\]""".r

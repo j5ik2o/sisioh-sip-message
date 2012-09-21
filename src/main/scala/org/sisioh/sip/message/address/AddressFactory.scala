@@ -4,9 +4,9 @@ trait AddressFactory {
 
   def createURI(uri: String): URI
 
-  def createSipURI(user: String, host: String): SipURI
+  def createSipURI(user: Option[String], host: String): SipURI
 
-  def createSipURI(sipUri: URI): SipURI
+  def createSipURI(uri: String): SipURI
 
   def createTelURL(phoneNumber: String): TelURL
 

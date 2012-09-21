@@ -7,7 +7,7 @@ object HostPortDecoder {
   def apply() = new HostPortDecoder()
 }
 
-class HostPortDecoder extends Decoder[HostPort] with HostPortParser {
+class HostPortDecoder extends Decoder with HostPortParser {
 
   def decode(source: String): HostPort = decodeTarget(source, hostPort)
 }
@@ -65,7 +65,8 @@ class HostPort(val host: Host, val port: Option[Int]) extends GenericObject {
 
   override def toString = encode
 
-  def encode(builder: StringBuilder) = builder.append(port.map("%s:%s".format(host.encode(), _)).getOrElse(host.toString))
+  def encode(builder: StringBuilder) =
+      builder.append(port.map("%s:%s".format(host.encode(), _)).getOrElse(host.toString))
 
   override def hashCode() = 31 * host.## + 31 * port.##
 

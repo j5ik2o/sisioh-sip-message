@@ -8,7 +8,7 @@ class NameValuePairListDecoder
 (separator: String = Separators.SEMICOLON,
  nameValuePairSeparator: String = Separators.EQUALS,
  quotes: String = "",
- isQuotedString: Boolean = false) extends Decoder[NameValuePairList] with NameValuePairListParser {
+ isQuotedString: Boolean = false) extends Decoder with NameValuePairListParser {
 
   def decode(source: String): NameValuePairList =
     decodeTarget(source, nameValuePairList(separator, nameValuePairSeparator, quotes, isQuotedString))
@@ -55,6 +55,9 @@ class NameValuePairList
 (val separator: String = Separators.SEMICOLON,
  private val nameValuePairs: Map[String, NameValuePair] = Map.empty[String, NameValuePair])
   extends Iterable[NameValuePair] with GenericObjectList {
+
+  def add(nameValuePairList: NameValuePairList) =
+    new NameValuePairList(separator, nameValuePairs ++ nameValuePairList.nameValuePairs)
 
   def add(nameValuePair: NameValuePair): NameValuePairList =
     new NameValuePairList(separator, nameValuePairs + (nameValuePair.name.get.toLowerCase -> nameValuePair))

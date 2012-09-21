@@ -18,7 +18,7 @@ class NameValuePairDecoder
 (separator: String,
  quotes: String,
  isQuotedString: Boolean)
-  extends Decoder[NameValuePair] with NameValuePairParser {
+  extends Decoder with NameValuePairParser {
 
   def decode(source: String): NameValuePair = decodeTarget(source, nameValuePair(separator, quotes, isQuotedString))
 }

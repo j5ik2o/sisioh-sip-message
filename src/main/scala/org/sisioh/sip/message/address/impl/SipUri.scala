@@ -8,39 +8,44 @@ object SipUriDecoder {
   def apply() = new SipUriDecoder
 }
 
-class SipUriDecoder extends Decoder[SipUri] with SipUriParser {
-  def decode(source: String) = decodeTarget(source, sipuri)
+class SipUriDecoder extends Decoder with SipUriParser {
+  def decode(source: String) = decodeTarget(source, uri)
+  def uri = sipuri | sipsuri
 }
 
 trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
 
-  def sipuri: Parser[SipUri] = "sip:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+  lazy val sipuri: Parser[SipUri] = "sip:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
     case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
-      SipUri.fromUserInfoWithHostPort(userInfoOpt, Some(hostPort))
+      SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIP)
   }
 
+  lazy val sipsuri: Parser[SipUri] = "sips:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+    case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
+      SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIPS)
+  }
 
-  def headers: Parser[NameValuePairList] = "?" ~> rep1sep(header, "&") ^^ {
+  lazy val headers: Parser[NameValuePairList] = "?" ~> rep1sep(header, "&") ^^ {
     case hlist =>
       NameValuePairList.fromValues(hlist)
   }
 
-  def header: Parser[NameValuePair] = hname ~ "=" ~ hvalue ^^ {
+  lazy val header: Parser[NameValuePair] = hname ~ "=" ~ hvalue ^^ {
     case n ~ _ ~ v =>
       NameValuePair(Some(n), Some(v))
   }
 
-  def hname = rep1(hnvUnreserved | unreserved | escaped) ^^ {
+  lazy val hname = rep1(hnvUnreserved | unreserved | escaped) ^^ {
     _.mkString
   }
 
-  def hnvUnreserved = "[" | "]" | "/" | "?" | ":" | "+" | "$"
+  lazy val hnvUnreserved = "[" | "]" | "/" | "?" | ":" | "+" | "$"
 
-  def hvalue = rep(hnvUnreserved | unreserved | escaped) ^^ {
+  lazy val hvalue = rep(hnvUnreserved | unreserved | escaped) ^^ {
     _.mkString
   }
 
-  def uriParams: Parser[NameValuePairList] = rep(";" ~> uriParameter) ^^ {
+  lazy val uriParams: Parser[NameValuePairList] = rep(";" ~> uriParameter) ^^ {
     case values =>
       NameValuePairList.fromValues(values)
   }
@@ -106,7 +111,9 @@ object SipUri {
   def apply(authority: Authority, scheme: String = NetObject.SIP): SipUri =
     new SipUri(authority, scheme)
 
-  def fromUserInfoWithHostPort
+  def decode(source: String) = SipUriDecoder().decode(source)
+
+  def fromUserInfoAndHostPort
   (userInfo: Option[UserInfo],
    hostPort: Option[HostPort],
    scheme: String = NetObject.SIP): SipUri = {
@@ -114,7 +121,7 @@ object SipUri {
     apply(authority, scheme)
   }
 
-  def fromUserWithPasswordAndHostWithPort
+  def fromUserAndHost
   (user: Option[String],
    password: Option[String],
    host: Option[String],
@@ -128,7 +135,7 @@ object SipUri {
       case (Some(h), p) => Some(HostPort(Host(h), port))
       case _ => None
     }
-    fromUserInfoWithHostPort(userInfo, hostPort, scheme)
+    fromUserInfoAndHostPort(userInfo, hostPort, scheme)
   }
 
   class JsonEncoder extends Encoder[SipUri] {

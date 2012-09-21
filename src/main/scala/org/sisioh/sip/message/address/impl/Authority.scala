@@ -9,25 +9,24 @@ object AuthorityDecoder {
   def apply() = new AuthorityDecoder
 }
 
-class AuthorityDecoder extends Decoder[Authority] with AuthorityParser {
+class AuthorityDecoder extends Decoder with AuthorityParser {
   def decode(source: String) = decodeTarget(source, authority)
 }
 
 
 trait AuthorityParser extends ParserBase with UserInfoParser with HostPortParser {
 
-  def regName: Parser[String] = rep1(unreserved | escaped | "$" | "," | ";" | ":" | "@" | "&" | "=" | "+") ^^ {
+  lazy val regName: Parser[String] = rep1(unreserved | escaped | "$" | "," | ";" | ":" | "@" | "&" | "=" | "+") ^^ {
     _.mkString
   }
 
-  def authority: Parser[Authority] = srvr ^^ {
+  lazy val authority: Parser[Authority] = srvr ^^ {
     case s =>
       Authority(Some(s._2), s._1)
   }
 
-  def srvr: Parser[(Option[UserInfo], HostPort)] = opt(userInfo) ~ hostPort ^^ {
+  lazy val srvr: Parser[(Option[UserInfo], HostPort)] = opt(userInfo) ~ hostPort ^^ {
     case userInfoOpt ~ hostPort =>
-      println("check1", userInfoOpt, hostPort)
       (userInfoOpt, hostPort)
   }
 }
