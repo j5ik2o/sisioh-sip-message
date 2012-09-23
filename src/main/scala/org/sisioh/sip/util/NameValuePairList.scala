@@ -3,6 +3,13 @@ package org.sisioh.sip.util
 import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
 
+object NameValuePairListDecoder {
+  def apply
+  (separator: String = Separators.SEMICOLON,
+   nameValuePairSeparator: String = Separators.EQUALS,
+   quotes: String = "",
+   isQuotedString: Boolean = false) = new NameValuePairListDecoder
+}
 
 class NameValuePairListDecoder
 (separator: String = Separators.SEMICOLON,
@@ -114,7 +121,7 @@ class NameValuePairList
 
   override def equals(obj: Any) = obj match {
     case that: NameValuePairList =>
-        separator == that.separator && nameValuePairs == that.nameValuePairs
+      separator == that.separator && nameValuePairs == that.nameValuePairs
     case _ => false
   }
 

@@ -52,9 +52,7 @@ trait TelephoneNumberParser extends ParserBase {
       }.getOrElse("")
   }
 
-  lazy val CHAR: Parser[Char] = chrRange(0x01, 0x7F)
-
-  lazy val quotedBodyChar: Parser[String] = """\""" ~ CHAR ^^ {
+  lazy val quotedBodyChar: Parser[String] = """\""" ~ chrRange(0x01, 0x7F) ^^ {
     case f ~ s => f + s
   } | (chrRange(0x20, 0x21) | chrRange(0x23, 0x7E) | chrRange(0x80, 0xFF)) ^^ {
     case c => c.toString
@@ -65,16 +63,16 @@ trait TelephoneNumberParser extends ParserBase {
       qs.toString + bodyChars.mkString + qe.toString
   }
 
-  lazy val futureExtension2: Parser[String] = "=" ~> (futureExtension3 | telQuotedString)
+  lazy val futureExtension2: Parser[String] = elem('=') ~> (futureExtension3 | telQuotedString)
 
-  lazy val futureExtension: Parser[NameValuePair] = ";" ~> rep1(tokenChar) ~ opt(futureExtension2) ^^ {
+  lazy val futureExtension: Parser[NameValuePair] = elem(';') ~> rep1(tokenChar) ~ opt(futureExtension2) ^^ {
     case tokenChars ~ futureExtension2Opt =>
       NameValuePair(Some(tokenChars.mkString), futureExtension2Opt)
   }
 
   lazy val tokenChar = (chr(0x21) | chrRange(0x23, 0x27) | chrRange(0x2A, 0x2B) | chrRange(0x2D, 0x2E) | chrRange(0x30, 0x39) | chrRange(0x41, 0x5A) | chrRange(0x5E, 0x7A) | chr(0x7C) | chr(0x7E))
 
-  lazy val serviceProvider: Parser[NameValuePair] = ";" ~> providerTag ~ ("=" ~> providerHostname) ^^ {
+  lazy val serviceProvider: Parser[NameValuePair] = elem(';') ~> providerTag ~ (elem('=') ~> providerHostname) ^^ {
     case pt ~ ph =>
       NameValuePair(Some(pt), Some(ph))
   }
@@ -83,12 +81,12 @@ trait TelephoneNumberParser extends ParserBase {
 
   lazy val providerHostname: Parser[String] = HOSTNAME
 
-  lazy val areaSpecifier: Parser[NameValuePair] = ";" ~> phoneContextTag ~ ("=" ~> phoneContextIdent) ^^ {
+  lazy val areaSpecifier: Parser[NameValuePair] = elem(';') ~> phoneContextTag ~ (elem('=') ~> phoneContextIdent) ^^ {
     case pct ~ pci =>
       NameValuePair(Some(pct), Some(pci))
   }
 
-  lazy val phoneContextTag = "phone-context"
+  lazy val phoneContextTag: Parser[String] = "phone-context"
 
   lazy val phoneContextIdent: Parser[String] = networkPrefix | privatePrefix
 
@@ -113,25 +111,25 @@ trait TelephoneNumberParser extends ParserBase {
     phoneDigits => NameValuePair(Some(ParameterNames.POSTDIAL), Some(phoneDigits.mkString))
   }
 
-  lazy val dtmfDigit = "*" | "#" | "A" | "B" | "C" | "D"
+  lazy val dtmfDigit: Parser[Char] = elem('*') | '#' | 'A' | 'B' | 'C' | 'D'
 
-  lazy val pauseCharacter = oneSecondPause | waitForDialTone
+  lazy val pauseCharacter: Parser[Char] = oneSecondPause | waitForDialTone
 
-  lazy val oneSecondPause = "p"
+  lazy val oneSecondPause: Parser[Char] = elem('p')
 
-  lazy val waitForDialTone = "w"
+  lazy val waitForDialTone: Parser[Char] = elem('w')
 
   lazy val isdnSubAddress: Parser[NameValuePair] = ";isub=" ~> rep1(phonedigit) ^^ {
     phoneDigits => NameValuePair(Some(ParameterNames.ISUB), Some(phoneDigits.mkString))
   }
 
-  lazy val basePhoneNumber = rep1(phonedigit) ^^ {
+  lazy val basePhoneNumber: Parser[String] = rep1(phonedigit) ^^ {
     _.mkString
   }
 
-  lazy val phonedigit = DIGIT | visualSeparator
+  lazy val phonedigit: Parser[Char] = DIGIT | visualSeparator
 
-  lazy val visualSeparator = "-" | "." | "(" | ")"
+  lazy val visualSeparator: Parser[Char] = elem('-') | '.' | '(' | ')'
 }
 
 object TelephoneNumber {

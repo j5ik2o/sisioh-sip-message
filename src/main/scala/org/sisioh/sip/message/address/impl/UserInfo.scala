@@ -13,18 +13,21 @@ class UserInfoDecoder extends Decoder with UserInfoParser {
 }
 
 trait UserInfoParser extends RegexParsers with ParserBase {
-  def userUnreserved: Parser[String] = "&" | "=" | "+" | "$" | "," | ";" | "?" | "/"
 
-  def userInfo: Parser[UserInfo] = user ~ opt(":" ~> password) <~ "@" ^^ {
+  lazy val userInfo: Parser[UserInfo] = user ~ opt(elem(':') ~> password) ^^ {
     case user ~ passwordOp =>
       UserInfo(user, passwordOp)
   }
 
-  def password = rep(unreserved | escaped | "&" | "=" | "+" | "$" | ",") ^^ {
+  lazy val userInfoWithAt: Parser[UserInfo] = userInfo <~ '@'
+
+  lazy val password = rep(unreserved | escaped | '&' | '=' | '+' | '$' | ',') ^^ {
     v => v.mkString
   }
 
-  def user: Parser[String] = rep1(unreserved | escaped | userUnreserved) ^^ {
+  lazy val userUnreserved: Parser[Char] = elem('&') | '=' | '+' | '$' | ',' | ';' | '?' | '/'
+
+  lazy val user: Parser[String] = rep1(unreserved | escaped | userUnreserved) ^^ {
     v => v.mkString
   }
 

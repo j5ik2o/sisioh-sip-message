@@ -1,9 +1,13 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ToHeader
-import org.sisioh.sip.util.{Encoder, NameValuePairList, DuplicateNameValueList}
+import org.sisioh.sip.util.{ParserBase, Encoder, NameValuePairList, DuplicateNameValueList}
 import org.sisioh.sip.message.address.impl.{AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
+
+trait ToParser extends ParserBase {
+  //def to : Parser[To] =
+}
 
 object To {
   def apply
@@ -34,7 +38,6 @@ class To
   extends AddressParametersHeader with ToHeader {
 
   val parameters = tag.map(t => parametersParam.add("tag",t)).getOrElse(parametersParam)
-
 
   val headerName = ToHeader.NAME
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()

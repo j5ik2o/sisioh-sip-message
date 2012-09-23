@@ -15,33 +15,33 @@ class SipUriDecoder extends Decoder with SipUriParser {
 
 trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
 
-  lazy val sipuri: Parser[SipUri] = "sip:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+  lazy val sipuri: Parser[SipUri] = "sip:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
     case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
       SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIP)
   }
 
-  lazy val sipsuri: Parser[SipUri] = "sips:" ~> opt(userInfo) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+  lazy val sipsuri: Parser[SipUri] = "sips:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
     case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
       SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIPS)
   }
 
-  lazy val headers: Parser[NameValuePairList] = "?" ~> rep1sep(header, "&") ^^ {
+  lazy val headers: Parser[NameValuePairList] = '?' ~> rep1sep(header, '&') ^^ {
     case hlist =>
       NameValuePairList.fromValues(hlist)
   }
 
-  lazy val header: Parser[NameValuePair] = hname ~ "=" ~ hvalue ^^ {
-    case n ~ _ ~ v =>
+  lazy val header: Parser[NameValuePair] = hname ~ ('=' ~> hvalue) ^^ {
+    case n ~ v =>
       NameValuePair(Some(n), Some(v))
   }
 
-  lazy val hname = rep1(hnvUnreserved | unreserved | escaped) ^^ {
+  lazy val hname: Parser[String] = rep1(hnvUnreserved | unreserved | escaped) ^^ {
     _.mkString
   }
 
-  lazy val hnvUnreserved = "[" | "]" | "/" | "?" | ":" | "+" | "$"
+  lazy val hnvUnreserved: Parser[Char] = elem('[') | ']' | '/' | '?' | ':' | '+' | '$'
 
-  lazy val hvalue = rep(hnvUnreserved | unreserved | escaped) ^^ {
+  lazy val hvalue: Parser[String] = rep(hnvUnreserved | unreserved | escaped) ^^ {
     _.mkString
   }
 
@@ -76,7 +76,7 @@ trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
       NameValuePair(Some(NetObject.TTL), Some(ttl))
   }
 
-  lazy val ttl = repN(3, DIGIT) ^^ {
+  lazy val ttl: Parser[Int] = repN(3, DIGIT) ^^ {
     _.mkString.toInt
   }
 
@@ -94,16 +94,16 @@ trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
       NameValuePair(Some(pn), Some(pv))
   }
 
-  lazy val pname = rep1(paramchar) ^^ {
+  lazy val pname: Parser[String] = rep1(paramchar) ^^ {
     _.mkString
   }
-  lazy val pvalue = rep1(paramchar) ^^ {
+  lazy val pvalue: Parser[String] = rep1(paramchar) ^^ {
     _.mkString
   }
 
-  lazy val paramchar = paramUnreserved | unreserved | escaped
+  lazy val paramchar: Parser[Char] = paramUnreserved | unreserved | escaped
 
-  lazy val paramUnreserved = "[" | "]" | "/" | ":" | "&" | "+" | "$"
+  lazy val paramUnreserved: Parser[Char] = elem('[') | ']' | '/' | ':' | '&' | '+' | '$'
 }
 
 object SipUri {

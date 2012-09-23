@@ -12,14 +12,14 @@ class HostPortDecoder extends Decoder with HostPortParser {
   def decode(source: String): HostPort = decodeTarget(source, hostPort)
 }
 
-trait HostPortParser extends RegexParsers with HostParser {
+trait HostPortParser extends ParserBase with HostParser {
 
   def hostPort: Parser[HostPort] = host ~ opt(COLON ~> rep1(PORT)) ^^ {
     case host ~ port =>
       new HostPort(host, port.map(_.mkString.toInt))
   }
 
-  lazy val COLON = ":"
+  //lazy val COLON = ":"
   lazy val PORT = DIGIT
 
 }

@@ -31,7 +31,7 @@ trait DefaultAddressParser extends ParserBase with SipUriParser {
 
   lazy val defaultAddress: Parser[DefaultAddress] = "*" ^^ {
     _ => DefaultAddress(WildCardURI, None, Some(AddressType.WILD_CARD))
-  } | opt(Separators.DOUBLE_QUOTE ~> DISPLAY_NAME <~ Separators.DOUBLE_QUOTE) ~ (opt(Separators.LESS_THAN) ~> sipuri <~ opt(Separators.GREATER_THAN)) ^^ {
+  } | opt(DQUOTE ~> DISPLAY_NAME <~ DQUOTE) ~ (opt(LAQUOT) ~> sipuri <~ opt(RAQUOT)) ^^ {
     case displayNameOpt ~ sipuri =>
       DefaultAddress(sipuri, displayNameOpt)
   }

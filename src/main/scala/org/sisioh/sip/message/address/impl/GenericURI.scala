@@ -37,9 +37,9 @@ trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
       scheme + colon + part
   }
 
-  lazy val scheme: Parser[String] = ALPHA ~ rep(ALPHA | DIGIT | "+" | "-" | ".") ^^ {
+  lazy val scheme: Parser[String] = ALPHA ~ rep(ALPHA | DIGIT | '+' | '-' | '.') ^^ {
     case f ~ s =>
-      f + s.mkString
+      new StringBuilder().append(f).append(s.mkString).result()
   }
 
   lazy val hierPart: Parser[String] = (netPath | absPath) ~ opt("?" ~ query) ^^ {
@@ -55,16 +55,16 @@ trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
 
   lazy val opaquePart: Parser[String] = uricNoSlash ~ rep(uric) ^^ {
     case uns ~ urics =>
-      uns + urics.mkString
+      new StringBuilder().append(uns).append(urics.mkString).result()
   }
 
-  lazy val uricNoSlash: Parser[String] = unreserved | escaped | ";" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
+  lazy val uricNoSlash: Parser[Char] = unreserved | escaped | elem(';') | '?' | ':' | '@' | '&' | '=' | '+' | '$' | ','
 
-  lazy val uric: Parser[String] = reserved | unreserved | escaped
+  lazy val uric: Parser[Char] = reserved | unreserved | escaped
 
   lazy val netPath: Parser[String] = "//" ~ authority ~ "@" ~ opt(absPath) ^^ {
-    case slash ~ authority ~ at ~ absPathOpt =>
-      slash + authority.toString + at + absPathOpt.getOrElse("")
+    case s ~ a ~ at ~ opt =>
+      s + a.toString + at + opt.getOrElse("")
   }
 
   lazy val absPath: Parser[String] = "/" ~ pathSegments ^^ {
@@ -84,7 +84,7 @@ trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
     _.mkString
   }
 
-  lazy val pchar = unreserved | escaped | ":" | "@" | "&" | "=" | "+" | "$" | ","
+  lazy val pchar: Parser[Char] = unreserved | escaped | elem(':') | '@' | '&' | '=' | '+' | '$' | ','
 }
 
 

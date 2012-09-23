@@ -17,7 +17,7 @@ class AuthorityDecoder extends Decoder with AuthorityParser {
 
 trait AuthorityParser extends ParserBase with UserInfoParser with HostPortParser {
 
-  lazy val regName: Parser[String] = rep1(unreserved | escaped | "$" | "," | ";" | ":" | "@" | "&" | "=" | "+") ^^ {
+  lazy val regName: Parser[String] = rep1(unreserved | escaped | '$' | ',' | ';' | ':' | '@' | '&' | '=' | '+') ^^ {
     _.mkString
   }
 
@@ -26,7 +26,7 @@ trait AuthorityParser extends ParserBase with UserInfoParser with HostPortParser
       Authority(Some(s._2), s._1)
   }
 
-  lazy val srvr: Parser[(Option[UserInfo], HostPort)] = opt(userInfo) ~ hostPort ^^ {
+  lazy val srvr: Parser[(Option[UserInfo], HostPort)] = opt(userInfoWithAt) ~ hostPort ^^ {
     case userInfoOpt ~ hostPort =>
       (userInfoOpt, hostPort)
   }
