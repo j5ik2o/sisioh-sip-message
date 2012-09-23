@@ -1,9 +1,39 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.FromHeader
-import org.sisioh.sip.util.{Encoder, NameValuePairList, DuplicateNameValueList}
-import org.sisioh.sip.message.address.impl.{AddressType, DefaultAddress}
+import org.sisioh.sip.util._
+import org.sisioh.sip.message.address.impl.{DefaultAddressParser, AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
+
+object FromDecoder {
+  def apply() = new FromDecoder
+}
+
+class FromDecoder extends Decoder with FromParser {
+  def decode(source: String) = decodeTarget(source, fromWithCrLfOpt)
+}
+
+trait FromParser extends ParserBase with DefaultAddressParser {
+  lazy val fromWithCrLfOpt: Parser[From] = from <~ opt(CRLF)
+
+  lazy val from: Parser[From] = ("From" | "f") ~> HCOLON ~> ((nameAddrToDefaultAddress | addrSpecToDefaultAddress) ~ rep(SEMI ~> toParam)) ^^ {
+    case da ~ toParams =>
+      From(da, None, NameValuePairList.fromValues(toParams))
+  }
+
+  lazy val toParam = tagParam | genericParam
+
+  lazy val tagParam: Parser[NameValuePair] = "tag" ~ (EQUAL ~> token) ^^ {
+    case n ~ v => NameValuePair(Some(n), Some(v))
+  }
+
+  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
+    case n ~ v => NameValuePair(Some(n), Some(v))
+  }
+
+  lazy val genValue = token | host | quotedString
+
+}
 
 object From {
 
@@ -61,7 +91,7 @@ class From
   override def hashCode() = 31 * address.## + 31 * parameters.## + 31 * headerName.## + 31 * duplicates.##
 
   override def equals(obj: Any) = obj match {
-    case that: To =>
+    case that: From =>
       address == that.address &&
         parameters == that.parameters &&
         headerName == that.headerName &&

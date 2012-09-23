@@ -17,7 +17,7 @@ class ToDecoder extends Decoder with ToParser {
   def decode(source: String) = decodeTarget(source, toWithCrLfOpt)
 }
 
-trait ToParser extends ParserBase with DefaultAddressParser with HostParser {
+trait ToParser extends ParserBase with DefaultAddressParser {
   lazy val toWithCrLfOpt: Parser[To] = to <~ opt(CRLF)
 
   lazy val to: Parser[To] = ("To" | "t") ~> HCOLON ~> ((nameAddrToDefaultAddress | addrSpecToDefaultAddress) ~ rep(SEMI ~> toParam)) ^^ {

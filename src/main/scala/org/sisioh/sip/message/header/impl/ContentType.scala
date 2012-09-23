@@ -1,7 +1,15 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ContentTypeHeader
-import org.sisioh.sip.util.{NameValuePair, NameValuePairList, ParserBase}
+import org.sisioh.sip.util.{Decoder, NameValuePair, NameValuePairList, ParserBase}
+
+object ContentTypeDecoder {
+  def apply() = new ContentTypeDecoder
+}
+
+class ContentTypeDecoder extends Decoder with ContentTypeParser {
+  def decode(source: String) = decodeTarget(source, contentType)
+}
 
 trait ContentTypeParser extends ParserBase {
   lazy val contentType: Parser[ContentType] = ("Content-Type" | "c") ~> ":" ~> mediaType ^^ {
@@ -33,7 +41,11 @@ trait ContentTypeParser extends ParserBase {
   lazy val mValue = token | quotedString
 }
 
-case class ContentType(contentType: String, contentSubType: Option[String], val parameters: NameValuePairList) extends ContentTypeHeader {
+case class ContentType
+(contentType: String,
+ contentSubType: Option[String],
+ parameters: NameValuePairList) extends ContentTypeHeader {
+
   val name = ContentTypeHeader.NAME
 
   def parameterNames = parameters.names

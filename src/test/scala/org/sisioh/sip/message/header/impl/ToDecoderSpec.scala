@@ -1,20 +1,13 @@
 package org.sisioh.sip.message.header.impl
 
 import org.specs2.mutable.Specification
-import org.sisioh.sip.util.{HostDecoder, Host}
 import org.sisioh.sip.message.address.impl.{SipUri, DefaultAddress}
-import org.sisioh.sip.message.address.URI
 
 class ToDecoderSpec extends Specification {
-
 
   "ToDecoder" should {
     val decoder = ToDecoder()
     "displayName" in {
-      //      "empty" in {
-      //        val displayName = ""
-      //        decoder.decodeTarget(displayName, decoder.displayName) must_== displayName
-      //      }
       "quoteless" in {
         val displayName = "ABC DEF "
         decoder.decodeTarget(displayName, decoder.displayName) must_== displayName
