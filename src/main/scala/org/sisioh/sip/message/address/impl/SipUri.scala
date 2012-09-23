@@ -10,17 +10,17 @@ object SipUriDecoder {
 
 class SipUriDecoder extends Decoder with SipUriParser {
   def decode(source: String) = decodeTarget(source, uri)
-  def uri = sipuri | sipsuri
+  def uri = SIP_URI | SIPS_URI
 }
 
-trait SipUriParser extends ParserBase with UserInfoParser with HostPortParser {
+trait SipUriParser extends ParserBase with DefaultGenericURIParser with UserInfoParser with HostPortParser {
 
-  lazy val sipuri: Parser[SipUri] = "sip:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+  lazy val SIP_URI: Parser[SipUri] = "sip:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
     case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
       SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIP)
   }
 
-  lazy val sipsuri: Parser[SipUri] = "sips:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
+  lazy val SIPS_URI: Parser[SipUri] = "sips:" ~> opt(userInfoWithAt) ~ hostPort ~ uriParams ~ opt(headers) ^^ {
     case userInfoOpt ~ hostPort ~ uriParams ~ headersOpt =>
       SipUri.fromUserInfoAndHostPort(userInfoOpt, Some(hostPort), NetObject.SIPS)
   }

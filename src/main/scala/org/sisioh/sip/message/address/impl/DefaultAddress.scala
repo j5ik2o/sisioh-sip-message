@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{Address, URI}
-import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util.{NameValuePair, Encoder, Decoder, ParserBase}
 import org.sisioh.sip.core.{GenericObject, Separators}
 import net.liftweb.json.ext.{EnumNameSerializer, EnumSerializer}
 
@@ -29,16 +29,41 @@ class DefaultAddressDecoder extends Decoder with DefaultAddressParser {
 
 trait DefaultAddressParser extends ParserBase with SipUriParser {
 
-  lazy val defaultAddress: Parser[DefaultAddress] = "*" ^^ {
-    _ => DefaultAddress(WildCardURI, None, Some(AddressType.WILD_CARD))
-  } | opt(DQUOTE ~> DISPLAY_NAME <~ DQUOTE) ~ (opt(LAQUOT) ~> sipuri <~ opt(RAQUOT)) ^^ {
-    case displayNameOpt ~ sipuri =>
-      DefaultAddress(sipuri, displayNameOpt)
+  lazy val defaultAddress: Parser[DefaultAddress] = elem('*') ^^ {
+    _ =>
+      DefaultAddress(WildCardURI, None, Some(AddressType.WILD_CARD))
+  } | nameAddrToDefaultAddress | addrSpecToDefaultAddress
+
+  lazy val nameAddrToDefaultAddress = nameAddr ^^ {
+    case dn ~ uri =>
+      DefaultAddress(uri.asInstanceOf[GenericURI], dn)
   }
 
-  lazy val DISPLAY_NAME: Parser[String] = rep(token) ^^ {
-    _.mkString
+  lazy val addrSpecToDefaultAddress = addrSpec ^^ {
+    case uri =>
+      DefaultAddress(uri.asInstanceOf[GenericURI])
   }
+
+  lazy val nameAddr = opt(displayName) ~ (LAQUOT ~> addrSpec <~ RAQUOT)
+  lazy val addrSpec: Parser[URI] = SIP_URI | SIPS_URI | absoluteURI
+  lazy val toParam = tagParam | genericParam
+
+  lazy val tagParam: Parser[NameValuePair] = "tag" ~ (EQUAL ~> token) ^^ {
+    case n ~ v => NameValuePair(Some(n), Some(v))
+  }
+
+  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
+    case n ~ v => NameValuePair(Some(n), Some(v))
+  }
+
+  lazy val genValue = token | host | quotedString
+
+  lazy val displayName: Parser[String] = rep1(token ~ LWS ^^ {
+    case f ~ s => f + s
+  }) ^^ {
+    case t =>
+      t.mkString
+  } | quotedString
 
 }
 
@@ -66,6 +91,7 @@ object DefaultAddress {
       builder.append(compact(render(json)))
     }
   }
+
 }
 
 /**

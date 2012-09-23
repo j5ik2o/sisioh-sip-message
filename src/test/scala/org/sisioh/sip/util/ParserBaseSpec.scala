@@ -1,6 +1,7 @@
 package org.sisioh.sip.util
 
 import org.specs2.mutable.Specification
+import org.apache.commons.lang.CharRange
 
 object BaseParser extends BaseParser
 
@@ -20,11 +21,7 @@ class ParserBaseSpec extends Specification {
     }
   }
   "ALPHA" in {
-    ('a' to 'z').map {
-      az =>
-        BaseParser.decodeTarget(az.toString, BaseParser.ALPHA) must_== az
-    }
-    ('A' to 'Z').map {
+    List('a' to 'z', 'A' to 'Z').flatten.map {
       az =>
         BaseParser.decodeTarget(az.toString, BaseParser.ALPHA) must_== az
     }
@@ -61,6 +58,10 @@ class ParserBaseSpec extends Specification {
         BaseParser.decodeTarget(c.toString, BaseParser.CHAR) must_== c
     }
   }
+  "token" in {
+    val token = "aaaa-"
+    BaseParser.decodeTarget(token, BaseParser.token) must_== token
+  }
   "escaped" in {
     val escaped = "%40"
     BaseParser.decodeTarget(escaped, BaseParser.escaped) must_== 0x40.toChar
@@ -70,6 +71,21 @@ class ParserBaseSpec extends Specification {
     BaseParser.decodeTarget(comment, BaseParser.comment) must_== comment
   }
 
+  "quotedPair" in {
+    List(0x00.toChar to 0x09.toChar, 0x0B.toChar to 0x0C.toChar, 0x0E.toChar to 0x7F.toChar).flatten.map {
+      c =>
+        val quotedPair = "\\%c".format(c)
+        BaseParser.decodeTarget(quotedPair, BaseParser.quotedPair) must_== quotedPair
+    }
+  }
+  "qdtext" in {
+    val qdtext = "]"
+    BaseParser.decodeTarget(qdtext, BaseParser.qdtext) must_== qdtext
+  }
+  "quotedString" in {
+    val quotedString = "\"aaa\""
+    BaseParser.decodeTarget(quotedString, BaseParser.quotedString) must_== quotedString.filterNot(_ == '"')
+  }
   "LWS" in {
     BaseParser.decodeTarget(" \n ", BaseParser.LWS) must_== " \n "
   }

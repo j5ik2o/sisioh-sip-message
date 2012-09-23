@@ -19,16 +19,17 @@ object HostDecoder {
 
 class HostDecoder extends Decoder with HostParser {
 
-  def decode(source: String): Host = decodeTarget(source, host)
+  def decode(source: String): Host = decodeTarget(source, hostToModel)
 
 }
 
 trait HostParser extends ParserBase {
 
-  def host: Parser[Host] = hostNameOrIpAddress ^^ {
+  lazy val hostToModel: Parser[Host] = hostNameOrIpAddress ^^ {
     h => Host(h)
   }
 
+  lazy val host: Parser[String] = hostNameOrIpAddress
 
   lazy val L_BRACKET = """\[""".r
   lazy val R_BRACKET = """\]""".r

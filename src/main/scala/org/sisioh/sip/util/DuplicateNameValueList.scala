@@ -12,6 +12,15 @@ class DuplicateNameValueList
 (val nameValuePairs: HashMap[String, Set[NameValuePair]] with MultiMap[String, NameValuePair])
   extends Iterable[Set[NameValuePair]] {
 
+  override def hashCode() = 31 * nameValuePairs.##
+
+  override def equals(obj: Any) = obj match {
+    case that: DuplicateNameValueList =>
+      nameValuePairs == that.nameValuePairs
+    case _ =>
+      false
+  }
+
   def add(nameValuePair: NameValuePair): DuplicateNameValueList =
     new DuplicateNameValueList(nameValuePairs.addBinding(nameValuePair.name.get, nameValuePair))
 

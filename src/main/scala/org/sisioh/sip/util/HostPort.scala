@@ -14,7 +14,7 @@ class HostPortDecoder extends Decoder with HostPortParser {
 
 trait HostPortParser extends ParserBase with HostParser {
 
-  def hostPort: Parser[HostPort] = host ~ opt(COLON ~> rep1(PORT)) ^^ {
+  def hostPort: Parser[HostPort] = hostToModel ~ opt(COLON ~> rep1(PORT)) ^^ {
     case host ~ port =>
       new HostPort(host, port.map(_.mkString.toInt))
   }

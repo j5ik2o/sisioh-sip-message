@@ -49,7 +49,6 @@ class DefaultAddressFactorySpec extends Specification {
         val sipuri = target.createURI("sip:testid@localhost")
         val sourceAddress = DefaultAddress(sipuri.asInstanceOf[GenericURI], Some("kato"))
         val encode = sourceAddress.encode()
-        println(encode)
         val destAddress = target.createAddress(encode)
         destAddress must_== sourceAddress
       }

@@ -28,13 +28,11 @@ class DefaultGenericURIDecoder extends Decoder with DefaultGenericURIParser {
 
 trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
 
-  lazy val genericURI: Parser[GenericURI] = absoluteURI ^^ {
-    uri => DefaultGenericURI(uri)
-  }
+  lazy val genericURI: Parser[GenericURI] = absoluteURI
 
-  lazy val absoluteURI: Parser[String] = scheme ~ ":" ~ (hierPart | opaquePart) ^^ {
+  lazy val absoluteURI: Parser[GenericURI] = scheme ~ ":" ~ (hierPart | opaquePart) ^^ {
     case scheme ~ colon ~ part =>
-      scheme + colon + part
+      DefaultGenericURI(scheme + colon + part)
   }
 
   lazy val scheme: Parser[String] = ALPHA ~ rep(ALPHA | DIGIT | '+' | '-' | '.') ^^ {

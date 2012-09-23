@@ -1,12 +1,30 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ToHeader
-import org.sisioh.sip.util.{ParserBase, Encoder, NameValuePairList, DuplicateNameValueList}
-import org.sisioh.sip.message.address.impl.{AddressType, DefaultAddress}
+import org.sisioh.sip.util._
+import org.sisioh.sip.message.address.impl._
 import org.sisioh.sip.core.Separators
+import scala.Some
+import org.sisioh.sip.message.address.{URI, SipURI}
+import org.sisioh.sip.message.address.impl.AddressType
+import scala.Some
 
-trait ToParser extends ParserBase {
-  //def to : Parser[To] =
+object ToDecoder {
+  def apply() = new ToDecoder
+}
+
+class ToDecoder extends Decoder with ToParser {
+  def decode(source: String) = decodeTarget(source, toWithCrLfOpt)
+}
+
+trait ToParser extends ParserBase with DefaultAddressParser with HostParser {
+  lazy val toWithCrLfOpt: Parser[To] = to <~ opt(CRLF)
+
+  lazy val to: Parser[To] = ("To" | "t") ~> HCOLON ~> ((nameAddrToDefaultAddress | addrSpecToDefaultAddress) ~ rep(SEMI ~> toParam)) ^^ {
+    case da ~ toParams =>
+      To(da, None, NameValuePairList.fromValues(toParams))
+  }
+
 }
 
 object To {
@@ -29,6 +47,7 @@ object To {
       builder.append(compact(render(json)))
     }
   }
+
 }
 
 class To
@@ -37,7 +56,7 @@ class To
  parametersParam: NameValuePairList = NameValuePairList())
   extends AddressParametersHeader with ToHeader {
 
-  val parameters = tag.map(t => parametersParam.add("tag",t)).getOrElse(parametersParam)
+  val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
 
   val headerName = ToHeader.NAME
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
@@ -65,12 +84,18 @@ class To
 
   override def equals(obj: Any) = obj match {
     case that: To =>
+//      println("address",address, that.address, (address == that.address))
+//      println("parameters",parameters, that.parameters, (parameters == that.parameters))
+//      println("headerName",headerName, that.headerName, (headerName == that.headerName))
+//      println("duplicates",duplicates, that.duplicates, (duplicates == that.duplicates))
       address == that.address &&
         parameters == that.parameters &&
         headerName == that.headerName &&
         duplicates == that.duplicates
     case _ => false
   }
+
+  override def toString = encode()
 
   def encodeByJson(builder: StringBuilder) = encode(builder, To.JsonEncoder)
 

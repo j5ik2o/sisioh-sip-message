@@ -22,23 +22,23 @@ trait ParserBase extends RegexParsers {
   lazy val LF = chr(0x0A)
   lazy val SP = chr(0x20)
   lazy val HT = chr(0x09)
-  lazy val DQUOTE = chr(0x22)
+  lazy val DQUOTE: Parser[Char] = '\"'
   lazy val WSP = SP | HT
 
 
   lazy val CRLF: Parser[String] = CR ~ LF ^^ {
-    case cr ~ lf =>
-      new StringBuilder().append(cr).append(lf).result()
+    case f ~ s =>
+      new StringBuilder().append(f).append(s).result()
   } | (CR | LF) ^^ {
     _.toString
   }
 
-  lazy val LWS: Parser[String] = opt(rep(WSP) ~ CRLF) ~ rep1(WSP) ^^ {
+  lazy val LWS: Parser[String] = opt((rep(WSP) ~ CRLF) ^^ {
     case f ~ s =>
-      f.map {
-        case wsp ~ crlf =>
-          wsp.mkString + crlf
-      }.getOrElse("") + s.mkString
+      f.mkString + s
+  }) ~ rep1(WSP) ^^ {
+    case f ~ s =>
+      f.getOrElse("") + s.mkString
   }
   lazy val SWS: Parser[Option[String]] = opt(LWS)
   lazy val HCOLON: Parser[Char] = rep(SP | HT) ~> ':' <~ SWS
@@ -48,6 +48,8 @@ trait ParserBase extends RegexParsers {
   lazy val token: Parser[String] = rep1(alphanum | elem('-') | '.' | '!' | '%' | '*' | '_' | '+' | '`' | '\'' | '~') ^^ {
     _.mkString
   }
+
+//  lazy val token: Parser[String] = """[a-zA-Z0-9\-.!%_+`'~]+""".r
 
   lazy val separators: Parser[Char] = elem('(') | ')' | '<' | '>' | '@' |
     ',' | ';' | ':' | '\\' | DQUOTE |
@@ -71,6 +73,7 @@ trait ParserBase extends RegexParsers {
   lazy val LAQUOT: Parser[Char] = SWS ~> '<'
   lazy val RAQUOT: Parser[Char] = '>' <~ SWS
   lazy val COMMA: Parser[Char] = SWS ~> ',' <~ SWS
+  lazy val SEMI: Parser[Char] = SWS ~> ';' <~ SWS
   lazy val COLON: Parser[Char] = SWS ~> ':' <~ SWS
   lazy val LDQUOTE: Parser[Char] = SWS ~> DQUOTE
   lazy val RDQUOTE: Parser[Char] = DQUOTE <~ SWS
@@ -87,19 +90,20 @@ trait ParserBase extends RegexParsers {
       c => c.toString
     } | UTF8_NONASCII | LWS
 
-  lazy val quotedPair = """\""" ~ (chrRange(0x00, 0x09) | chrRange(0x0B, 0x0C) | chrRange(0x0E, 0x7F)) ^^ {
-    case bs ~ c => bs + c.toString
+  lazy val quotedPair: Parser[String] = elem('\\') ~ (chrRange(0x00, 0x09) | chrRange(0x0B, 0x0C) | chrRange(0x0E, 0x7F)) ^^ {
+    case bs ~ c =>
+      new StringBuilder().append(bs).append(c).result()
   }
 
   lazy val HOSTNAME = """(([a-zA-Z]|([a-zA-Z0-9])([a-zA-Z0-9]|[-])*([a-zA-Z0-9]))[.])*(([a-zA-Z][a-zA-Z0-9]*[a-zA-Z])|[a-zA-Z])[.]?""".r
 
-  lazy val qdtext: Parser[String] = LWS ~> (chr(0x21) | chrRange(0x23, 0x5B) | chrRange(0x5D, 0x7E)) ^^ {
-    _.toString
+  lazy val qdtext: Parser[String] = LWS | (chr(0x21) | chrRange(0x23, 0x5B) | chrRange(0x5D, 0x7E)) ^^ {
+    e =>
+      e.toString
   } | UTF8_NONASCII
 
-  lazy val quotedString: Parser[String] = SWS ~> DQUOTE ~ rep(qdtext | quotedPair) ~ DQUOTE ^^ {
-    case ldq ~ texts ~ rdq =>
-      new StringBuilder().append(ldq).append(texts.mkString).append(rdq).result()
+  lazy val quotedString: Parser[String] = SWS ~> (DQUOTE ~> rep(qdtext | quotedPair) <~ DQUOTE) ^^ {
+    _.mkString
   }
 
 
