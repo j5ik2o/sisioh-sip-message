@@ -46,17 +46,6 @@ trait DefaultAddressParser extends ParserBase with SipUriParser {
 
   lazy val nameAddr = opt(displayName) ~ (LAQUOT ~> addrSpec <~ RAQUOT)
   lazy val addrSpec: Parser[URI] = SIP_URI | SIPS_URI | absoluteURI
-  lazy val toParam = tagParam | genericParam
-
-  lazy val tagParam: Parser[NameValuePair] = "tag" ~ (EQUAL ~> token) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
-  }
-
-  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
-  }
-
-  lazy val genValue = token | host | quotedString
 
   lazy val displayName: Parser[String] = rep1(token ~ LWS ^^ {
     case f ~ s => f + s
