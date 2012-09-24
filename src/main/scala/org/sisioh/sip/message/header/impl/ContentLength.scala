@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ContentLengthHeader
-import org.sisioh.sip.util.{Decoder, ParserBase}
+import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
 
 object ContentLengthDecoder extends ContentLengthDecoder
 
@@ -17,12 +17,28 @@ trait ContentLengthParser extends ParserBase {
   }
 }
 
-case class ContentLength(contentLength: Int) extends SIPHeader with ContentLengthHeader {
+object ContentLength {
+
+  def decode(source: String) = ContentLengthDecoder.decode(source)
+
+  object JsonEncoder extends Encoder[ContentLength]{
+    def encode(model: ContentLength, builder: StringBuilder) = {
+      import net.liftweb.json._
+      val json = JObject(JField("contentLength", JInt(model.contentLength)) :: Nil)
+      builder.append(compact(render(json)))
+    }
+  }
+
+}
+
+case class ContentLength(contentLength: Int)
+  extends SIPHeader with ContentLengthHeader {
+
   require(contentLength > 0)
   val name = ContentLengthHeader.NAME
   val headerName = ContentLengthHeader.NAME
 
-  def encodeByJson(builder: StringBuilder) = null
+  def encodeByJson(builder: StringBuilder) = encode(builder, ContentType.JsonEncoder)
 
   def encodeBody(builder: StringBuilder) = {
     if (contentLength < 0)
@@ -30,4 +46,6 @@ case class ContentLength(contentLength: Int) extends SIPHeader with ContentLengt
     else
       builder.append(contentLength)
   }
+
+  override def toString = encode()
 }

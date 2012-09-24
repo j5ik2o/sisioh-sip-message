@@ -48,4 +48,5 @@ case class CallID(callId: String) extends SIPHeader with CallIdHeader {
   def encodeBody(builder: StringBuilder) =
     callIdentity.encode(builder)
 
+  override def toString = encode()
 }

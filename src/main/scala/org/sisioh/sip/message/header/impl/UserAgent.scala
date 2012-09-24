@@ -84,4 +84,5 @@ case class UserAgent(products: List[ServerVal] = List.empty)
 
   def encodeBody(builder: StringBuilder) = encodeProducts(builder)
 
+  override def toString = encode()
 }

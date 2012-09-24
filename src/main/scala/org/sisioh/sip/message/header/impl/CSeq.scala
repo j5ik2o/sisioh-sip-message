@@ -49,4 +49,6 @@ case class CSeq(method: String, sequenceNumber: Long) extends SIPHeader with CSe
 
   def encodeBody(builder: StringBuilder) =
     builder.append(sequenceNumber).append(Separators.SP).append(method.toUpperCase)
+
+  override def toString = encode()
 }

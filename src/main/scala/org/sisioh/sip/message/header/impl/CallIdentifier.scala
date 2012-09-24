@@ -41,4 +41,6 @@ case class CallIdentifier(localId: String, host: Option[String] = None) extends 
   }
 
   def encodeByJson(builder: StringBuilder) = encode(builder, CallIdentifier.JsonEncoder)
+
+  override def toString = encode()
 }

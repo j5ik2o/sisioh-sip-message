@@ -67,4 +67,5 @@ case class MediaRange(mediaType: String, mediaSubType: String) extends SIPObject
 
   def encodeByJson(builder: StringBuilder) = encode(builder, MediaRange.JsonEncoder)
 
+  override def toString = encode()
 }

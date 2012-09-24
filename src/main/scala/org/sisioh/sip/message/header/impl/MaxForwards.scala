@@ -45,4 +45,5 @@ case class MaxForwards(maxForwards: Int) extends SIPHeader with MaxForwardsHeade
   def encodeBody(builder: StringBuilder) =
     builder.append(maxForwards)
 
+  override def toString = encode()
 }

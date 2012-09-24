@@ -69,9 +69,11 @@ class To
  parametersParam: NameValuePairList = NameValuePairList())
   extends ToOrFromHeader with ToHeader {
 
+  val name = ToHeader.NAME
+  val headerName = ToHeader.NAME
+
   val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
 
-  val headerName = ToHeader.NAME
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
@@ -80,5 +82,4 @@ class To
 
   def encodeByJson(builder: StringBuilder) = encode(builder, To.JsonEncoder)
 
-  val name = ToHeader.NAME
 }

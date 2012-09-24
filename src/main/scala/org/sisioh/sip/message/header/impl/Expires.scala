@@ -45,4 +45,6 @@ case class Expires(expires: Int) extends SIPHeader with ExpiresHeader {
 
   def encodeBody(builder: StringBuilder) =
     builder.append(expires)
+
+  override def toString = encode()
 }
