@@ -2,13 +2,14 @@ package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.util.{Encoder, Encodable}
 import org.sisioh.sip.core.{GenericObject, Separators}
+import annotation.tailrec
 
 object CallIdentifier {
 
-  def apply(localIdWithHost: String): CallIdentifier = {
+  def from(localIdWithHost: String): CallIdentifier = {
     val index = localIdWithHost.indexOf('@')
     if (index == -1) {
-      CallIdentifier(localIdWithHost)
+      CallIdentifier(localIdWithHost, None)
     } else {
       val localId = localIdWithHost.substring(0, index)
       val host = localIdWithHost.substring(index + 1, localIdWithHost.length())

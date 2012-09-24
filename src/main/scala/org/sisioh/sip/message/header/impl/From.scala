@@ -5,9 +5,7 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.{DefaultAddressParser, AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
 
-object FromDecoder {
-  def apply() = new FromDecoder
-}
+object FromDecoder extends FromDecoder
 
 class FromDecoder extends Decoder with FromParser {
   def decode(source: String) = decodeTarget(source, fromWithCrLfOpt)
@@ -48,6 +46,8 @@ object From {
   def unapply(from: From): Option[(DefaultAddress, NameValuePairList)] =
     Some(from.address, from.parameters)
 
+  def decode(source: String) = FromDecoder.decode(source)
+
   object JsonEncoder extends Encoder[To] {
     def encode(model: To, builder: StringBuilder) = {
       import net.liftweb.json._
@@ -59,44 +59,27 @@ object From {
 
 }
 
+/**
+ * Fromヘッダを表す値オブジェクト。
+ *
+ * @param address
+ * @param tag
+ * @param parametersParam
+ */
 class From
 (val address: DefaultAddress,
  val tag: Option[String] = None,
  parametersParam: NameValuePairList = NameValuePairList())
-  extends AddressParametersHeader with FromHeader {
+  extends ToOrFromHeader with FromHeader {
+
   val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
 
   val headerName = FromHeader.NAME
+
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
     new From(address, tag, _parameters)
-  }
-
-  def encodeBody(builder: StringBuilder) = {
-    if (address.addressType == AddressType.ADDRESS) {
-      builder.append(Separators.LESS_THAN)
-    }
-    address.encode(builder)
-    if (address.addressType == AddressType.ADDRESS) {
-      builder.append(Separators.GREATER_THAN)
-    }
-    if (!parameters.isEmpty) {
-      builder.append(Separators.SEMICOLON)
-      parameters.encode(builder)
-    }
-    builder
-  }
-
-  override def hashCode() = 31 * address.## + 31 * parameters.## + 31 * headerName.## + 31 * duplicates.##
-
-  override def equals(obj: Any) = obj match {
-    case that: From =>
-      address == that.address &&
-        parameters == that.parameters &&
-        headerName == that.headerName &&
-        duplicates == that.duplicates
-    case _ => false
   }
 
   def encodeByJson(builder: StringBuilder) = encode(builder, From.JsonEncoder)

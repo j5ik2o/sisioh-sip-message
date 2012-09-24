@@ -6,9 +6,8 @@ class SipUriDecoderSpec extends Specification {
 
   "SipUriDecoder" should {
     val uri = SipUri.fromUserAndHost(Some("user"), None, Some("localhost"), None)
-    val target = SipUriDecoder()
     val encodeObject = uri.encode()
-    val result = target.decode(encodeObject)
+    val result = SipUriDecoder.decode(encodeObject)
     "可逆的にデコードできること" in {
       result must_== uri
     }

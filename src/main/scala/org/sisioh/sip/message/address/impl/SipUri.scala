@@ -21,9 +21,7 @@ import org.sisioh.sip.message.address.{NetObject, SipURI}
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
 
-object SipUriDecoder {
-  def apply() = new SipUriDecoder
-}
+object SipUriDecoder extends SipUriDecoder
 
 class SipUriDecoder extends Decoder with SipUriParser {
   def decode(source: String) = decodeTarget(source, uri)
@@ -128,7 +126,7 @@ object SipUri {
   def apply(authority: Authority, scheme: String = NetObject.SIP): SipUri =
     new SipUri(authority, scheme)
 
-  def decode(source: String) = SipUriDecoder().decode(source)
+  def decode(source: String) = SipUriDecoder.decode(source)
 
   def fromUserInfoAndHostPort
   (userInfo: Option[UserInfo],

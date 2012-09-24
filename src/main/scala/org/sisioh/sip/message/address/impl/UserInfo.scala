@@ -16,14 +16,11 @@ package org.sisioh.sip.message.address.impl
  * governing permissions and limitations under the License.
  */
 
-
 import org.sisioh.sip.core.{GenericObject, Separators}
 import org.sisioh.sip.util.{Decoder, ParserBase, Encoder, Encodable}
 import util.parsing.combinator.RegexParsers
 
-object UserInfoDecoder {
-  def apply() = new UserInfoDecoder
-}
+object UserInfoDecoder extends UserInfoDecoder
 
 class UserInfoDecoder extends Decoder with UserInfoParser {
   def decode(source: String) = decodeTarget(source, userInfo)
@@ -39,13 +36,13 @@ trait UserInfoParser extends RegexParsers with ParserBase {
   lazy val userInfoWithAt: Parser[UserInfo] = userInfo <~ '@'
 
   lazy val password = rep(unreserved | escaped | '&' | '=' | '+' | '$' | ',') ^^ {
-    v => v.mkString
+    _.mkString
   }
 
   lazy val userUnreserved: Parser[Char] = elem('&') | '=' | '+' | '$' | ',' | ';' | '?' | '/'
 
   lazy val user: Parser[String] = rep1(unreserved | escaped | userUnreserved) ^^ {
-    v => v.mkString
+    _.mkString
   }
 
 }

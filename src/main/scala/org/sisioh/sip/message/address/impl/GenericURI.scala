@@ -25,14 +25,7 @@ import scala.Some
 /**
  * [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]のコンパニオンオブジェクト。
  */
-object DefaultGenericURIDecoder {
-  /**
-   * ファクトリメソッド。
-   *
-   * @return [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]
-   */
-  def apply() = new DefaultGenericURIDecoder
-}
+object DefaultGenericURIDecoder extends DefaultGenericURIDecoder
 
 /**
  * [[org.sisioh.sip.message.address.impl.GenericURI]]のための[[org.sisioh.sip.util.Decoder]]
@@ -109,7 +102,7 @@ object DefaultGenericURI {
 
   def unapply(genericUri: GenericURI): Option[(String, String)] = Some(genericUri.uriString, genericUri.scheme)
 
-  def decode(source: String) = DefaultGenericURIDecoder().decode(source)
+  def decode(source: String) = DefaultGenericURIDecoder.decode(source)
 
 }
 

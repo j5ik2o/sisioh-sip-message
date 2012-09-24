@@ -10,19 +10,19 @@ class DefaultAddressDecoderSpec extends Specification {
       "表示名がない場合" in {
         val source = DefaultAddress(uri)
         val encodeObject = source.encode()
-        val dest = DefaultAddressDecoder().decode(encodeObject)
+        val dest = DefaultAddressDecoder.decode(encodeObject)
         dest must_== source
       }
       "表示名がある場合" in {
         val source = DefaultAddress(uri, Some("kato"))
         val encodeObject = source.encode()
-        val dest = DefaultAddressDecoder().decode(encodeObject)
+        val dest = DefaultAddressDecoder.decode(encodeObject)
         dest must_== source
       }
       "ワイルドカードの場合" in {
         val source = DefaultAddress(WildCardURI)
         val encodeObject = source.encode()
-        val dest = DefaultAddressDecoder().decode(encodeObject)
+        val dest = DefaultAddressDecoder.decode(encodeObject)
         dest must_== source
       }
     }

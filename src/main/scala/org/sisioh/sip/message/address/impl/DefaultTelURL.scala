@@ -21,9 +21,7 @@ import org.sisioh.sip.message.address.TelURL
 import org.sisioh.sip.core.GenericObject
 import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
 
-object DefaultTelURLDecoder {
-  def apply() = new DefaultTelURLDecoder
-}
+object DefaultTelURLDecoder extends DefaultTelURLDecoder
 
 class DefaultTelURLDecoder extends Decoder with DefaultTelURLParser {
   def decode(source: String): DefaultTelURL = decodeTarget(source, defaultTelURL)
@@ -44,7 +42,7 @@ object DefaultTelURL {
   def unapply(defaultTelURL:DefaultTelURL): Option[(TelephoneNumber, Option[String])] =
     Some(defaultTelURL.telephoneNumber, defaultTelURL.phoneContext)
 
-  def decode(telephoneNumber: String) = DefaultTelURLDecoder().decode(telephoneNumber)
+  def decode(telephoneNumber: String) = DefaultTelURLDecoder.decode(telephoneNumber)
 
   object JsonEncoder extends Encoder[DefaultTelURL]{
     def encode(model: DefaultTelURL, builder: StringBuilder) = {

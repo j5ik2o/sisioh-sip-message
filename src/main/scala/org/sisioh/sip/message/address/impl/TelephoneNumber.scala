@@ -21,9 +21,7 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.core.{Separators, GenericObject}
 import scala.Some
 
-object TelephoneNumberDecoder {
-  def apply() = new TelephoneNumberDecoder
-}
+object TelephoneNumberDecoder extends TelephoneNumberDecoder
 
 class TelephoneNumberDecoder extends Decoder with TelephoneNumberParser {
   def decode(source: String): TelephoneNumber = decodeTarget(source, telephoneNumber)

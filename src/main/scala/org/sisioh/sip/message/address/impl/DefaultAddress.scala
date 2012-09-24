@@ -35,9 +35,7 @@ object AddressType extends Enumeration {
   WILD_CARD = Value
 }
 
-object DefaultAddressDecoder {
-  def apply() = new DefaultAddressDecoder
-}
+object DefaultAddressDecoder extends DefaultAddressDecoder
 
 class DefaultAddressDecoder extends Decoder with DefaultAddressParser {
   def decode(source: String) = decodeTarget(source, defaultAddress)
@@ -79,7 +77,7 @@ object DefaultAddress {
             addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
     new DefaultAddress(uri, displayName, addressTypeParam)
 
-  def decode(source: String) = DefaultAddressDecoder().decode(source)
+  def decode(source: String) = DefaultAddressDecoder.decode(source)
 
   def fromURI(uri: URI, displayName: Option[String] = None,
               addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
