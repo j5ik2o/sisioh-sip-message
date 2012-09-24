@@ -16,7 +16,7 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
-trait MaxForwardsHeader {
+trait MaxForwardsHeader extends Header {
   val maxForwards: Int
   def decrementMaxForwards: MaxForwardsHeader
 }

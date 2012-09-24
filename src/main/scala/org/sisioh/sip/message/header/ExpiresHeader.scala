@@ -16,7 +16,7 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
-trait ExpiresHeader {
+trait ExpiresHeader extends Header {
   val expires: Int
 }
 

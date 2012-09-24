@@ -48,8 +48,8 @@ object From {
 
   def decode(source: String) = FromDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[To] {
-    def encode(model: To, builder: StringBuilder) = {
+  object JsonEncoder extends Encoder[From] {
+    def encode(model: From, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(JField("address", parse(model.address.encodeByJson())) ::
         JField("paramters", parse(model.parameters.encodeByJson())) :: Nil)

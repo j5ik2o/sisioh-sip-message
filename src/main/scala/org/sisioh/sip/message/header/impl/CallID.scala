@@ -31,10 +31,8 @@ object CallID {
   object JsonEncoder extends Encoder[CallID] {
     def encode(model: CallID, builder: StringBuilder) = {
       import net.liftweb.json._
-//      val json = JObject(JField("address", parse(model.address.encodeByJson())) ::
-//        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil)
-//      builder.append(compact(render(json)))
-      null
+      val json = JObject(JField("callId", JString(model.callId)) :: Nil)
+      builder.append(compact(render(json)))
     }
   }
 
@@ -42,7 +40,7 @@ object CallID {
 
 case class CallID(callId: String) extends SIPHeader with CallIdHeader {
   val name = CallIdHeader.NAME
-  val callIdentity = CallIdentifier(callId)
+  val callIdentity = CallIdentifier.from(callId)
   val headerName = CallIdHeader.NAME
 
   def encodeByJson(builder: StringBuilder) = encode(builder, CallID.JsonEncoder)

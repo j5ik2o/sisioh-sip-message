@@ -147,9 +147,6 @@ class DefaultAddress
 
   override def equals(obj: Any) = obj match {
     case that: DefaultAddress =>
-      //      println("uri", uri, that.uri, uri == that.uri)
-      //      println("display", displayName, that.displayName, displayName == that.displayName)
-      //      println("addressType", addressType, that.addressType, addressType == that.addressType)
       uri == that.uri &&
         displayName == that.displayName &&
         addressType == that.addressType

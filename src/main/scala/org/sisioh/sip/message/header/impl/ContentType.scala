@@ -1,62 +1,69 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ContentTypeHeader
-import org.sisioh.sip.util.{Decoder, NameValuePair, NameValuePairList, ParserBase}
+import org.sisioh.sip.util._
+import org.sisioh.sip.core.Separators
+import scala.Some
+import net.liftweb.json.ext.EnumNameSerializer
 
-object ContentTypeDecoder {
-  def apply() = new ContentTypeDecoder
-}
+object ContentTypeDecoder extends ContentTypeDecoder
 
 class ContentTypeDecoder extends Decoder with ContentTypeParser {
-  def decode(source: String) = decodeTarget(source, contentType)
+  def decode(source: String) = decodeTarget(source, contentTypeWithCrLfOpt)
 }
 
-trait ContentTypeParser extends ParserBase {
-  lazy val contentType: Parser[ContentType] = ("Content-Type" | "c") ~> ":" ~> mediaType ^^ {
+trait ContentTypeParser extends ParserBase with MediaRangeParser {
+  lazy val contentTypeWithCrLfOpt = contentType <~ opt(CRLF)
+
+  lazy val contentType: Parser[ContentType] = ("Content-Type" | "c") ~> HCOLON ~> mediaType ^^ {
     case mt =>
-      ContentType(mt._1, Some(mt._2), mt._3)
+      ContentType(mt._1, mt._2, mt._3)
   }
 
-  lazy val mediaType: Parser[(String, String, NameValuePairList)] = mType ~ ("/" ~> mSubtype) ~ rep(";" ~> mParameter) ^^ {
-    case mt ~ msub ~ mparams =>
-      (mt, msub, mparams.foldLeft(NameValuePairList())((l, r) => l.add(r)))
+}
 
+object ContentType {
+
+  def decode(source: String) = ContentTypeDecoder.decode(source)
+
+  object JsonEncoder extends Encoder[ContentType] {
+    def encode(model: ContentType, builder: StringBuilder) = {
+      import net.liftweb.json._
+      import net.liftweb.json.JsonDSL._
+      implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
+      val json = ("contentType" -> model.contentType) ~
+        ("contentSubType" -> model.contentSubType) ~
+        ("parameters" -> parse(model.parameters.encodeByJson()))
+      builder.append(compact(render(json)))
+    }
   }
 
-  lazy val mType = discreteType | compositeType
-
-  lazy val discreteType = "text" | "image" | "audio" | "video" | "application" | extensionToken
-  lazy val compositeType = "message" | "multipart" | extensionToken
-  lazy val extensionToken = ietfToken | xToken
-  lazy val ietfToken = token
-  lazy val xToken: Parser[String] = "x-" ~ token ^^ {
-    case f ~ s => f + s
-  }
-  lazy val mSubtype = extensionToken | ianaToken
-  lazy val ianaToken = token
-  lazy val mParameter: Parser[NameValuePair] = mAttribute ~ ("=" ~> mValue) ^^ {
-    case ma ~ mv => NameValuePair(Some(ma), Some(mv))
-  }
-  lazy val mAttribute = token
-  lazy val mValue = token | quotedString
 }
 
 case class ContentType
 (contentType: String,
- contentSubType: Option[String],
- parameters: NameValuePairList) extends ContentTypeHeader {
-
+ contentSubType: String,
+ parameters: NameValuePairList = NameValuePairList()) extends ParametersHeader with ContentTypeHeader {
+  val mediaRange = MediaRange(contentType, contentSubType)
   val name = ContentTypeHeader.NAME
+  val headerName = ContentTypeHeader.NAME
+  val duplicates = DuplicateNameValueList()
 
-  def parameterNames = parameters.names
+  def encodeByJson(builder: StringBuilder) = encode(builder, ContentType.JsonEncoder)
 
-  def getParameter(name: String) = parameters.getValue(name)
-
-  def removeParameter(name: String) = {
-    new ContentType(
-      contentType,
-      contentSubType,
-      parameters.remove(name)
-    )
+  def encodeBody(builder: StringBuilder) = {
+    mediaRange.encode(builder)
+    if (hasParameters) {
+      builder.append(Separators.SEMICOLON)
+      parameters.encode(builder)
+    }
+    builder
   }
+
+  protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
+    new ContentType(contentType, contentSubType, _parameters)
+  }
+
+  override def toString = encode()
+
 }

@@ -12,7 +12,7 @@ trait SIPHeader extends GenericObject {
   def encodeBody[A](builder: StringBuilder, encoder: Encoder[A]):StringBuilder = encoder.encode(this.asInstanceOf[A], builder)
 
   def encode(builder: StringBuilder): StringBuilder = {
-    builder.append(this.headerName).append(Separators.COLON).append(Separators.SP);
+    builder.append(this.headerName).append(Separators.COLON).append(Separators.SP)
     encodeBody(builder)
     builder.append(Separators.NEWLINE)
     builder

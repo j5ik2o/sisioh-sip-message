@@ -34,8 +34,8 @@ trait ParserBase extends RegexParsers {
   lazy val CHAR = chrRange(Char.MinValue, Char.MaxValue)
   lazy val DIGIT: Parser[Char] = chrRange('0', '9')
 
-  lazy val CR = chr(0x0D)
-  lazy val LF = chr(0x0A)
+  lazy val CR = chr(0x0D) // \r
+  lazy val LF = chr(0x0A) // \n
   lazy val SP = chr(0x20)
   lazy val HT = chr(0x09)
   lazy val DQUOTE: Parser[Char] = '\"'
@@ -65,7 +65,7 @@ trait ParserBase extends RegexParsers {
     _.mkString
   }
 
-//  lazy val token: Parser[String] = """[a-zA-Z0-9\-.!%_+`'~]+""".r
+  //  lazy val token: Parser[String] = """[a-zA-Z0-9\-.!%_+`'~]+""".r
 
   lazy val separators: Parser[Char] = elem('(') | ')' | '<' | '>' | '@' |
     ',' | ';' | ':' | '\\' | DQUOTE |
@@ -159,4 +159,9 @@ trait ParserBase extends RegexParsers {
   lazy val CANCELm = "CANCEL"
   lazy val REGISTERm = "REGISTER"
   lazy val extensionMethod = token
+
+  lazy val deltaSeconds: Parser[String] = rep1(DIGIT) ^^ {
+    _.mkString
+  }
+
 }
