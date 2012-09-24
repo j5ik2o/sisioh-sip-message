@@ -3,7 +3,7 @@ package org.sisioh.sip.message.header
 import impl.ServerVal
 
 trait UserAgentHeader extends Header {
-  val products: List[ServerVal]
+  val serverVals: List[ServerVal]
 }
 
 object UserAgentHeader {
