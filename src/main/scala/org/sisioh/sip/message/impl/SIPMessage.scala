@@ -35,6 +35,9 @@ trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
   val messageContent: String
   val messageContentBytes: Array[Byte]
   val messageContentObject: Any
+  val headerTable: Map[String, SIPHeader]
+  val applicationData: Any
+  val forkId: String
   val remoteAddress: InetAddress
   val remotePort: Int
   val localAddress: InetAddress

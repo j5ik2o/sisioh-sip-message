@@ -28,11 +28,6 @@ trait ToOrFromParser extends ParserBase with HostParser {
     case n ~ v => NameValuePair(Some(n), Some(v))
   }
 
-  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
-  }
-
-  lazy val genValue = token | host | quotedString
 
 }
 

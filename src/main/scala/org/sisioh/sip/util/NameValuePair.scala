@@ -60,13 +60,13 @@ trait NameValuePairParser extends RegexParsers {
 
 object NameValuePair {
 
-  implicit def stringToOption(value: String):Option[String] = Some(value)
+  implicit def stringToOption(value: String): Option[String] = Some(value)
 
-//  def apply
-//  (name: String, value: String,
-//   separator: String = Separators.EQUALS,
-//   quotes: String = "",
-//   isQuotedString: Boolean = false): NameValuePair = apply(Some(name), Some(value), separator, quotes, isQuotedString)
+  //  def apply
+  //  (name: String, value: String,
+  //   separator: String = Separators.EQUALS,
+  //   quotes: String = "",
+  //   isQuotedString: Boolean = false): NameValuePair = apply(Some(name), Some(value), separator, quotes, isQuotedString)
 
   def apply
   (name: Option[String],
@@ -115,17 +115,58 @@ class NameValuePair
  val isQuotedString: Boolean = false)
   extends Tuple2[Option[String], Option[Any]](name, value) with GenericObject {
 
-  def getValueAsObject(stripQuotes: Boolean): Option[String] =
-    value.map {
-      v =>
-        if (v.isInstanceOf[Boolean]) {
-          ""
-        } else if (!stripQuotes && isQuotedString) {
-          quotes + v.toString() + quotes; // add the quotes for quoted string
-        } else {
-          v.toString
-        }
-    }
+
+  private def formatString(source: String, stripQuotes: Boolean) =
+    if (stripQuotes == false && isQuotedString) quotes + source.toString + quotes else source.toString
+
+  def getValueAStringWithoutBoolean(stripQuotes: Boolean = true) : Option[String] = value.flatMap {
+    case s: String => Some(formatString(s, stripQuotes))
+    case b: Boolean => None
+    case any: Any => Some(formatString(any.toString, stripQuotes))
+  }
+
+  def getValueAsString(stripQuotes: Boolean = true): Option[String] = value.flatMap {
+    case s: String => Some(formatString(s, stripQuotes))
+    case any: Any => Some(formatString(any.toString, stripQuotes))
+  }
+
+  private val digitRegex = """[0-9]+""".r
+
+  def getValueAsInt = value.flatMap {
+    case n: Int => Some(n)
+    case digitRegex(s) => Some(s.toInt)
+    case _ => None
+  }
+
+  def getValueAsBoolean = value.flatMap {
+    case b: Boolean => Some(b)
+    case s: String if (s.equalsIgnoreCase("true")) => Some(true)
+    case s: String if (s.equalsIgnoreCase("false")) => Some(false)
+    case 1 => Some(true)
+    case 0 => Some(false)
+    case _ => None
+  }
+
+  def getValueAsType[T](clazz: Class[T]): Option[T] = value.flatMap {
+    e =>
+      if (clazz.isAssignableFrom(e.getClass)) {
+        Some(e.asInstanceOf[T])
+      } else {
+        None
+      }
+  }
+
+//  def getValueAsObject(stripQuotes: Boolean): Option[String] =
+//    value.map {
+//      v =>
+//        if (v.isInstanceOf[Boolean]) {
+//          ""
+//        } else if (!stripQuotes && isQuotedString) {
+//          quotes + v.toString + quotes; // add the quotes for quoted string
+//        } else {
+//          v.toString
+//        }
+//    }
 
   override def hashCode() =
     31 * name.## + 31 * value.##

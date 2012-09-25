@@ -25,12 +25,22 @@ object Server {
 
   object JsonEncoder extends Encoder[Server] {
     def encode(model: Server, builder: StringBuilder) = {
-      null
+      import net.liftweb.json._
+      val list = model.serverVals.map {
+        e => JString(e.toString)
+      }.toList
+      val json = JArray(list)
+      builder.append(compact(render(json)))
     }
   }
 
 }
 
+/**
+ * Serverヘッダを表す値オブジェクト
+ *
+ * @param serverVals [[org.sisioh.sip.message.header.impl.ServerVal]]のリスト
+ */
 case class Server(serverVals: List[ServerVal] = List.empty)
   extends SIPHeader with ServerHeader {
 
@@ -45,9 +55,8 @@ case class Server(serverVals: List[ServerVal] = List.empty)
     )
   }
 
-  private def encodeProducts(builder: StringBuilder): StringBuilder = {
+  private def encodeProducts(builder: StringBuilder): StringBuilder =
     builder.append(serverVals.mkString(" "))
-  }
 
   def encodeBody(builder: StringBuilder) = encodeProducts(builder)
 

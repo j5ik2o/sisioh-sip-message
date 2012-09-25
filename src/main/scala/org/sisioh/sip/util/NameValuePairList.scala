@@ -40,7 +40,11 @@ class NameValuePairListDecoder
 
 trait NameValuePairListParser extends RegexParsers with NameValuePairParser {
 
-  def nameValuePairList(separator: String, nameValuePairSeparator: String, quotes: String, isQuotedString: Boolean): Parser[NameValuePairList] =
+  def nameValuePairList
+  (separator: String,
+   nameValuePairSeparator: String,
+   quotes: String,
+   isQuotedString: Boolean): Parser[NameValuePairList] =
     repsep(nameValuePair(nameValuePairSeparator, quotes, isQuotedString), separator) ^^ {
       case list =>
         val values = list.map(e => (e.name.get, e)).toMap
@@ -86,10 +90,16 @@ class NameValuePairList
 
   def add(name: String, value: Any): NameValuePairList = add(NameValuePair(Some(name), Some(value)))
 
-  def getNameValuePair(name: String) = nameValuePairs.get(name.toLowerCase)
+  def getNameValuePair(name: String): Option[NameValuePair] = nameValuePairs.get(name.toLowerCase)
 
   def getValue(name: String): Option[Any] =
     getNameValuePair(name.toLowerCase).flatMap(_.value)
+
+  def getValueAsType[T](clazz: Class[T], name: String): Option[T] = getNameValuePair(name).flatMap(_.getValueAsType(clazz))
+
+  def getValueAsString(name: String, stripQuotes: Boolean = true): Option[String] = getNameValuePair(name).flatMap(_.getValueAsString(stripQuotes))
+
+  def getValueAsInt(name: String): Option[Int] = getNameValuePair(name).flatMap(_.getValueAsInt)
 
   def hasNameValuePair(name: String) = getNameValuePair(name).isDefined
 
@@ -103,11 +113,8 @@ class NameValuePairList
 
   def iterator = nameValuePairs.valuesIterator
 
-  def getParameter(name: String): Option[String] =
-    getParameter(name, true);
-
-  def getValue(name: String, stripQuotes: Boolean): Option[String] =
-    getNameValuePair(name.toLowerCase()).flatMap(_.getValueAsObject(stripQuotes))
+  def getValue(name: String, stripQuotes: Boolean = true): Option[String] =
+    getNameValuePair(name.toLowerCase).flatMap(_.getValueAStringWithoutBoolean(stripQuotes))
 
 
   def getParameter(name: String, stripQuotes: Boolean): Option[String] = {
@@ -141,7 +148,7 @@ class NameValuePairList
     case _ => false
   }
 
-  override def toString = encode()
+  override def toString() = encode()
 
   def encodeByJson(builder: StringBuilder) = encode(builder, NameValuePairList.JsonEncoder)
 }

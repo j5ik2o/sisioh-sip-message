@@ -18,4 +18,23 @@ package org.sisioh.sip.message.header
 
 object SIPHeaderNames {
 
+
+  val MIN_EXPIRES = MinExpiresHeader.NAME; //1
+  val ERROR_INFO = ErrorInfoHeader.NAME; //2
+  val MIME_VERSION = MimeVersionHeader.NAME; //3
+  val IN_REPLY_TO = InReplyToHeader.NAME; //4
+  val ALLOW = AllowHeader.NAME; //5
+  val CONTENT_LANGUAGE = ContentLanguageHeader.NAME;
+
+  val VIA = ViaHeader.NAME
+  val ROUTE = RouteHeader.NAME
+
+  val PROXY_AUTHORIZATION = ProxyAuthorizationHeader.NAME
+
+  val AUTHORIZATION = AuthorizationHeader.NAME
+
+  val PROXY_AUTHENTICATE = ProxyAuthenticateHeader.NAME
+
+  val WWW_AUTHENTICATE = WWWAuthenticateHeader.NAME
+
 }

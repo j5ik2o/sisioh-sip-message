@@ -11,25 +11,13 @@ class FromDecoder extends Decoder with FromParser {
   def decode(source: String) = decodeTarget(source, fromWithCrLfOpt)
 }
 
-trait FromParser extends ParserBase with DefaultAddressParser {
+trait FromParser extends ToOrFromParser with DefaultAddressParser {
   lazy val fromWithCrLfOpt: Parser[From] = from <~ opt(CRLF)
 
   lazy val from: Parser[From] = ("From" | "f") ~> HCOLON ~> ((nameAddrToDefaultAddress | addrSpecToDefaultAddress) ~ rep(SEMI ~> toParam)) ^^ {
     case da ~ toParams =>
       From(da, None, NameValuePairList.fromValues(toParams))
   }
-
-  lazy val toParam = tagParam | genericParam
-
-  lazy val tagParam: Parser[NameValuePair] = "tag" ~ (EQUAL ~> token) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
-  }
-
-  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
-  }
-
-  lazy val genValue = token | host | quotedString
 
 }
 

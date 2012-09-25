@@ -41,17 +41,10 @@ class HostDecoder extends Decoder with HostParser {
 
 trait HostParser extends ParserBase {
 
-  lazy val hostToModel: Parser[Host] = hostNameOrIpAddress ^^ {
+  lazy val hostToModel: Parser[Host] = host ^^ {
     h => Host(h)
   }
 
-  lazy val host: Parser[String] = hostNameOrIpAddress
-
-  lazy val L_BRACKET = """\[""".r
-  lazy val R_BRACKET = """\]""".r
-  lazy val ipV4Address = ("(" + Host.v4Partial + ")(\\.(" + Host.v4Partial + ")){3}").r
-  lazy val ipV6Address = L_BRACKET ~> (Host.v6PattenBase + "{7}").r <~ R_BRACKET
-  lazy val hostNameOrIpAddress = HOSTNAME | ipV4Address | ipV6Address
 }
 
 

@@ -164,4 +164,23 @@ trait ParserBase extends RegexParsers {
     _.mkString
   }
 
+  lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
+    case n ~ v => NameValuePair(Some(n), Some(v))
+  }
+
+  lazy val L_BRACKET = """\[""".r
+  lazy val R_BRACKET = """\]""".r
+
+  lazy val IPv4address = ("(" + Host.v4Partial + ")(\\.(" + Host.v4Partial + ")){3}").r
+
+  lazy val IPv6address = (Host.v6PattenBase + "{7}").r
+
+  lazy val IPv6addressReference = L_BRACKET ~>  IPv6address <~ R_BRACKET
+
+  lazy val host = HOSTNAME | IPv4address | IPv6address
+
+  lazy val genValue = token | host | quotedString
+
+  lazy val port = DIGIT
+
 }

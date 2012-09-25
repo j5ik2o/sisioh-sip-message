@@ -20,13 +20,23 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.message.address.NetObject
 
 object ParameterNames {
+  val RPORT = "rport"
+
+  val BRANCH = "branch"
+
+  val MADDR = "maddr"
+
+  val TTL = "ttl"
+
+  val RECEIVED = "received"
+
   val SIP_URI_SCHEME = "sip"
   val SIPS_URI_SCHEME = "sips"
   val TEL_URI_SCHEME = "tel"
   val POSTDIAL = "postd"
   val PHONE_CONTEXT_TAG = "context-tag"
   val ISUB = "isub"
-  val PROVIDER_TAG = "provider-tag";
+  val PROVIDER_TAG = "provider-tag"
   val UDP = NetObject.UDP
   val TCP = NetObject.TCP
   val TLS = NetObject.TLS
