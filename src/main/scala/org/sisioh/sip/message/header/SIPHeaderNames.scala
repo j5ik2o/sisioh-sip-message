@@ -16,8 +16,9 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
-object SIPHeaderNames {
+object SIPHeaderNames extends SIPHeaderNames
 
+trait SIPHeaderNames {
 
   val MIN_EXPIRES = MinExpiresHeader.NAME; //1
   val ERROR_INFO = ErrorInfoHeader.NAME; //2

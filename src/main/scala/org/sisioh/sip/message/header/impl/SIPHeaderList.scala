@@ -57,6 +57,10 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 
   protected def createInstance(headers: List[HDR]): A
 
+  def getHead = headers.head
+
+  def getLast = headers.last
+
   def addHead(sipHeader: HDR): A = createInstance(sipHeader :: headers)
 
   def addLast(sipHeader: HDR): A = createInstance(headers :+ sipHeader)

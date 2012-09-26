@@ -2,6 +2,7 @@ package org.sisioh.sip.message.address.impl
 
 import org.specs2.mutable.Specification
 import org.sisioh.sip.util.NameValuePair
+import org.sisioh.sip.message.address.ParameterNames
 
 class TelephoneNumberDecoderSpec extends Specification {
   "TelephoneNumberDecoder" should {

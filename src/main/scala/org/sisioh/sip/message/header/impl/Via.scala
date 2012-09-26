@@ -17,14 +17,9 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.util._
-import org.sisioh.sip.message.header.{impl, ViaHeaderExt, Protocol, ViaHeader}
-import scala.Some
-import org.sisioh.sip.message.address.impl.{TelephoneNumber, ParameterNames}
+import org.sisioh.sip.message.header._
 import org.sisioh.sip.core.Separators
-import collection.generic.CanBuildFrom
-import collection.{LinearSeqOptimized, immutable, mutable}
-import collection.immutable.LinearSeq
-import collection.mutable.Builder
+import scala.Some
 
 trait ViaParser extends ParserBase with HostParser {
   lazy val VIA = ("Via" | "v") ~> HCOLON ~> rep1sep(viaParm, COMMA)

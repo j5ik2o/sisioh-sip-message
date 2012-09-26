@@ -20,6 +20,7 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{Separators, GenericObject}
 import scala.Some
+import org.sisioh.sip.message.address.ParameterNames
 
 object TelephoneNumberDecoder extends TelephoneNumberDecoder
 

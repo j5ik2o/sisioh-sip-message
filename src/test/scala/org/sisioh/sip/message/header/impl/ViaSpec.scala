@@ -4,7 +4,7 @@ import org.sisioh.sip.util.{Host, HostPort}
 import org.sisioh.sip.message.header.Protocol
 import org.specs2.mutable.Specification
 import org.sisioh.sip.core.Separators
-import org.sisioh.sip.message.address.impl.ParameterNames
+import org.sisioh.sip.message.header.ParameterNames
 
 class ViaSpec extends Specification {
   "Via" should {

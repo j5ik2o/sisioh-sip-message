@@ -17,9 +17,9 @@ package org.sisioh.sip.message.address.impl
  */
 
 
-import org.sisioh.sip.message.address.TelURL
+import org.sisioh.sip.message.address.{ParameterNames, TelURL}
 import org.sisioh.sip.core.GenericObject
-import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util.{SIPDecoder, Encoder, ParserBase}
 
 object DefaultTelURLDecoder extends DefaultTelURLDecoder
 

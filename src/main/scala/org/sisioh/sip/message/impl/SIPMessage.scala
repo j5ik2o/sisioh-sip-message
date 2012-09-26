@@ -45,42 +45,59 @@ trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
   val localAddress: InetAddress
   val localPort: Int
 
-//  def attachHeader(header: SIPHeader, replace: Boolean, top: Boolean) = {
-//    val sipHeader = if (SIPHeaderListMapping.hasList(header) && classOf[SIPHeaderList].isAssignableFrom(header.getClass)) {
-//      SIPHeaderListMappingUtil.getList(sipHeader).addLast(sipHeader)
-//    } else {
-//      header
+  def getSIPHeaderListLowerCase(lowerCaseHeaderName: String): Option[SIPHeader] = {
+    headerTable.get(lowerCaseHeaderName)
+  }
+
+  def getViaHeaders = getSIPHeaderListLowerCase("via").map(_.asInstanceOf[ViaList])
+  def getViaHeadHeader = getViaHeaders.map(_.getHead)
+
+//  def getTransactionId: String = {
+//    getViaHeadHeader match {
+//      case Some(via) =>
+//        via.branch match {
+//          case Some(b) if (b.toUpperCase.startsWith())
+//        }
 //    }
-//    val headerNameLowerCase = sipHeader.name.toLowerCase
-//    if (replace) {
-//      headerTable -= headerNameLowerCase
-//    } else if (headerTable.contains(headerNameLowerCase) && sipHeader.isInstanceOf[SIPHeaderList] == false) {
-//      if (sipHeader.isInstanceOf[ContentLength]) {
-//        val cl = sipHeader.asInstanceOf[ContentLength]
-//        // ContentLength(cl.contentLength)
-//      }
-//    }
-//    val originalHeader = getHeader(header.name).map(_.asInstanceOf[SIPHeader])
-//    if (originalHeader.isDefined) {
-//      val li = headers.iterator
-//      // li.filterNot(_ == originalHeader.get)
-//    }
-//    if (headerTable.contains(headerNameLowerCase) == false) {
-//      headerTable += (headerNameLowerCase -> sipHeader)
-//      headers :+ sipHeader
-//    } else {
-//      if (sipHeader.isInstanceOf[SIPHeaderList]) {
-//        val hdrList = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeaderList])
-//        if (hdrList.isDefined)
-//          hdrList.get.concatenate(sipHeader.asInstanceOf[SIPHeaderList], top)
-//        else
-//          headerTable.put(headerNameLowerCase, h);
-//      } else {
-//        headerTable.put(headerNameLowerCase, h);
-//      }
-//    }
-//
 //  }
+
+
+  //  def attachHeader(header: SIPHeader, replace: Boolean, top: Boolean) = {
+  //    val sipHeader = if (SIPHeaderListMapping.hasList(header) && classOf[SIPHeaderList].isAssignableFrom(header.getClass)) {
+  //      SIPHeaderListMappingUtil.getList(sipHeader).addLast(sipHeader)
+  //    } else {
+  //      header
+  //    }
+  //    val headerNameLowerCase = sipHeader.name.toLowerCase
+  //    if (replace) {
+  //      headerTable -= headerNameLowerCase
+  //    } else if (headerTable.contains(headerNameLowerCase) && sipHeader.isInstanceOf[SIPHeaderList] == false) {
+  //      if (sipHeader.isInstanceOf[ContentLength]) {
+  //        val cl = sipHeader.asInstanceOf[ContentLength]
+  //        // ContentLength(cl.contentLength)
+  //      }
+  //    }
+  //    val originalHeader = getHeader(header.name).map(_.asInstanceOf[SIPHeader])
+  //    if (originalHeader.isDefined) {
+  //      val li = headers.iterator
+  //      // li.filterNot(_ == originalHeader.get)
+  //    }
+  //    if (headerTable.contains(headerNameLowerCase) == false) {
+  //      headerTable += (headerNameLowerCase -> sipHeader)
+  //      headers :+ sipHeader
+  //    } else {
+  //      if (sipHeader.isInstanceOf[SIPHeaderList]) {
+  //        val hdrList = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeaderList])
+  //        if (hdrList.isDefined)
+  //          hdrList.get.concatenate(sipHeader.asInstanceOf[SIPHeaderList], top)
+  //        else
+  //          headerTable.put(headerNameLowerCase, h);
+  //      } else {
+  //        headerTable.put(headerNameLowerCase, h);
+  //      }
+  //    }
+  //
+  //  }
 
   def addHeader(header: Header) = null
 }
