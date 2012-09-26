@@ -25,7 +25,7 @@ import org.sisioh.sip.util.Encoder
 trait SIPHeader extends GenericObject {
 
   val headerName: String
-
+  val name = headerName
   /**
    * ヘッダのボディをエンコードする。
    *
@@ -74,4 +74,5 @@ trait SIPHeader extends GenericObject {
     builder.append(Separators.NEWLINE)
     builder
   }
+
 }

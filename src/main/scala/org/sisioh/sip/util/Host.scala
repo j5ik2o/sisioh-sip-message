@@ -33,7 +33,7 @@ object HostDecoder {
 
 }
 
-class HostDecoder extends Decoder with HostParser {
+class HostDecoder extends SIPDecoder[Host] with HostParser {
 
   def decode(source: String): Host = decodeTarget(source, hostToModel)
 

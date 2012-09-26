@@ -1,11 +1,11 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ServerHeader
-import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
 
 object ServerDecoder extends ServerDecoder
 
-class ServerDecoder extends Decoder with ServerParser {
+class ServerDecoder extends SIPDecoder[Server] with ServerParser {
   def decode(source: String) = decodeTarget(source, SERVER_WithCrLfOpt)
 }
 
@@ -44,7 +44,6 @@ object Server {
 case class Server(serverVals: List[ServerVal] = List.empty)
   extends SIPHeader with ServerHeader {
 
-  val name = ServerHeader.NAME
   val headerName = ServerHeader.NAME
 
   def encodeByJson(builder: StringBuilder) = encode(builder, Server.JsonEncoder)

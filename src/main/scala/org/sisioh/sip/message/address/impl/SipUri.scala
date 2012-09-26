@@ -23,9 +23,9 @@ import org.sisioh.sip.core.{GenericObject, Separators}
 
 object SipUriDecoder extends SipUriDecoder
 
-class SipUriDecoder extends Decoder with SipUriParser {
+class SipUriDecoder extends SIPDecoder[SipUri] with SipUriParser {
   def decode(source: String) = decodeTarget(source, uri)
-  def uri = SIP_URI | SIPS_URI
+  lazy val uri = SIP_URI | SIPS_URI
 }
 
 trait SipUriParser extends ParserBase with DefaultGenericURIParser with UserInfoParser with HostPortParser {

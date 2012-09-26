@@ -27,7 +27,7 @@ object AuthorityDecoder {
   def apply() = new AuthorityDecoder
 }
 
-class AuthorityDecoder extends Decoder with AuthorityParser {
+class AuthorityDecoder extends SIPDecoder[Authority] with AuthorityParser {
   def decode(source: String) = decodeTarget(source, authority)
 }
 

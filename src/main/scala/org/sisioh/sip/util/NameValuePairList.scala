@@ -31,7 +31,8 @@ class NameValuePairListDecoder
 (separator: String = Separators.SEMICOLON,
  nameValuePairSeparator: String = Separators.EQUALS,
  quotes: String = "",
- isQuotedString: Boolean = false) extends Decoder with NameValuePairListParser {
+ isQuotedString: Boolean = false)
+  extends SIPDecoder[NameValuePairList] with NameValuePairListParser {
 
   def decode(source: String): NameValuePairList =
     decodeTarget(source, nameValuePairList(separator, nameValuePairSeparator, quotes, isQuotedString))
@@ -117,7 +118,7 @@ class NameValuePairList
     getNameValuePair(name.toLowerCase).flatMap(_.getValueAStringWithoutBoolean(stripQuotes))
 
 
-  def getParameter(name: String, stripQuotes: Boolean): Option[String] = {
+  def getParameter(name: String, stripQuotes: Boolean = true): Option[String] = {
     getValue(name, stripQuotes).map {
       e =>
         if (e.isInstanceOf[GenericObject]) {

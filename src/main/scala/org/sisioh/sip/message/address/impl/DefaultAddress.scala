@@ -17,9 +17,10 @@ package org.sisioh.sip.message.address.impl
  */
 
 import org.sisioh.sip.message.address.{Address, URI}
-import org.sisioh.sip.util.{NameValuePair, Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
 import net.liftweb.json.ext.{EnumNameSerializer, EnumSerializer}
+import scala.Some
 
 /**
  * アドレスの種別を表す列挙型。
@@ -37,7 +38,7 @@ object AddressType extends Enumeration {
 
 object DefaultAddressDecoder extends DefaultAddressDecoder
 
-class DefaultAddressDecoder extends Decoder with DefaultAddressParser {
+class DefaultAddressDecoder extends SIPDecoder[DefaultAddress] with DefaultAddressParser {
   def decode(source: String) = decodeTarget(source, defaultAddress)
 }
 

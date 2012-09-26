@@ -21,6 +21,7 @@ trait ViaHeader {
   val port: Option[Int]
   val transport: String
   val protocol: String
+  val protocolVersion: String
   val ttl: Option[Int]
   val maddr: Option[String]
   val received: Option[String]

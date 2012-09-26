@@ -6,7 +6,7 @@ import scala.Some
 
 object MediaRangeDecoder extends MediaRangeDecoder
 
-class MediaRangeDecoder extends Decoder with MediaRangeParser {
+class MediaRangeDecoder extends SIPDecoder[MediaRange] with MediaRangeParser {
   def decode(source: String) = decodeTarget(source, mediaRange)
 }
 

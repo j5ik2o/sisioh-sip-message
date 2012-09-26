@@ -36,7 +36,7 @@ trait Message[T] {
 
   def getHeaders(headerName: String): Iterator[Header]
 
-  def getHeader(headerName: String): String
+  def getHeader(headerName: String): Option[Header]
 
   def getUnrecognizedHeaders: Iterator[Header]
 

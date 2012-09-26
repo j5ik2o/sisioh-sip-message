@@ -28,8 +28,8 @@ import scala.Some
 
 object ToDecoder extends ToDecoder
 
-class ToDecoder extends Decoder with ToParser {
-  def decode(source: String) = decodeTarget(source, toWithCrLfOpt)
+class ToDecoder extends SIPDecoder[To] with ToParser {
+  def decode(source: String):To = decodeTarget(source, toWithCrLfOpt)
 }
 
 trait ToParser extends ToOrFromParser with DefaultAddressParser {
@@ -85,7 +85,8 @@ class To
  parametersParam: NameValuePairList = NameValuePairList())
   extends ToOrFromHeader with ToHeader {
 
-  val name = ToHeader.NAME
+  type ParametersHeaderType = To
+
   val headerName = ToHeader.NAME
 
   val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)

@@ -1,7 +1,5 @@
 package org.sisioh.sip.message.header
 
-import impl.ServerVal
-
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
  *
@@ -17,6 +15,8 @@ import impl.ServerVal
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
+import impl.ServerVal
 
 trait ServerHeader extends Header {
   val serverVals: List[ServerVal]

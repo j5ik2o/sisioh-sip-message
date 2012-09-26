@@ -7,8 +7,8 @@ import org.sisioh.sip.core.Separators
 
 object FromDecoder extends FromDecoder
 
-class FromDecoder extends Decoder with FromParser {
-  def decode(source: String) = decodeTarget(source, fromWithCrLfOpt)
+class FromDecoder extends SIPDecoder[From] with FromParser {
+  def decode(source: String):From = decodeTarget(source, fromWithCrLfOpt)
 }
 
 trait FromParser extends ToOrFromParser with DefaultAddressParser {
@@ -60,7 +60,8 @@ class From
  parametersParam: NameValuePairList = NameValuePairList())
   extends ToOrFromHeader with FromHeader {
 
-  val name = FromHeader.NAME
+  type ParametersHeaderType = From
+
   val headerName = FromHeader.NAME
 
   val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)

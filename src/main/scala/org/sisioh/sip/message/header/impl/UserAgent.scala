@@ -17,11 +17,11 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.message.header.UserAgentHeader
-import org.sisioh.sip.util.{Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
 
 object UserAgentDecoder extends UserAgentDecoder
 
-class UserAgentDecoder extends Decoder with UserAgentParser {
+class UserAgentDecoder extends SIPDecoder[UserAgent] with UserAgentParser {
   def decode(source: String) = decodeTarget(source, USER_AGENTWithCrLfOpt)
 }
 
@@ -114,7 +114,6 @@ case class Product(name: String, version: Option[String] = None) extends ServerV
 case class UserAgent(serverVals: List[ServerVal] = List.empty)
   extends SIPHeader with UserAgentHeader {
 
-  val name = UserAgentHeader.NAME
   val headerName = UserAgentHeader.NAME
 
   def addProduct(product: Product): UserAgent = {

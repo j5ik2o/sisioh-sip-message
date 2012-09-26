@@ -1,12 +1,30 @@
 package org.sisioh.sip.message.header.impl
 
+/*
+ * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
 import org.sisioh.sip.message.header.CallIdHeader
-import org.sisioh.sip.util.{Decoder, Encoder, ParserBase}
+import org.sisioh.sip.util.{SIPDecoder, Decoder, Encoder, ParserBase}
 
 object CallIDDecoder extends CallIDDecoder
 
-class CallIDDecoder extends Decoder with CallIDParser {
-  def decode(source: String) = decodeTarget(source, Call_IDWithCrLfOpt)
+class CallIDDecoder extends SIPDecoder[CallID] with CallIDParser {
+
+  def decode(source: String): CallID = decodeTarget(source, Call_IDWithCrLfOpt)
+
 }
 
 trait CallIDParser extends ParserBase {
@@ -26,7 +44,18 @@ trait CallIDParser extends ParserBase {
 
 object CallID {
 
-  def decode(source: String) = CallIDDecoder.decode(source)
+  def decode(source: String): CallID = CallIDDecoder.decode(source)
+
+  def decodeFromJson(source: String): CallID = JsonDecoder.decode(source)
+
+  object JsonDecoder extends Decoder[CallID] {
+    def decode(source: String) = {
+      import net.liftweb.json._
+      val json = parse(source)
+      val JString(callId) = json \ "callId"
+      CallID(callId)
+    }
+  }
 
   object JsonEncoder extends Encoder[CallID] {
     def encode(model: CallID, builder: StringBuilder) = {
@@ -39,7 +68,6 @@ object CallID {
 }
 
 case class CallID(callId: String) extends SIPHeader with CallIdHeader {
-  val name = CallIdHeader.NAME
   val callIdentity = CallIdentifier.from(callId)
   val headerName = CallIdHeader.NAME
 

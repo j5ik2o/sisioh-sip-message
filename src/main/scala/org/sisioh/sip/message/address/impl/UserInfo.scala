@@ -17,12 +17,13 @@ package org.sisioh.sip.message.address.impl
  */
 
 import org.sisioh.sip.core.{GenericObject, Separators}
-import org.sisioh.sip.util.{Decoder, ParserBase, Encoder, Encodable}
+import org.sisioh.sip.util._
 import util.parsing.combinator.RegexParsers
+import scala.Some
 
 object UserInfoDecoder extends UserInfoDecoder
 
-class UserInfoDecoder extends Decoder with UserInfoParser {
+class UserInfoDecoder extends SIPDecoder[UserInfo] with UserInfoParser {
   def decode(source: String) = decodeTarget(source, userInfo)
 }
 

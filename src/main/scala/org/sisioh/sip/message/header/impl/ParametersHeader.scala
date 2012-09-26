@@ -6,11 +6,13 @@ import org.sisioh.sip.message.header.Parameters
 
 trait ParametersHeader extends Parameters with ParametersHeaderExt with SIPHeader {
 
+  type ParametersHeaderType <: ParametersHeader
+
   val duplicates: DuplicateNameValueList
 
   val parameters: NameValuePairList
 
-  protected def createParametersHeader(duplicates: DuplicateNameValueList, parameters: NameValuePairList): ParametersHeader
+  protected def createParametersHeader(duplicates: DuplicateNameValueList, parameters: NameValuePairList): ParametersHeaderType
 
   def getParameter(name: String, stripQuotes: Boolean) =
     parameters.getParameter(name, stripQuotes)
@@ -23,7 +25,10 @@ trait ParametersHeader extends Parameters with ParametersHeaderExt with SIPHeade
 
   def hasParameters = parameters.isEmpty == false
 
-  def removeParameter(name: String) =
+  def withParameter(name: String, value: Any): ParametersHeaderType =
+    createParametersHeader(duplicates, parameters.add(name, value))
+
+  def removeParameter(name: String): ParametersHeaderType =
     createParametersHeader(duplicates, parameters.remove(name))
 
 }

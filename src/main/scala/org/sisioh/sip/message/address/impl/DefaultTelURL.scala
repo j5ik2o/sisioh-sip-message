@@ -19,11 +19,11 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.TelURL
 import org.sisioh.sip.core.GenericObject
-import org.sisioh.sip.util.{Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
 
 object DefaultTelURLDecoder extends DefaultTelURLDecoder
 
-class DefaultTelURLDecoder extends Decoder with DefaultTelURLParser {
+class DefaultTelURLDecoder extends SIPDecoder[DefaultTelURL] with DefaultTelURLParser {
   def decode(source: String): DefaultTelURL = decodeTarget(source, defaultTelURL)
 }
 

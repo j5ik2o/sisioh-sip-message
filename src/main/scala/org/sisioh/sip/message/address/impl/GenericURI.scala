@@ -30,17 +30,17 @@ object DefaultGenericURIDecoder extends DefaultGenericURIDecoder
 /**
  * [[org.sisioh.sip.message.address.impl.GenericURI]]のための[[org.sisioh.sip.util.Decoder]]
  */
-class DefaultGenericURIDecoder extends Decoder with DefaultGenericURIParser {
+class DefaultGenericURIDecoder extends SIPDecoder[DefaultGenericURI] with DefaultGenericURIParser {
 
-  def decode(source: String): GenericURI = decodeTarget(source, genericURI)
+  def decode(source: String): DefaultGenericURI = decodeTarget(source, genericURI)
 
 }
 
 trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
 
-  lazy val genericURI: Parser[GenericURI] = absoluteURI
+  lazy val genericURI: Parser[DefaultGenericURI] = absoluteURI
 
-  lazy val absoluteURI: Parser[GenericURI] = scheme ~ ":" ~ (hierPart | opaquePart) ^^ {
+  lazy val absoluteURI: Parser[DefaultGenericURI] = scheme ~ ":" ~ (hierPart | opaquePart) ^^ {
     case scheme ~ colon ~ part =>
       DefaultGenericURI(scheme + colon + part)
   }

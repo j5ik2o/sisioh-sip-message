@@ -1,4 +1,4 @@
-package org.sisioh.sip.message.header.impl
+package org.sisioh.sip.message.impl
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -16,10 +16,6 @@ package org.sisioh.sip.message.header.impl
  * governing permissions and limitations under the License.
  */
 
-import org.sisioh.sip.message.address.impl.DefaultAddress
-
-trait AddressParametersHeader extends ParametersHeader {
-
-  val address: DefaultAddress
-
-}
+class SIPRequest[T] //extends SIPMessage[T]{
+//
+//}

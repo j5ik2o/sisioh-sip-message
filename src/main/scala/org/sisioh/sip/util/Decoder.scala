@@ -16,9 +16,17 @@ package org.sisioh.sip.util
  * governing permissions and limitations under the License.
  */
 
-trait Decoder extends ParserBase {
+trait Decoder[A] {
 
-  def decodeTarget[A](source: String, parser: Parser[A]): A = parseAll[A](parser, source) match {
+  def decode(source: String):A
+
+}
+
+
+
+trait SIPDecoder[A] extends Decoder[A] with ParserBase {
+
+  def decodeTarget[T](source: String, parser: Parser[T]): T = parseAll[T](parser, source) match {
     case Success(result, _) => result
     case Failure(msg, _) => throw new ParseException(Some(msg))
     case Error(msg, _) => throw new ParseException(Some(msg))

@@ -1,11 +1,11 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ExpiresHeader
-import org.sisioh.sip.util.{Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
 
 object ExpiresDecoder extends ExpiresDecoder
 
-class ExpiresDecoder extends Decoder with ExpiresParser {
+class ExpiresDecoder extends SIPDecoder[Expires] with ExpiresParser {
   def decode(source: String) = decodeTarget(source, expireWithCrLfOpt)
 }
 
@@ -36,8 +36,6 @@ object Expires {
 
 case class Expires(expires: Int) extends SIPHeader with ExpiresHeader {
   require(expires > 0)
-
-  val name = ExpiresHeader.NAME
 
   val headerName = ExpiresHeader.NAME
 

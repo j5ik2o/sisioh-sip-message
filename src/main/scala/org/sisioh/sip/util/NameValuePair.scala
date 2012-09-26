@@ -34,7 +34,7 @@ class NameValuePairDecoder
 (separator: String,
  quotes: String,
  isQuotedString: Boolean)
-  extends Decoder with NameValuePairParser {
+  extends SIPDecoder[NameValuePair] with NameValuePairParser {
 
   def decode(source: String): NameValuePair = decodeTarget(source, nameValuePair(separator, quotes, isQuotedString))
 }
@@ -60,7 +60,7 @@ trait NameValuePairParser extends RegexParsers {
 
 object NameValuePair {
 
-  implicit def stringToOption(value: String): Option[String] = Some(value)
+  //implicit def stringToOption(value: String): Option[String] = Some(value)
 
   //  def apply
   //  (name: String, value: String,

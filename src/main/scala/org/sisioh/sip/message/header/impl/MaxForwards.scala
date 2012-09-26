@@ -1,11 +1,11 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.MaxForwardsHeader
-import org.sisioh.sip.util.{Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
 
 object MaxForwardsDecoder extends MaxForwardsDecoder
 
-class MaxForwardsDecoder extends Decoder with MaxForwardsParser {
+class MaxForwardsDecoder extends SIPDecoder[MaxForwards] with MaxForwardsParser {
   def decode(source: String) = decodeTarget(source, Max_ForwardsWithCrLfOpt)
 }
 
@@ -33,8 +33,6 @@ object MaxForwards {
 }
 
 case class MaxForwards(maxForwards: Int) extends SIPHeader with MaxForwardsHeader {
-
-  val name = MaxForwardsHeader.NAME
 
   val headerName = MaxForwardsHeader.NAME
 

@@ -23,7 +23,7 @@ import scala.Some
 
 object TelephoneNumberDecoder extends TelephoneNumberDecoder
 
-class TelephoneNumberDecoder extends Decoder with TelephoneNumberParser {
+class TelephoneNumberDecoder extends SIPDecoder[TelephoneNumber] with TelephoneNumberParser {
   def decode(source: String): TelephoneNumber = decodeTarget(source, telephoneNumber)
 }
 

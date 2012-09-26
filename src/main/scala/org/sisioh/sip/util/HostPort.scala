@@ -23,7 +23,7 @@ object HostPortDecoder {
   def apply() = new HostPortDecoder()
 }
 
-class HostPortDecoder extends Decoder with HostPortParser {
+class HostPortDecoder extends SIPDecoder[HostPort] with HostPortParser {
 
   def decode(source: String): HostPort = decodeTarget(source, hostPort)
 }
