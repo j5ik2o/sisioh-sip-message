@@ -14,7 +14,9 @@ class ServerSpec extends Specification {
     }
     "エンコード結果を取得できること" in {
       target.encode() must_== """Server: PRODUCT1""" + Separators.NEWLINE
-      target.encodeByJson() must_== """["PRODUCT1"]"""
+      target.encodeByJson() must_== """{"headerName":"Server","serverVals":["PRODUCT1"]}"""
+      target.addProduct(Product("PRODUCT2")).encode() must_== """Server: PRODUCT2 PRODUCT1""" + Separators.NEWLINE
+      target.addProduct(Product("PRODUCT2")).encodeByJson() must_== """{"headerName":"Server","serverVals":["PRODUCT2","PRODUCT1"]}"""
     }
   }
 }

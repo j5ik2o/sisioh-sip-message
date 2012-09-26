@@ -23,7 +23,8 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 
   def encodeByJson(builder: StringBuilder) = {
     import net.liftweb.json._
-    val json = JObject(JField("headerNamne", JString(headerName)) ::
+    val json = JObject(
+      JField("headerNamne", JString(headerName)) ::
       JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil)
     builder.append(compact(render(json)))
   }

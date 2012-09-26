@@ -58,7 +58,8 @@ object CSeq {
     def encode(model: CSeq, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(
-        JField("seq", JInt(BigInt(model.sequenceNumber))) ::
+        JField("headerName", JString(model.headerName)) ::
+          JField("seq", JInt(BigInt(model.sequenceNumber))) ::
           JField("method", JString(model.method)) :: Nil
       )
       builder.append(compact(render(json)))

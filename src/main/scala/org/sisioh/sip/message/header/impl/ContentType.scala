@@ -46,7 +46,9 @@ object ContentType {
       import net.liftweb.json._
       import net.liftweb.json.JsonDSL._
       implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
-      val json = ("contentType" -> model.contentType) ~
+      val json =
+        ("headerName" -> model.headerName) ~
+        ("contentType" -> model.contentType) ~
         ("contentSubType" -> model.contentSubType) ~
         ("parameters" -> parse(model.parameters.encodeByJson()))
       builder.append(compact(render(json)))

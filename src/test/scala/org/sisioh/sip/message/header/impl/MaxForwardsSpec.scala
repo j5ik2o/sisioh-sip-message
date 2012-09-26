@@ -14,7 +14,7 @@ class MaxForwardsSpec extends Specification {
     }
     "エンコード結果を取得できること" in {
       target.encode() must_== """Max-Forwards: 1""" + Separators.NEWLINE
-      target.encodeByJson() must_== """{"maxForwards":1}"""
+      target.encodeByJson() must_== """{"headerName":"Max-Forwards","maxForwards":1}"""
     }
   }
 }

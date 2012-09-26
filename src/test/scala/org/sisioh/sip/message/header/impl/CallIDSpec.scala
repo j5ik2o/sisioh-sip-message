@@ -15,6 +15,7 @@ class CallIDSpec extends Specification {
     }
     "エンコード結果が正しいこと" in {
       CallID(callId).encode() must_== "Call-ID: test@testhost" + Separators.NEWLINE
+      CallID(callId).encodeByJson() must_== """{"headerName":"Call-ID","callId":"test@testhost"}"""
     }
   }
 }

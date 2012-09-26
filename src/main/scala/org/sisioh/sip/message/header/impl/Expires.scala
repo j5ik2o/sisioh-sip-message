@@ -26,6 +26,7 @@ object Expires {
     def encode(model: Expires, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(
+        JField("headerName", JString(model.headerName)) ::
         JField("expires", JInt(BigInt(model.expires))) :: Nil
       )
       builder.append(compact(render(json)))

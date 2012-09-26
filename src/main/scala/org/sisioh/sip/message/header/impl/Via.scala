@@ -82,12 +82,13 @@ object Via {
     def encode(model: Via, builder: StringBuilder) = {
       import net.liftweb.json._
       import net.liftweb.json.JsonDSL._
-      val json = ("sentBy" -> parse(model.sentBy.encodeByJson())) ~
+      val json =
+        ("headerName" -> model.headerName) ~
+        ("sentBy" -> parse(model.sentBy.encodeByJson())) ~
         ("sentProtocol" -> parse(model.sentProtocol.encodeByJson())) ~
         ("parameters" -> parse(model.parameters.encodeByJson()))
       builder.append(compact(render(json)))
     }
-
   }
 
 }

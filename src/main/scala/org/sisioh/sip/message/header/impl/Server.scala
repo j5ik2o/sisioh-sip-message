@@ -26,10 +26,14 @@ object Server {
   object JsonEncoder extends Encoder[Server] {
     def encode(model: Server, builder: StringBuilder) = {
       import net.liftweb.json._
+
       val list = model.serverVals.map {
         e => JString(e.toString)
       }.toList
-      val json = JArray(list)
+      val json = JObject(
+        JField("headerName", JString(model.headerName)) ::
+          JField("serverVals", JArray(list)) :: Nil
+      )
       builder.append(compact(render(json)))
     }
   }

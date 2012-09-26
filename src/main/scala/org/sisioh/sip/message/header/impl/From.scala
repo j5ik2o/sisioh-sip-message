@@ -39,8 +39,11 @@ object From {
   object JsonEncoder extends Encoder[From] {
     def encode(model: From, builder: StringBuilder) = {
       import net.liftweb.json._
-      val json = JObject(JField("address", parse(model.address.encodeByJson())) ::
-        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil)
+      val json = JObject(
+        JField("headerName", JString(model.headerName)) ::
+        JField("address", parse(model.address.encodeByJson())) ::
+        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
+      )
       builder.append(compact(render(json)))
     }
   }

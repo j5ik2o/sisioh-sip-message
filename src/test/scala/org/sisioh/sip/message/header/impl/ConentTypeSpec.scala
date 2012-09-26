@@ -14,7 +14,7 @@ class ConentTypeSpec extends Specification {
     }
     "エンコード結果が取得できる" in {
       target.encode() must_== "Content-Type: application/sdp" + Separators.NEWLINE
-      target.encodeByJson() must_== """{"contentType":"application","contentSubType":"sdp","parameters":{}}"""
+      target.encodeByJson() must_== """{"headerName":"Content-Type","contentType":"application","contentSubType":"sdp","parameters":{}}"""
     }
   }
 }

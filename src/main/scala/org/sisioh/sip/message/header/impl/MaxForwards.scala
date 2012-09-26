@@ -12,7 +12,7 @@ class MaxForwardsDecoder extends SIPDecoder[MaxForwards] with MaxForwardsParser 
 trait MaxForwardsParser extends ParserBase {
   lazy val Max_ForwardsWithCrLfOpt = Max_Forwards <~ opt(CRLF)
 
-  lazy val Max_Forwards: Parser[MaxForwards]  = "Max-Forwards" ~> HCOLON ~> rep1(DIGIT) ^^ {
+  lazy val Max_Forwards: Parser[MaxForwards] = "Max-Forwards" ~> HCOLON ~> rep1(DIGIT) ^^ {
     e => MaxForwards(e.mkString.toInt)
   }
 }
@@ -25,7 +25,8 @@ object MaxForwards {
     def encode(model: MaxForwards, builder: StringBuilder) = {
       import net.liftweb.json._
       import net.liftweb.json.JsonDSL._
-      val json = ("maxForwards" -> model.maxForwards)
+      val json = ("headerName" -> model.headerName) ~
+        ("maxForwards" -> model.maxForwards)
       builder.append(compact(render(json)))
     }
   }
@@ -36,7 +37,7 @@ case class MaxForwards(maxForwards: Int) extends SIPHeader with MaxForwardsHeade
 
   val headerName = MaxForwardsHeader.NAME
 
-  def decrementMaxForwards = MaxForwards(maxForwards -1)
+  def decrementMaxForwards = MaxForwards(maxForwards - 1)
 
   def encodeByJson(builder: StringBuilder) = encode(builder, MaxForwards.JsonEncoder)
 

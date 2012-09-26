@@ -60,7 +60,10 @@ object CallID {
   object JsonEncoder extends Encoder[CallID] {
     def encode(model: CallID, builder: StringBuilder) = {
       import net.liftweb.json._
-      val json = JObject(JField("callId", JString(model.callId)) :: Nil)
+      val json = JObject(
+        JField("headerName", JString(model.headerName)) ::
+        JField("callId", JString(model.callId)) :: Nil
+      )
       builder.append(compact(render(json)))
     }
   }
