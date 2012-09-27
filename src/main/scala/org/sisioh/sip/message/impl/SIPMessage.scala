@@ -23,6 +23,7 @@ import java.net.InetAddress
 import org.sisioh.sip.util.Utils
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
+import com.sun.xml.internal.messaging.saaj.soap.MessageFactoryImpl
 
 abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
@@ -68,7 +69,7 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
     getThis
   }
 
-  def withCallId(callId: Option[CallID]) = {
+  def withCallId(callId: Option[CallId]) = {
     addConfigurator {
       _.callId = callId
     }
@@ -160,35 +161,35 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
   }
 
 
-  var unrecognizedHeaders: List[Header] = _
-  var headers: List[SIPHeader] = _
+  var unrecognizedHeaders: List[Header] = List.empty
+  var headers: List[SIPHeader] = List.empty
   var headerTable: Map[String, SIPHeader] = Map.empty
 
-  var from: Option[From] = _
-  var to: Option[To] = _
-  var cSeq: Option[CSeq] = _
-  var callId: Option[CallID] = _
-  var contentLength: Option[ContentLength] = _
-  var maxForwards: Option[MaxForwards] = _
-  var size: Int = _
+  var from: Option[From] = None
+  var to: Option[To] = None
+  var cSeq: Option[CSeq] = None
+  var callId: Option[CallId] = None
+  var contentLength: Option[ContentLength] = None
+  var maxForwards: Option[MaxForwards] = None
+  var size: Int = 0
 
-  var messageContent: Option[String] = _
-  var messageContentBytes: Option[Array[Byte]] = _
-  var messageContentObject: Option[Any] = _
+  var messageContent: Option[String] = None
+  var messageContentBytes: Option[Array[Byte]] = None
+  var messageContentObject: Option[Any] = None
 
-  var applicationData: Any = _
-  var forkId: String = _
+  var applicationData: Any = null
+  var forkId: String = ""
 
-  var remoteAddress: Option[InetAddress] = _
-  var remotePort: Option[Int] = _
-  var localAddress: Option[InetAddress] = _
-  var localPort: Option[Int] = _
+  var remoteAddress: Option[InetAddress] = None
+  var remotePort: Option[Int] = None
+  var localAddress: Option[InetAddress] = None
+  var localPort: Option[Int] = None
 
 
 }
 
 
-trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
+trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   val headers: List[SIPHeader] = List.empty
   val headerTable: Map[String, SIPHeader] = Map.empty
@@ -196,7 +197,7 @@ trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
   val from: Option[From]
   val to: Option[To]
   val cSeq: Option[CSeq]
-  val callId: Option[CallID]
+  val callId: Option[CallId]
   val maxForwards: Option[MaxForwards]
   val contentLength: Option[ContentLength]
 
@@ -371,7 +372,7 @@ trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
                 builder.withCSeq(None)
               case h: MaxForwards =>
                 builder.withMaxForwards(None)
-              case h: CallID =>
+              case h: CallId =>
                 builder.withCallId(None)
               case h: ContentLength =>
                 builder.withContentLength(None)
@@ -410,20 +411,48 @@ trait SIPMessage[T] extends MessageObject with Message[T] with MessageExt {
 
   def removeLast(headerName: String) = null
 
+  lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 
-  val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
+  lazy val contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
 
-  val contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
+  lazy val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
 
-  val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
+  lazy val contentEncoding = getHeaderLowerCase(CONTENT_ENCODING_LOWERCASE).map(_.asInstanceOf[ContentEncodingHeader])
 
-  val contentEncoding = getHeaderLowerCase(CONTENT_ENCODING_LOWERCASE).map(_.asInstanceOf[ContentEncodingHeader])
+  lazy val EXPIRES_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME)
 
-  def getRawContent = null
+  lazy val expires = getHeaderLowerCase(EXPIRES_LOWERCASE).map(_.asInstanceOf[ExpiresHeader])
 
-  def getContent = null
+  private lazy val contentEncodingCharset = DefaultMessageFactory.defaultContentEncodingCharset
 
-  def getExpires = null
+  protected final def getCharset = {
+    contentType.flatMap {
+      ct => ct.charset
+    }.getOrElse(contentEncodingCharset)
+  }
+
+  def getRawContent = {
+    if (messageContentObject.isDefined) {
+      messageContentObject.map(_.toString.getBytes(getCharset))
+    } else if (messageContent.isDefined) {
+      messageContent.map(_.getBytes(getCharset))
+    } else {
+      None
+    }
+  }
+
+  def getContent = {
+    if (messageContentObject.isDefined){
+      messageContentObject
+    } else if(messageContent.isDefined) {
+      messageContent
+    } else if(messageContentBytes.isDefined){
+      messageContentBytes
+    }else {
+      None
+    }
+  }
+
 
   val sipVersion = SIPConstants.SIP_VERSION_STRING
 }

@@ -64,6 +64,8 @@ case class ContentType
 
   type ParametersHeaderType = ContentType
 
+  val charset = getParameter("charset")
+
   val mediaRange = MediaRange(contentType, contentSubType)
   val headerName = ContentTypeHeader.NAME
   val duplicates = DuplicateNameValueList()

@@ -525,7 +525,7 @@ object StatusCode extends Enumeration {
 
 }
 
-trait Response[T] extends Message[T] {
+trait Response extends Message {
 
   val statusCode: StatusCode.Value
 

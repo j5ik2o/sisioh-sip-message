@@ -18,19 +18,19 @@ package org.sisioh.sip.message
 
 import header._
 
-trait Message[T] {
+trait Message {
 
-  def addHeader(header: Header): Message[T]
+  def addHeader(header: Header): Message
 
-  def addLast(header: Header): Message[T]
+  def addLast(header: Header): Message
 
-  def addFirst(header: Header): Message[T]
+  def addFirst(header: Header): Message
 
-  def removeFirst(headerName: String): Message[T]
+  def removeFirst(headerName: String): Message
 
-  def removeLast(headerName: String): Message[T]
+  def removeLast(headerName: String): Message
 
-  def removeHeader(headerName: String): Message[T]
+  def removeHeader(headerName: String): Message
 
   def getHeaderNames: Iterator[String]
 
@@ -38,7 +38,7 @@ trait Message[T] {
 
   def getHeader(headerName: String): Option[Header]
 
-  def unrecognizedHeaders: List[Header]
+  val unrecognizedHeaders: List[Header]
 
   val contentLength: Option[ContentLengthHeader]
 
@@ -48,13 +48,13 @@ trait Message[T] {
 
   val contentType: Option[ContentTypeHeader]
 
-  def getRawContent: Array[Byte]
+  val expires: Option[ExpiresHeader]
 
-  def getContent: Option[T]
+  def getRawContent: Option[Array[Byte]]
 
-  def removeContent: Message[T]
+  def getContent: Option[Any]
 
-  def getExpires: Option[ExpiresHeader]
+  def removeContent: Message
 
   val sipVersion: String
 }

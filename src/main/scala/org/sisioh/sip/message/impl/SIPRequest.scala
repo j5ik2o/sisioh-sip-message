@@ -53,7 +53,7 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 class SIPRequest
 (val to: Option[To],
  val from: Option[From],
- val callId: Option[CallID],
+ val callId: Option[CallId],
  val cSeq: Option[CSeq],
  val maxForwards: Option[MaxForwards],
  val contentLength: Option[ContentLength],

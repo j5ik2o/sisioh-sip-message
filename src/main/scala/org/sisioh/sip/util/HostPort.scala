@@ -62,9 +62,6 @@ object HostPort {
       HostPort(host, port)
     }
 
-    def decode(source: String) =
-      decode(parse(source))
-
   }
 
   /**

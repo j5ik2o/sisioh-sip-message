@@ -19,6 +19,7 @@ import json.JsonAST
  * governing permissions and limitations under the License.
  */
 
+
 trait Decoder[A] {
 
   def decode(source: String):A
@@ -26,6 +27,9 @@ trait Decoder[A] {
 }
 
 trait JsonDecoder[A] extends Decoder[A] {
+  import net.liftweb.json._
+
+  def decode(source: String) = decode(parse(source))
 
   def decode(json : JsonAST.JValue): A
 

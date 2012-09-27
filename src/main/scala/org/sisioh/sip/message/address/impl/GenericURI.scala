@@ -21,6 +21,8 @@ import org.sisioh.sip.message.address.URI
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.GenericObject
 import scala.Some
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json
 
 /**
  * [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]のコンパニオンオブジェクト。
@@ -104,6 +106,31 @@ object DefaultGenericURI {
 
   def decode(source: String) = DefaultGenericURIDecoder.decode(source)
 
+  import net.liftweb.json._
+
+  object JsonDecoder extends JsonDecoder[GenericURI] {
+
+    def decode(json: JsonAST.JValue) = {
+      json \ "uriString" match {
+        case JString("*") =>
+          WildCardURI
+        case JString(uriString) =>
+          DefaultGenericURI(uriString)
+      }
+    }
+
+  }
+
+  object JsonEncoder extends JsonEncoder[GenericURI] {
+
+    def encode(model: GenericURI, builder: StringBuilder) =
+      builder.append(compact(render(encode(model))))
+
+    def encode(model: GenericURI) =
+      JObject(JField("uriString", JString(model.uriString)) :: Nil)
+
+  }
+
 }
 
 trait GenericURI extends URI with GenericObject {
@@ -122,13 +149,6 @@ trait GenericURI extends URI with GenericObject {
 
   override def toString = encode()
 
-  object JsonEncoder extends Encoder[GenericURI] {
-    def encode(model: GenericURI, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(JField("uriString", JString(model.uriString)) :: Nil)
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -142,7 +162,7 @@ class WildCardURI extends GenericURI {
   val scheme = ""
   val isSipURI = false
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, JsonEncoder)
+  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultGenericURI.JsonEncoder)
 }
 
 class DefaultGenericURI
@@ -156,5 +176,5 @@ class DefaultGenericURI
 
   val isSipURI = isInstanceOf[SipUri]
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, JsonEncoder)
+  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultGenericURI.JsonEncoder)
 }

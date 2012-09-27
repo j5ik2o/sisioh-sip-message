@@ -21,19 +21,19 @@ import org.sisioh.sip.util.{SIPDecoder, Decoder, Encoder, ParserBase}
 
 object CallIDDecoder extends CallIDDecoder
 
-class CallIDDecoder extends SIPDecoder[CallID] with CallIDParser {
+class CallIDDecoder extends SIPDecoder[CallId] with CallIDParser {
 
-  def decode(source: String): CallID = decodeTarget(source, Call_IDWithCrLfOpt)
+  def decode(source: String): CallId = decodeTarget(source, Call_IDWithCrLfOpt)
 
 }
 
 trait CallIDParser extends ParserBase {
 
-  lazy val Call_IDWithCrLfOpt: Parser[CallID] = Call_ID <~ opt(CRLF)
+  lazy val Call_IDWithCrLfOpt: Parser[CallId] = Call_ID <~ opt(CRLF)
 
-  lazy val Call_ID: Parser[CallID] = ("Call-ID" | "i") ~> (HCOLON ~> callid) ^^ {
+  lazy val Call_ID: Parser[CallId] = ("Call-ID" | "i") ~> (HCOLON ~> callid) ^^ {
     case callid =>
-      CallID(callid)
+      CallId(callid)
   }
 
   lazy val callid: Parser[String] = repsep(word, "@") ^^ {
@@ -42,23 +42,23 @@ trait CallIDParser extends ParserBase {
 
 }
 
-object CallID {
+object CallId {
 
-  def decode(source: String): CallID = CallIDDecoder.decode(source)
+  def decode(source: String): CallId = CallIDDecoder.decode(source)
 
-  def decodeFromJson(source: String): CallID = JsonDecoder.decode(source)
+  def decodeFromJson(source: String): CallId = JsonDecoder.decode(source)
 
-  object JsonDecoder extends Decoder[CallID] {
+  object JsonDecoder extends Decoder[CallId] {
     def decode(source: String) = {
       import net.liftweb.json._
       val json = parse(source)
       val JString(callId) = json \ "callId"
-      CallID(callId)
+      CallId(callId)
     }
   }
 
-  object JsonEncoder extends Encoder[CallID] {
-    def encode(model: CallID, builder: StringBuilder) = {
+  object JsonEncoder extends Encoder[CallId] {
+    def encode(model: CallId, builder: StringBuilder) = {
       import net.liftweb.json._
       val json = JObject(
         JField("headerName", JString(model.headerName)) ::
@@ -70,11 +70,11 @@ object CallID {
 
 }
 
-case class CallID(callId: String) extends SIPHeader with CallIdHeader {
+case class CallId(callId: String) extends SIPHeader with CallIdHeader {
   val callIdentity = CallIdentifier.from(callId)
   val headerName = CallIdHeader.NAME
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, CallID.JsonEncoder)
+  def encodeByJson(builder: StringBuilder) = encode(builder, CallId.JsonEncoder)
 
   def encodeBody(builder: StringBuilder) =
     callIdentity.encode(builder)

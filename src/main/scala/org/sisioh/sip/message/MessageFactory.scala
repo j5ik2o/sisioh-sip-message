@@ -21,7 +21,7 @@ import header._
 
 trait MessageFactory {
 
-  def createRequest[A]
+  def createRequest
   (requestURI: URI,
    method: String,
    callId: CallIdHeader,
@@ -29,7 +29,7 @@ trait MessageFactory {
    from: FromHeader,
    to: ToHeader,
    contentType: ContentTypeHeader,
-   content: A): Request[A]
+   content: Any): Request
 
   def createRequest
   (requestURI: URI,
@@ -39,25 +39,16 @@ trait MessageFactory {
    from: FromHeader,
    to: ToHeader,
    contentType: ContentTypeHeader,
-   content: Array[Byte]): Request[Array[Byte]]
+   content: Array[Byte]): Request
 
-  def createRequest[T]
+  def createRequest
   (requestURI: URI,
    method: String,
    callId: CallIdHeader,
    cseq: CSeqHeader,
    from: FromHeader,
-   to: ToHeader): Request[T]
+   to: ToHeader): Request
 
-
-  def createResponse[A]
-  (statusCode: StatusCode.Value,
-   callId: CallIdHeader,
-   cseq: CSeqHeader,
-   from: FromHeader,
-   to: ToHeader,
-   contentType: ContentTypeHeader,
-   content: A): Response[A]
 
   def createResponse
   (statusCode: StatusCode.Value,
@@ -66,34 +57,43 @@ trait MessageFactory {
    from: FromHeader,
    to: ToHeader,
    contentType: ContentTypeHeader,
-   content: Array[Byte]): Response[Array[Byte]]
+   content: Any): Response
 
-  def createResponse[A]
+  def createResponse
   (statusCode: StatusCode.Value,
    callId: CallIdHeader,
    cseq: CSeqHeader,
    from: FromHeader,
-   to: ToHeader): Response[A]
-
-  def createResponse[A, B]
-  (statusCode: StatusCode.Value,
-   request: Request[A],
+   to: ToHeader,
    contentType: ContentTypeHeader,
-   content: B): Response[B]
+   content: Array[Byte]): Response
 
-  def createResponse[A]
+  def createResponse
   (statusCode: StatusCode.Value,
-   request: Request[A],
+   callId: CallIdHeader,
+   cseq: CSeqHeader,
+   from: FromHeader,
+   to: ToHeader): Response
+
+  def createResponse
+  (statusCode: StatusCode.Value,
+   request: Request,
    contentType: ContentTypeHeader,
-   content: Array[Byte]): Response[Array[Byte]]
+   content: Any): Response
 
-  def createResponse[A, B]
+  def createResponse
   (statusCode: StatusCode.Value,
-   request: Request[A]): Response[B]
+   request: Request,
+   contentType: ContentTypeHeader,
+   content: Array[Byte]): Response
 
-  def createRequest[A](requestString: String): Request[A]
+  def createResponse
+  (statusCode: StatusCode.Value,
+   request: Request): Response
 
-  def createResponse[A](responseString: String): Response[A]
+  def createRequest(requestString: String): Request
+
+  def createResponse(responseString: String): Response
 
 
 }
