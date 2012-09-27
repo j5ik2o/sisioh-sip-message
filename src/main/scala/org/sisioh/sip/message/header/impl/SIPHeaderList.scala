@@ -25,7 +25,7 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
     import net.liftweb.json._
     val json = JObject(
       JField("headerNamne", JString(headerName)) ::
-      JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil)
+        JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil)
     builder.append(compact(render(json)))
   }
 
@@ -53,6 +53,10 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
         }
     }
 
+  def isEmpty = headers.isEmpty
+
+  def iterator = headers.iterator
+
   def toList = headers
 
   protected def createInstance(headers: List[HDR]): A
@@ -67,11 +71,15 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 
   def remove(sipHeader: HDR): A = createInstance(headers.filterNot(_ == sipHeader))
 
-  def concatenate(other: SIPHeaderList[A, HDR], top: Boolean) = {
+  def removeHead: A = createInstance(headers.drop(1))
+
+  def removeLast: A = createInstance(headers.dropRight(1))
+
+  def concatenate(other: SIPHeaderList[_, _], top: Boolean) = {
     if (top == false) {
-      createInstance(headers ++ other.headers)
+      createInstance(headers ++ other.headers.asInstanceOf[List[HDR]])
     } else {
-      createInstance(other.headers ++ headers)
+      createInstance(other.headers.asInstanceOf[List[HDR]] ++ headers)
     }
   }
 

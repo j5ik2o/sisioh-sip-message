@@ -17,7 +17,7 @@ class HostSpec extends Specification {
       host.resolvedIpAddress must_== "127.0.0.1"
       host.toString must_== "localhost"
       host.encode() must_== "localhost"
-      host.encodeByJson() must_== """{"hostNameOrIpAddress":"localhost","addressTypeParam":0}"""
+      host.encodeByJson() must_== """{"hostNameOrIpAddress":"localhost","addressType":0}"""
     }
   }
 
@@ -33,7 +33,7 @@ class HostSpec extends Specification {
       host.resolvedIpAddress must_== "127.0.0.1"
       host.toString must_== "127.0.0.1"
       host.encode() must_== "127.0.0.1"
-      host.encodeByJson() must_== """{"hostNameOrIpAddress":"127.0.0.1","addressTypeParam":1}"""
+      host.encodeByJson() must_== """{"hostNameOrIpAddress":"127.0.0.1","addressType":1}"""
     }
   }
 

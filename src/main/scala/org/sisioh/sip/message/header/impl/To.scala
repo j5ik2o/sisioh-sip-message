@@ -16,7 +16,7 @@ package org.sisioh.sip.message.header.impl
  * governing permissions and limitations under the License.
  */
 
-import org.sisioh.sip.message.header.ToHeader
+import org.sisioh.sip.message.header.{ParameterNames, ToHeader}
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl._
 import org.sisioh.sip.core.Separators
@@ -92,9 +92,11 @@ class To
 
   val headerName = ToHeader.NAME
 
-  val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
+  val parameters = tag.map(t => parametersParam.add(ParameterNames.TAG, t)).getOrElse(parametersParam)
 
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
+
+  def hasTag: Boolean = hasParameter(ParameterNames.TAG)
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
     new To(address, tag, _parameters)

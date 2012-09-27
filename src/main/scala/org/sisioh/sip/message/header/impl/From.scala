@@ -1,6 +1,6 @@
 package org.sisioh.sip.message.header.impl
 
-import org.sisioh.sip.message.header.FromHeader
+import org.sisioh.sip.message.header.{ParameterNames, FromHeader}
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.{DefaultAddressParser, AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
@@ -67,9 +67,11 @@ class From
 
   val headerName = FromHeader.NAME
 
-  val parameters = tag.map(t => parametersParam.add("tag", t)).getOrElse(parametersParam)
+  val parameters = tag.map(t => parametersParam.add(ParameterNames.TAG, t)).getOrElse(parametersParam)
 
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
+
+  def hasTag: Boolean = hasParameter(ParameterNames.TAG)
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
     new From(address, tag, _parameters)

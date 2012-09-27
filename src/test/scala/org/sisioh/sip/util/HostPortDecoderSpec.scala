@@ -8,7 +8,7 @@ class HostPortDecoderSpec extends Specification {
     val host = HostPort(Host("www.dwango.co.jp"), None)
     val encode = host.encode()
     println("(%s)".format(encode))
-    val h = HostPortDecoder().decode(encode)
+    val h = HostPortDecoder.decode(encode)
     "可逆的にデコードできること" in {
       host must_== h
     }

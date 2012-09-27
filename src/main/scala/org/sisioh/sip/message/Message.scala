@@ -38,23 +38,23 @@ trait Message[T] {
 
   def getHeader(headerName: String): Option[Header]
 
-  def getUnrecognizedHeaders: Iterator[Header]
+  def unrecognizedHeaders: List[Header]
 
-  def getContentLength: ContentLengthHeader
+  val contentLength: Option[ContentLengthHeader]
 
-  def getContentLanguage: ContentLanguageHeader
+  val contentLanguage: Option[ContentLanguageHeader]
 
-  def getContentEncoding: ContentEncodingHeader
+  val contentEncoding: Option[ContentEncodingHeader]
 
-  def getContentType: ContentTypeHeader
+  val contentType: Option[ContentTypeHeader]
 
   def getRawContent: Array[Byte]
 
   def getContent: Option[T]
 
-  def remoteContent: Message[T]
+  def removeContent: Message[T]
 
-  def getExpires: ExpiresHeader
+  def getExpires: Option[ExpiresHeader]
 
-  def getSIPVersion: String
+  val sipVersion: String
 }

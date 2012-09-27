@@ -2,7 +2,7 @@ package org.sisioh.sip.util;
 
 import org.sisioh.sip.message.header.impl.SIPHeader;
 import org.sisioh.sip.message.header.impl.SIPHeaderList;
-import org.sisioh.sip.message.header.impl.SIPHeaderListMapping;
+import org.sisioh.sip.message.header.impl.SIPHeaderListMapping$;
 import scala.Option;
 import scala.Some;
 import scala.collection.immutable.List;
@@ -15,7 +15,7 @@ public class SIPHeaderListMappingUtil {
     public static <T extends SIPHeaderList<T, HDR>, HDR extends SIPHeader> Option<SIPHeaderList<T, HDR>> getList(SIPHeader sipHeader) {
         try {
             Class<?> headerClass = sipHeader.getClass();
-            Option<Class<?>> listClass = SIPHeaderListMapping.getListClass(headerClass);
+            Option<Class<?>> listClass = SIPHeaderListMapping$.MODULE$.getListClass(headerClass);
             if (listClass.isDefined()) {
                 @SuppressWarnings("unchecked")
                 SIPHeaderList<T, HDR> shl = (SIPHeaderList<T, HDR>) listClass.get().getConstructor(List.class).newInstance(List$.MODULE$.empty());

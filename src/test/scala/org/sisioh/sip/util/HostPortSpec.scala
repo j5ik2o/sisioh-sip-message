@@ -6,7 +6,7 @@ class HostPortSpec extends Specification {
   "localhost:8080" should {
     val host = Host("localhost")
     val port = Some(8080)
-    val hostPort = HostPort(host,port)
+    val hostPort = HostPort(host, port)
     "localhostが取得できる" in {
       hostPort.host must_== host
     }
@@ -14,8 +14,11 @@ class HostPortSpec extends Specification {
       hostPort.port must_== port
     }
     "エンコード結果が取得できる" in {
-      hostPort.encode() must_== """localhost:8080"""
-      hostPort.encodeByJson() must_== """{"host":"localhost","port":8080}"""
+      HostPort.decodeFromJson(HostPort(host, None).encodeByJson())
+      HostPort(host, port).encode() must_== """localhost:8080"""
+      HostPort(host, port).encodeByJson() must_== """{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080}"""
+      HostPort(host, None).encodeByJson() must_== """{"host":{"hostNameOrIpAddress":"localhost","addressType":0}}"""
+
     }
   }
 }

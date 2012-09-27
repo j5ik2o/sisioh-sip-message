@@ -78,6 +78,8 @@ object UserInfo {
   def unapply(userInfo: UserInfo): Option[(String, Option[String], Option[UserType.Value])] =
     Some(userInfo.name, userInfo.password, Some(userInfo.userType))
 
+  //object JsonDecoder extends
+
   object JsonEncoder extends Encoder[UserInfo] {
 
     def encode(model: UserInfo, builder: StringBuilder): StringBuilder = {

@@ -20,6 +20,11 @@ import scala.Tuple2
 import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
 import javax.swing.plaf.OptionPaneUI
+import net.liftweb.json._
+import scala.Some
+import scala.Tuple2
+import net.liftweb.json
+import json.JsonAST.JValue
 
 object NameValuePairDecoder {
 
@@ -84,24 +89,50 @@ object NameValuePair {
   def unapply(nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
     Some(nameValuePair.name, nameValuePair.value)
 
-  object JsonEncoder extends Encoder[NameValuePair] {
-    def encode(model: NameValuePair, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(model.value.map {
+//  object JsonDecoder extends JsonDecoder[NameValuePair] {
+//
+//    def decode(json: json.JValue) = {
+//      val JString(name) = json \ "name"
+//      val JString(valueType) = json \ "type"
+//      val value = json \ "value"
+//      (valueType, value) match {
+//        case ("boolean", JBool(b)) => b
+//        case ("string", JString(s)) => s
+//        case ("generic", value) =>
+//        case ("generic_list", value) =>
+//
+//      }
+//    }
+//
+//    def decode(source: String) =
+//      decode(parse(source))
+//
+//  }
+
+  object JsonEncoder extends JsonEncoder[NameValuePair] {
+
+    def encode(model: NameValuePair) = {
+      JObject(model.value.map {
         e =>
-          JField("name", JString(model.name.get)) :: JField("value", e match {
-            case b: Boolean => JBool(b)
-            case s: String => JString(s)
+          val (value, valueType) = e match {
+            case b: Boolean => (JBool(b), "boolean")
+            case s: String => (JString(s), "string")
             case v: GenericObject =>
-              parse(v.encodeByJson())
+              (parse(v.encodeByJson()), "generic")
             case v: GenericObjectList =>
-              parse(v.encodeByJson())
-          }) :: Nil
+              (parse(v.encodeByJson()), "generic_list")
+          }
+          JField("name", JString(model.name.get)) ::
+            JField("type", JString(valueType)) ::
+            JField("value", value) :: Nil
       }.getOrElse {
         JField("name", JString(model.name.get)) :: Nil
       })
-      builder.append(compact(render(json)))
     }
+
+    def encode(model: NameValuePair, builder: StringBuilder) =
+      builder.append(compact(render(encode(model))))
+
   }
 
 }
@@ -119,7 +150,7 @@ class NameValuePair
   private def formatString(source: String, stripQuotes: Boolean) =
     if (stripQuotes == false && isQuotedString) quotes + source.toString + quotes else source.toString
 
-  def getValueAStringWithoutBoolean(stripQuotes: Boolean = true) : Option[String] = value.flatMap {
+  def getValueAStringWithoutBoolean(stripQuotes: Boolean = true): Option[String] = value.flatMap {
     case s: String => Some(formatString(s, stripQuotes))
     case b: Boolean => None
     case any: Any => Some(formatString(any.toString, stripQuotes))
@@ -156,17 +187,17 @@ class NameValuePair
       }
   }
 
-//  def getValueAsObject(stripQuotes: Boolean): Option[String] =
-//    value.map {
-//      v =>
-//        if (v.isInstanceOf[Boolean]) {
-//          ""
-//        } else if (!stripQuotes && isQuotedString) {
-//          quotes + v.toString + quotes; // add the quotes for quoted string
-//        } else {
-//          v.toString
-//        }
-//    }
+  //  def getValueAsObject(stripQuotes: Boolean): Option[String] =
+  //    value.map {
+  //      v =>
+  //        if (v.isInstanceOf[Boolean]) {
+  //          ""
+  //        } else if (!stripQuotes && isQuotedString) {
+  //          quotes + v.toString + quotes; // add the quotes for quoted string
+  //        } else {
+  //          v.toString
+  //        }
+  //    }
 
   override def hashCode() =
     31 * name.## + 31 * value.##

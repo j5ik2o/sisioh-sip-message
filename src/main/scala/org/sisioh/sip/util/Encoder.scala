@@ -1,5 +1,7 @@
 package org.sisioh.sip.util
 
+import net.liftweb.json
+
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
  *
@@ -22,5 +24,13 @@ package org.sisioh.sip.util
  * @tparam A モデルの型
  */
 trait Encoder[A] {
+
   def encode(model: A, builder: StringBuilder): StringBuilder
+
+}
+
+trait JsonEncoder[A] extends Encoder[A] {
+
+  def encode(model: A): json.JValue
+
 }

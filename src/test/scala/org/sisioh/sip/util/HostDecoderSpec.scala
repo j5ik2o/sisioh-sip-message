@@ -8,7 +8,7 @@ class HostDecoderSpec extends Specification {
   "HostDecoder" should {
     val host = Host("localhost")
     val encode = host.encode()
-    val h = HostDecoder().decode(encode)
+    val h = HostDecoder.decode(encode)
     "可逆的にデコードできること" in {
       host must_== h
     }

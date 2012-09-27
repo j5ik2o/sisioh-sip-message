@@ -1,5 +1,8 @@
 package org.sisioh.sip.util
 
+import net.liftweb.json
+import json.JsonAST
+
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
  *
@@ -22,7 +25,11 @@ trait Decoder[A] {
 
 }
 
+trait JsonDecoder[A] extends Decoder[A] {
 
+  def decode(json : JsonAST.JValue): A
+
+}
 
 trait SIPDecoder[A] extends Decoder[A] with ParserBase {
 

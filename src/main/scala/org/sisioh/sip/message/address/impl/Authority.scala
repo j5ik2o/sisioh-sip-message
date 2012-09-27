@@ -22,6 +22,8 @@ import org.sisioh.sip.core.{GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
 import scala.Some
 import org.sisioh.sip.util.HostPort.JsonEncoder
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json
 
 object AuthorityDecoder {
   def apply() = new AuthorityDecoder
@@ -59,9 +61,23 @@ object Authority {
 
   def decode(source: String) = AuthorityDecoder().decode(source)
 
+  import net.liftweb.json._
+
+//  object JsonDecoder extends Decoder[Authority]{
+//
+//    def decode(json : JsonAST.JValue): Authority = {
+//      val hostPort = HostPort.JsonDecoder.decode(json \ "hostPort")
+//      UserInfo.JsonDecoder
+//    }
+//
+//    def decode(source: String) = {
+//      decodec(parse(source))
+//    }
+//
+//  }
+
   object JsonEncoder extends Encoder[Authority] {
     def encode(model: Authority, builder: StringBuilder) = {
-      import net.liftweb.json._
       val json = (model.hostPort, model.userInfo) match {
         case (Some(hp), Some(ui)) =>
           JObject(JField("hostPort", parse(hp.encodeByJson())) :: JField("userInfo", parse(ui.encodeByJson())) :: Nil)

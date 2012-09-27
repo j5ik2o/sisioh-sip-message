@@ -25,6 +25,8 @@ trait ParametersHeader extends Parameters with ParametersHeaderExt with SIPHeade
 
   def hasParameters = parameters.isEmpty == false
 
+  def hasParameter(name: String) = parameters.hasNameValuePair(name)
+
   def withParameter(name: String, value: Any): ParametersHeaderType =
     createParametersHeader(duplicates, parameters.add(name, value))
 

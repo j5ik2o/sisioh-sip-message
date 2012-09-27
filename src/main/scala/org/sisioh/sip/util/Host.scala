@@ -19,6 +19,8 @@ package org.sisioh.sip.util
 import java.net.InetAddress
 import java.util.regex.Pattern
 import org.sisioh.sip.core.GenericObject
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json
 
 /**
  * アドレスの種別を表す列挙型。
@@ -27,11 +29,7 @@ object AddressType extends Enumeration {
   val HOST_NAME, IPV4_ADDRESS, IPV6_ADDRESS = Value
 }
 
-object HostDecoder {
-
-  def apply() = new HostDecoder
-
-}
+object HostDecoder extends HostDecoder
 
 class HostDecoder extends SIPDecoder[Host] with HostParser {
 
@@ -57,7 +55,9 @@ object Host {
 
   def apply(hostNameOrIpAddress: String, addressTypeParam: Option[AddressType.Value] = None) = new Host(hostNameOrIpAddress, addressTypeParam)
 
-  def decode(source: String) = HostDecoder().decode(source)
+  def decode(source: String) = HostDecoder.decode(source)
+
+  def decodeFromJson(source: String) = JsonDecoder.decode(source)
 
   def unapply(host: Host): Option[(String, AddressType.Value)] = Some(host.hostNameOrIpAddress, host.addressType)
 
@@ -67,14 +67,30 @@ object Host {
   val v6PattenBase = "(" + v6Partial + ")(:(" + v6Partial + "))"
   val v6Pattern = Pattern.compile(v6PattenBase + "{7}")
 
-  object JsonEncoder extends Encoder[Host] {
-    def encode(model: Host, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = ("hostNameOrIpAddress" -> model.hostNameOrIpAddress) ~
-        ("addressTypeParam" -> model.addressType.id)
-      builder.append(compact(render(json)))
+  import net.liftweb.json._
+  import net.liftweb.json.JsonDSL._
+
+  object JsonDecoder extends Decoder[Host] {
+
+    def decode(json: JsonAST.JValue): Host = {
+      val JString(hostName) = json \ "hostNameOrIpAddress"
+      val JInt(addressTypeId) = json \ "addressType"
+      Host(hostName, Some(AddressType(addressTypeId.toInt)))
     }
+
+    def decode(source: String): Host =
+      decode(parse(source))
+
+  }
+
+  object JsonEncoder extends JsonEncoder[Host] {
+
+    def encode(model: Host) =
+      ("hostNameOrIpAddress" -> model.hostNameOrIpAddress) ~
+        ("addressType" -> model.addressType.id)
+
+    def encode(model: Host, builder: StringBuilder) =
+      builder.append(compact(render(encode(model))))
 
   }
 
