@@ -61,7 +61,8 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
     messageContent,
     remoteAddress, remotePort, localAddress, localPort,
     applicationData,
-    unrecognizedHeaders
+    unrecognizedHeaders,
+    size
   )
 }
 

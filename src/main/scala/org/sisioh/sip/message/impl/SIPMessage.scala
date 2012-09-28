@@ -160,8 +160,6 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
   var size: Int = 0
 
   var messageContent: Option[MessageContent] = None
-  var messageContentBytes: Option[Array[Byte]] = None
-  var messageContentObject: Option[Any] = None
 
   var applicationData: Option[Any] = null
   var forkId: String = ""
@@ -212,8 +210,6 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   val forkId: Option[String]
 
   val messageContent: Option[MessageContent]
-  //  val messageContentBytes: Option[Array[Byte]]
-  //  val messageContentObject: Option[Any]
 
   val applicationData: Any
   val size: Int

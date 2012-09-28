@@ -34,7 +34,7 @@ class SipUriSpec extends Specification {
         sipuri.encode() must_== uri
         sipuri.toString() must_== uri
         sipuri.uriString must_== uri
-        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{}}"""
+        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{}}"""
       }
       "HeaderNamesのサイズは0" in {
         sipuri.getHeaderNames.toList must have size (0)
@@ -47,7 +47,7 @@ class SipUriSpec extends Specification {
         sipuri.encode() must_== uri
         sipuri.toString() must_== uri
         sipuri.uriString must_== uri
-        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{"PARAM1":"param1"},"qheaders":{}}"""
+        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{"PARAM1":"param1"},"qheaders":{}}"""
       }
       "Parameterが取得できる" in{
         sipuri.getParameter("PARAM1") must_== Some("param1")
@@ -60,7 +60,7 @@ class SipUriSpec extends Specification {
         sipuri.encode() must_== uri
         sipuri.toString() must_== uri
         sipuri.uriString must_== uri
-        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{"HEADER1":"header1"}}"""
+        sipuri.encodeByJson() must_== """{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{"HEADER1":"header1"}}"""
       }
       "Parameterが取得できる" in{
         sipuri.getHeader("HEADER1") must_== Some("header1")

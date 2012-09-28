@@ -34,7 +34,7 @@ class AuthoritySpec extends Specification {
     val r = BigDecimal(json) / BigDecimal(org)
     println("raito = %.2f".format(r))
     authority.encode() must_== """KATO:password@localhost:8080"""
-    authority.encodeByJson() must_== """{"hostPort":{"host":"localhost","port":8080},"userInfo":{"name":"KATO","password":"password"}}"""
+    authority.encodeByJson() must_== """{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}}"""
   }
   "HostPortが取得できる" in {
     authority.hostPort must_== Some(hostPort)

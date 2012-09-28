@@ -39,7 +39,7 @@ object RequestLine {
   object JsonDecoder extends JsonDecoder[RequestLine] {
 
     def decode(json: JsonAST.JValue) = {
-      val JString(uriString) = (json \ "uri")
+      val uriString = (json \ "uri")
       val uri = DefaultGenericURI.JsonDecoder.decode(uriString)
       val JString(method) = (json \ "method")
       val sipVersion = (json \ "sipVersion").toOpt.map {
