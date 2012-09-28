@@ -3,6 +3,7 @@ package org.sisioh.sip.message.impl
 import org.sisioh.sip.message.header.impl._
 import java.net.InetAddress
 import org.sisioh.sip.message.header.Header
+import org.sisioh.sip.message.Request
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -20,7 +21,21 @@ import org.sisioh.sip.message.header.Header
  * governing permissions and limitations under the License.
  */
 
+object SIPRequestBuilder {
+  def apply() = new SIPRequestBuilder()
+}
+
 class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder] {
+
+  var requestLine: Option[RequestLine] = None
+
+  def withRequestLine(requestLine: Option[RequestLine]) = {
+    addConfigurator {
+      _.requestLine = requestLine
+    }
+    getThis
+  }
+
   protected def getThis = this
 
   protected def newInstance = new SIPRequestBuilder
@@ -33,8 +48,6 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
     builder.withMaxForwards(vo.maxForwards)
     builder.withContentLength(vo.contentLength)
     builder.withMessageContent(vo.messageContent)
-    builder.withMessageContentBytes(vo.messageContentBytes)
-    builder.withMessageContentObject(vo.messageContentObject)
     builder.withRemoteAddress(vo.remoteAddress)
     builder.withRemotePort(vo.remotePort)
     builder.withLocalAddress(vo.localAddress)
@@ -43,38 +56,153 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
   }
 
   protected def createValueObject = new SIPRequest(
+    requestLine,
     to, from, callId, cSeq, maxForwards, contentLength,
-    messageContent, messageContentBytes, messageContentObject,
+    messageContent,
     remoteAddress, remotePort, localAddress, localPort,
+    applicationData,
     unrecognizedHeaders
   )
 }
 
 class SIPRequest
-(val to: Option[To],
+(val requestLine: Option[RequestLine],
+ val to: Option[To],
  val from: Option[From],
  val callId: Option[CallId],
  val cSeq: Option[CSeq],
  val maxForwards: Option[MaxForwards],
+
  val contentLength: Option[ContentLength],
- val messageContent: Option[String],
- val messageContentBytes: Option[Array[Byte]],
- val messageContentObject: Option[Any],
+ val messageContent: Option[MessageContent],
+
  val remoteAddress: Option[InetAddress],
  val remotePort: Option[Int],
  val localAddress: Option[InetAddress],
  val localPort: Option[Int],
- val unrecognizedHeaders: List[Header])
-
-  extends SIPMessage[Any] {
+ val applicationData: Option[Any],
+ val unrecognizedHeaders: List[Header],
+ val size: Int
+  ) extends SIPMessage[Any] {
 
   type A = SIPRequest
   type B = SIPRequestBuilder
 
-  def newBuilder = new SIPRequestBuilder
+  val isNullRequest: Boolean = false
 
-  val forkId = ""
-  val applicationData = ""
+  def newBuilder = SIPRequestBuilder()
 
-  val size = 0
+  val fromTag = from.flatMap(_.tag)
+
+  val forkId = {
+    (callId, fromTag) match {
+      case (Some(cid), Some(ftag)) =>
+        Some((cid.callId + ":" + ftag).toLowerCase)
+      case _ => None
+    }
+  }
+
+  override def encodeAsBytes(transport: String): Array[Byte] = {
+    if (isNullRequest) {
+      "\r\n\r\n".getBytes
+    } else if (requestLine.isEmpty) {
+      new Array[Byte](0)
+    } else {
+      val rlBytes = requestLine.get.encode().getBytes("UTF-8")
+      val superBytes = super.encodeAsBytes(transport)
+      val retVal = new Array[Byte](rlBytes.size + superBytes.size)
+      rlBytes.copyToArray[Byte](retVal, 0, rlBytes.size)
+      superBytes.copyToArray[Byte](retVal, rlBytes.size, superBytes.size)
+      retVal
+    }
+  }
+
+  private var nameTable: Map[String, String] = Map.empty
+
+  private def putName(name: String) = nameTable += (name -> name)
+
+  putName(Request.INVITE)
+  putName(Request.BYE)
+  putName(Request.CANCEL)
+  putName(Request.ACK)
+  putName(Request.PRACK)
+  putName(Request.INFO)
+  putName(Request.MESSAGE)
+  putName(Request.NOTIFY)
+  putName(Request.OPTIONS)
+  putName(Request.PRACK)
+  putName(Request.PUBLISH)
+  putName(Request.REFER)
+  putName(Request.REGISTER)
+  putName(Request.SUBSCRIBE)
+  putName(Request.UPDATE)
+
+
+  private def getCannonicalName(method: String): Option[String] = {
+    if (nameTable.contains(method))
+      nameTable.get(method).map(_.asInstanceOf[String])
+    else
+      Some(method)
+  }
+
+  private def getRequestLineByDefaults: Option[RequestLine] = {
+    requestLine.map {
+      r =>
+        (r.method, cSeq) match {
+          case (None, Some(s)) =>
+            val method = getCannonicalName(s.method)
+            RequestLine(r.uri, method, r.sipVersion)
+          case _ =>
+            r
+        }
+    }
+  }
+
+  override def encode(builder: StringBuilder): StringBuilder = {
+    if (requestLine.isDefined) {
+      getRequestLineByDefaults.map {
+        rl =>
+          builder.append(rl.encode())
+      }.get
+      super.encode(builder)
+    } else if (isNullRequest) {
+      builder.append("\r\n\r\n")
+    } else {
+      super.encode(builder)
+    }
+  }
+
+  def encodeMessage(sb: StringBuilder) = {
+    if (requestLine.isDefined) {
+      getRequestLineByDefaults.map {
+        _.encode(sb)
+      }.get
+      encodeSIPHeaders(sb)
+    } else if (isNullRequest) {
+      sb.append("\r\n\r\n")
+    } else
+      encodeSIPHeaders(sb)
+  }
+
+  to.foreach {
+    addHeader(_)
+  }
+  from.foreach {
+    addHeader(_)
+  }
+  callId.foreach {
+    addHeader(_)
+  }
+  cSeq.foreach {
+    addHeader(_)
+  }
+  maxForwards.foreach {
+    addHeader(_)
+  }
+  messageContent.foreach {
+    mc =>
+      addHeader(mc.contentType)
+  }
+
+
 }

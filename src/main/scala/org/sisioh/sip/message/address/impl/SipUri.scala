@@ -139,7 +139,7 @@ object SipUri {
   def fromUserAndHost
   (user: Option[String],
    password: Option[String],
-   host: Option[String],
+   host: String,
    port: Option[Int],
    scheme: String = NetObject.SIP): SipUri = {
     val userInfo = (user, password) match {
@@ -147,7 +147,7 @@ object SipUri {
       case _ => None
     }
     val hostPort = (host, port) match {
-      case (Some(h), p) => Some(HostPort(Host(h), port))
+      case (h, p) => Some(HostPort(Host(h), port))
       case _ => None
     }
     fromUserInfoAndHostPort(userInfo, hostPort, scheme)

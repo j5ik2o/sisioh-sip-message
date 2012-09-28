@@ -8,13 +8,13 @@ class RequestLineDecoderSpec extends Specification {
   "RequestLineDecoder" should {
     "可逆的にデコードできること" in {
       "標準" in {
-        val source = RequestLine(Some(DefaultGenericURI("test:testurl")), Some("INVITE"))
+        val source = RequestLine(DefaultGenericURI("test:testurl"), Some("INVITE"))
         val encode = source.encode()
         val dest = RequestLineDecoder.decode(encode)
         dest must_== source
       }
       "JSON" in {
-        val source = RequestLine(Some(DefaultGenericURI("test:testurl")), Some("INVITE"))
+        val source = RequestLine(DefaultGenericURI("test:testurl"), Some("INVITE"))
         val encode = source.encodeByJson()
         val dest = RequestLine.decodeFromJson(encode)
         dest must_== source

@@ -41,10 +41,10 @@ class FromDecoderSpec extends Specification{
     }
     "From" in {
       val dest = FromDecoder.decode("From: \"kato\" <sip:kato@localhost>")
-      dest must_== From(DefaultAddress(SipUri.fromUserAndHost(Some("kato"), None, Some("localhost"), None), Some("kato")))
+      dest must_== From(DefaultAddress(SipUri.fromUserAndHost(Some("kato"), None, "localhost", None), Some("kato")))
     }
     "可逆的にデコードできること" in {
-      val source = From(DefaultAddress(SipUri.fromUserAndHost(Some("test"), None, Some("localhost"), None), Some("kato")))
+      val source = From(DefaultAddress(SipUri.fromUserAndHost(Some("test"), None, "localhost", None), Some("kato")))
       val encodeObj = source.encode()
       val dest = FromDecoder.decode(encodeObj)
       source must_== dest

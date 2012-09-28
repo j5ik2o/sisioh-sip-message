@@ -40,10 +40,13 @@ case class Expires(expires: Int) extends SIPHeader with ExpiresHeader {
 
   val headerName = ExpiresHeader.NAME
 
+  val name = headerName
+
   def encodeByJson(builder: StringBuilder) = encode(builder, Expires.JsonEncoder)
 
   def encodeBody(builder: StringBuilder) =
     builder.append(expires)
 
   override def toString = encode()
+
 }

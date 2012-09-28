@@ -111,12 +111,11 @@ object DefaultGenericURI {
   object JsonDecoder extends JsonDecoder[GenericURI] {
 
     def decode(json: JsonAST.JValue) = {
-      json \ "uriString" match {
-        case JString("*") =>
-          WildCardURI
-        case JString(uriString) =>
-          DefaultGenericURI(uriString)
-      }
+      val JString(uriString) = json \ "uriString"
+      if (uriString == "*")
+        WildCardURI
+      else
+        DefaultGenericURI(uriString)
     }
 
   }

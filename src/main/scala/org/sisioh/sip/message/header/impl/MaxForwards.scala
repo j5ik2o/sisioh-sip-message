@@ -37,6 +37,8 @@ case class MaxForwards(maxForwards: Int) extends SIPHeader with MaxForwardsHeade
 
   val headerName = MaxForwardsHeader.NAME
 
+  val name = headerName
+
   def decrementMaxForwards = MaxForwards(maxForwards - 1)
 
   def encodeByJson(builder: StringBuilder) = encode(builder, MaxForwards.JsonEncoder)

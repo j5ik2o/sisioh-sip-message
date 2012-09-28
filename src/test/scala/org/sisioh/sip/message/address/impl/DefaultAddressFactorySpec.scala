@@ -10,21 +10,21 @@ class DefaultAddressFactorySpec extends Specification {
     "SipURIを生成できること" in {
       "SIPURIから生成する場合" in {
         val sipuri = target.createSipURI("sip:hoge@localhost")
-        sipuri must_== SipUri.fromUserAndHost(Some("hoge"), None, Some("localhost"), None)
+        sipuri must_== SipUri.fromUserAndHost(Some("hoge"), None, "localhost", None)
       }
       "ユーザ名とホストから生成する場合" in {
         val sipuri = target.createSipURI(Some("hoge"), "localhost")
-        sipuri must_== SipUri.fromUserAndHost(Some("hoge"), None, Some("localhost"), None)
+        sipuri must_== SipUri.fromUserAndHost(Some("hoge"), None, "localhost", None)
       }
     }
     "URIを生成できること" in {
       "SIPURIの場合" in {
         val uri = target.createURI("sip:hoge@localhost")
-        uri must_== SipUri.fromUserAndHost(Some("hoge"), None, Some("localhost"), None)
+        uri must_== SipUri.fromUserAndHost(Some("hoge"), None, "localhost", None)
       }
       "SIPSURIの場合" in {
         val uri = target.createURI("sips:hoge@localhost")
-        uri must_== SipUri.fromUserAndHost(Some("hoge"), None, Some("localhost"), None, NetObject.SIPS)
+        uri must_== SipUri.fromUserAndHost(Some("hoge"), None, "localhost", None, NetObject.SIPS)
       }
       "電話番号の場合" in {
         val uri = target.createURI("tel:+09012345678")

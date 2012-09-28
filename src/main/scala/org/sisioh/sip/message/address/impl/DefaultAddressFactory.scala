@@ -54,7 +54,7 @@ class DefaultAddressFactory extends AddressFactory with AddressFactoryEx {
 
   def createAddress(address: String): DefaultAddress = {
     if (address == "*") {
-      val uri = SipUri.fromUserAndHost(user = Some("*"), password = None, host = None, port = None)
+      val uri = WildCardURI // TODO
       DefaultAddress.fromURI(uri, None, Some(AddressType.WILD_CARD))
     } else {
       DefaultAddress.decode(address)

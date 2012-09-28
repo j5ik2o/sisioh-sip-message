@@ -14,6 +14,11 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
  private val headers: List[HDR] = List.empty[HDR])
   extends SIPHeader with Header {
 
+  override def toString = encode()
+
+  def getHeadersAsEncodedStrings: List[String] =
+    headers.map(_.toString())
+
   def encodeBody(builder: StringBuilder): StringBuilder = {
     builder.append(headers.map {
       header =>

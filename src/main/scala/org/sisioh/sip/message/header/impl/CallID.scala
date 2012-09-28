@@ -19,15 +19,15 @@ package org.sisioh.sip.message.header.impl
 import org.sisioh.sip.message.header.CallIdHeader
 import org.sisioh.sip.util.{SIPDecoder, Decoder, Encoder, ParserBase}
 
-object CallIDDecoder extends CallIDDecoder
+object CallIdDecoder extends CallIdDecoder
 
-class CallIDDecoder extends SIPDecoder[CallId] with CallIDParser {
+class CallIdDecoder extends SIPDecoder[CallId] with CallIdParser {
 
   def decode(source: String): CallId = decodeTarget(source, Call_IDWithCrLfOpt)
 
 }
 
-trait CallIDParser extends ParserBase {
+trait CallIdParser extends ParserBase {
 
   lazy val Call_IDWithCrLfOpt: Parser[CallId] = Call_ID <~ opt(CRLF)
 
@@ -44,7 +44,7 @@ trait CallIDParser extends ParserBase {
 
 object CallId {
 
-  def decode(source: String): CallId = CallIDDecoder.decode(source)
+  def decode(source: String): CallId = CallIdDecoder.decode(source)
 
   def decodeFromJson(source: String): CallId = JsonDecoder.decode(source)
 
@@ -73,6 +73,7 @@ object CallId {
 case class CallId(callId: String) extends SIPHeader with CallIdHeader {
   val callIdentity = CallIdentifier.from(callId)
   val headerName = CallIdHeader.NAME
+  val name = CallIdHeader.NAME
 
   def encodeByJson(builder: StringBuilder) = encode(builder, CallId.JsonEncoder)
 

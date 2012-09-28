@@ -23,7 +23,7 @@ import java.net.InetAddress
 import org.sisioh.sip.util.Utils
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
-import com.sun.xml.internal.messaging.saaj.soap.MessageFactoryImpl
+import collection.mutable.ListBuffer
 
 abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
@@ -97,28 +97,14 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
     getThis
   }
 
-  def withMessageContent(messageContent: Option[String]) = {
+  def withMessageContent(messageContent: Option[MessageContent]) = {
     addConfigurator {
       _.messageContent = messageContent
     }
     getThis
   }
 
-  def withMessageContentBytes(messageContentBytes: Option[Array[Byte]]) = {
-    addConfigurator {
-      _.messageContentBytes = messageContentBytes
-    }
-    getThis
-  }
-
-  def withMessageContentObject(messageContentObject: Option[Any]) = {
-    addConfigurator {
-      _.messageContentObject = messageContentObject
-    }
-    getThis
-  }
-
-  def withApplicationData(applicationData: Any) = {
+  def withApplicationData(applicationData: Option[Any]) = {
     addConfigurator {
       _.applicationData = applicationData
     }
@@ -173,11 +159,11 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
   var maxForwards: Option[MaxForwards] = None
   var size: Int = 0
 
-  var messageContent: Option[String] = None
+  var messageContent: Option[MessageContent] = None
   var messageContentBytes: Option[Array[Byte]] = None
   var messageContentObject: Option[Any] = None
 
-  var applicationData: Any = null
+  var applicationData: Option[Any] = null
   var forkId: String = ""
 
   var remoteAddress: Option[InetAddress] = None
@@ -189,9 +175,31 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
 }
 
 
+object MessageContent {
+
+
+  def apply(contentType: ContentType,
+            contentAsString: String): MessageContent = MessageContent(contentType, contentAsString.getBytes)
+
+}
+
+case class MessageContent
+(contentType: ContentType,
+ contentBytes: Array[Byte]) {
+
+  def getContentAsString
+  (charset: String = DefaultMessageFactory.defaultContentEncodingCharset): String =
+    new String(contentBytes, charset)
+
+
+}
+
+
 trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
-  val headers: List[SIPHeader] = List.empty
+  import scala.collection.mutable._
+
+  val headers: ListBuffer[SIPHeader] = ListBuffer.empty
   val headerTable: Map[String, SIPHeader] = Map.empty
 
   val from: Option[From]
@@ -201,11 +209,11 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   val maxForwards: Option[MaxForwards]
   val contentLength: Option[ContentLength]
 
-  val forkId: String
+  val forkId: Option[String]
 
-  val messageContent: Option[String]
-  val messageContentBytes: Option[Array[Byte]]
-  val messageContentObject: Option[Any]
+  val messageContent: Option[MessageContent]
+  //  val messageContentBytes: Option[Array[Byte]]
+  //  val messageContentObject: Option[Any]
 
   val applicationData: Any
   val size: Int
@@ -216,11 +224,67 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   val localAddress: Option[InetAddress]
   val localPort: Option[Int]
 
+
+  def getMessageAsEncodedStrings(): List[String] = {
+    headers.result().flatMap {
+      case l: SIPHeaderList[_, _] =>
+        l.getHeadersAsEncodedStrings
+      case h: SIPHeader =>
+        List(h.encode())
+    }
+  }
+
+  def encodeSIPHeaders(builder: StringBuilder): StringBuilder = {
+    headers.filterNot(_.isInstanceOf[ContentLength]).foreach {
+      e =>
+        e.encode(builder)
+    }
+    contentLength.map {
+      e =>
+        e.encode(builder).append(Separators.NEWLINE)
+    }
+    builder
+  }
+
+
+  def encodeAsBytes(transport: String): Array[Byte] = {
+    if (isInstanceOf[SIPRequest] && asInstanceOf[SIPRequest].isNullRequest) {
+      return "\r\n\r\n".getBytes
+    }
+
+    val soruceVia = getHeader(ViaHeader.NAME).asInstanceOf[Via]
+    val topVia = Via(soruceVia.sentBy, Protocol(soruceVia.sentProtocol.protocolName, soruceVia.sentProtocol.protocolVersion, transport))
+    // TODO topViaを更新する
+
+    val encoding = new StringBuilder()
+    headers.synchronized {
+      headers.filterNot(_.isInstanceOf[ContentLength]).foreach {
+        header =>
+          header.encode(encoding)
+      }
+    }
+    contentLength.get.encode(encoding)
+    encoding.append(Separators.NEWLINE)
+
+    val content = getRawContent
+    content.map {
+      e =>
+        val msgArray = encoding.result().getBytes(getCharset)
+        val retVal = new Array[Byte](msgArray.size + e.size)
+        msgArray.copyToArray[Byte](retVal, 0, msgArray.size)
+        e.copyToArray[Byte](retVal, msgArray.size, e.size)
+        retVal
+    }.getOrElse {
+      encoding.result().getBytes(getCharset)
+    }
+  }
+
+
+  def encodeMessage(sb: StringBuilder): StringBuilder
+
   def removeContent = {
     newBuilder.
       withMessageContent(None).
-      withMessageContentBytes(None).
-      withMessageContentObject(None).
       withContentLength(Some(ContentLength(0))).
       build(this.asInstanceOf[A])
   }
@@ -310,9 +374,35 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   type B <: SIPMessageBuilder[A, B]
 
   def addHeader(header: Header) = {
-    //addLast(header)
-    null
+    addLast(header)
   }
+
+  def attachHeader(header: Header) = {
+    val headerNameLowerCase = header.name.toLowerCase
+    val sipHeader = header.asInstanceOf[SIPHeader]
+    // 更新系
+    if (headerTable.contains(headerNameLowerCase) == false) {
+      headerTable += (headerNameLowerCase -> sipHeader)
+      headers += sipHeader
+      // 追加系
+    } else {
+      if (sipHeader.isInstanceOf[SIPHeaderList[_, _]]) {
+        val hdrList = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeaderList[_, SIPHeader]])
+        val htble = hdrList.map {
+          e =>
+            val list = sipHeader.asInstanceOf[SIPHeaderList[_, _]]
+            val newHdrList = e.concatenate(list, false)
+            headerTable += (headerNameLowerCase -> newHdrList.asInstanceOf[SIPHeader])
+        }.getOrElse {
+          headerTable += (headerNameLowerCase -> sipHeader)
+        }
+      } else {
+        headerTable + (headerNameLowerCase -> sipHeader)
+      }
+    }
+    this
+  }
+
 
   //  def attachHeader(header: Header, replace: Boolean, top: Boolean): SIPMessage[T] = {
   //    val headerNameLowerCase = header.name.toLowerCase
@@ -339,12 +429,12 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   //  }
 
   def addLast(header: Header) = {
-    //attachHeader(header, false, true)
-    null
+    attachHeader(header)
   }
 
   def addFirst(header: Header) = {
-    newBuilder.withHeaders(header.asInstanceOf[SIPHeader] :: headers).build(this.asInstanceOf[A])
+    headers.prepend(header.asInstanceOf[SIPHeader])
+    this
   }
 
   //def removeFirst(headerName: String) = null
@@ -356,28 +446,35 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
         h match {
           case sipHeaderList: SIPHeaderList[_, _] =>
             val newSHL = (if (top) sipHeaderList.removeHead else sipHeaderList.removeLast).asInstanceOf[SIPHeader]
-            val v = newBuilder.withHeaderTable(headerTable + (headerNameLowerCase -> newSHL))
+            headerTable += (headerNameLowerCase -> newSHL)
+
             if (sipHeaderList.isEmpty) {
-              v.withHeaders(headers.filterNot(_.name.equalsIgnoreCase(headerNameLowerCase))).
-                withHeaderTable(headerTable - (headerNameLowerCase)).build(v.asInstanceOf[A])
+              headers.filter(_.name.equalsIgnoreCase(headerNameLowerCase)).foreach {
+                e =>
+                  headers -= e
+              }
+              headerTable -= (headerNameLowerCase)
             }
           case _ =>
-            val builder = newBuilder.withHeaderTable(headerTable - (headerNameLowerCase))
-            h match {
-              case h: From =>
-                builder.withFrom(None)
-              case h: To =>
-                builder.withTo(None)
-              case h: CSeq =>
-                builder.withCSeq(None)
-              case h: MaxForwards =>
-                builder.withMaxForwards(None)
-              case h: CallId =>
-                builder.withCallId(None)
-              case h: ContentLength =>
-                builder.withContentLength(None)
+            headerTable -= (headerNameLowerCase)
+            //            h match {
+            //              case h: From =>
+            //                builder.withFrom(None)
+            //              case h: To =>
+            //                builder.withTo(None)
+            //              case h: CSeq =>
+            //                builder.withCSeq(None)
+            //              case h: MaxForwards =>
+            //                builder.withMaxForwards(None)
+            //              case h: CallId =>
+            //                builder.withCallId(None)
+            //              case h: ContentLength =>
+            //                builder.withContentLength(None)
+            //            }
+            headers.filter(_.name.equalsIgnoreCase(headerNameLowerCase)).foreach {
+              e =>
+                headers -= e
             }
-            builder.withHeaders(headers.filterNot(_.name.equalsIgnoreCase(headerNameLowerCase))).build(this.asInstanceOf[A])
         }
     }
   }
@@ -403,7 +500,23 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     }
   }
 
-  def encode(builder: StringBuilder) = null
+  def encode(builder: StringBuilder): StringBuilder = {
+    headers.filterNot(_.isInstanceOf[ContentLength]).foreach {
+      _.encode(builder)
+    }
+    unrecognizedHeaders.foreach {
+      header =>
+        builder.append(header).append(Separators.NEWLINE)
+    }
+    contentLength.foreach {
+      _.encode(builder).append(Separators.NEWLINE)
+    }
+    messageContent.foreach {
+      e =>
+        builder.append(e.getContentAsString(getCharset))
+    }
+    builder
+  }
 
   def encodeByJson(builder: StringBuilder) = null
 
@@ -432,25 +545,11 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   }
 
   def getRawContent = {
-    if (messageContentObject.isDefined) {
-      messageContentObject.map(_.toString.getBytes(getCharset))
-    } else if (messageContent.isDefined) {
-      messageContent.map(_.getBytes(getCharset))
-    } else {
-      None
-    }
+    messageContent.map(_.contentBytes)
   }
 
   def getContent = {
-    if (messageContentObject.isDefined){
-      messageContentObject
-    } else if(messageContent.isDefined) {
-      messageContent
-    } else if(messageContentBytes.isDefined){
-      messageContentBytes
-    }else {
-      None
-    }
+    messageContent.map(_.contentBytes)
   }
 
 

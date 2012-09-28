@@ -119,6 +119,8 @@ case class UserAgent(serverVals: List[ServerVal] = List.empty)
 
   val headerName = UserAgentHeader.NAME
 
+  val name = headerName
+
   def addProduct(product: Product): UserAgent = {
     UserAgent(
       product :: serverVals

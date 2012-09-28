@@ -3,7 +3,7 @@ package org.sisioh.sip.message.header.impl
 import org.specs2.mutable.Specification
 import org.sisioh.sip.core.Separators
 
-class CallIDSpec extends Specification {
+class CallIdSpec extends Specification {
   "CallId" should {
     val callId = "test@testhost"
     "callIdが正しいこと" in {

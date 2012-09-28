@@ -6,7 +6,7 @@ class DefaultAddressDecoderSpec extends Specification {
 
   "DefaultAddressDecoder" should {
     "可逆的にデコードできること" in {
-      val uri = SipUri.fromUserAndHost(Some("user"), None, Some("localhost"), None)
+      val uri = SipUri.fromUserAndHost(Some("user"), None, "localhost", None)
       "表示名がない場合" in {
         val source = DefaultAddress(uri)
         val encodeObject = source.encode()

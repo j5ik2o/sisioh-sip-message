@@ -68,10 +68,13 @@ object CSeq {
 
 }
 
-case class CSeq(method: String, sequenceNumber: Long) extends SIPHeader with CSeqHeader {
+case class CSeq(method: String, sequenceNumber: Long)
+  extends SIPHeader with CSeqHeader {
+
   require(sequenceNumber > 0 && sequenceNumber <= (1L << 32 - 1))
 
   val headerName = CSeqHeader.NAME
+  val name = headerName
 
   def encodeByJson(builder: StringBuilder) = encode(builder, CSeq.JsonEncoder)
 

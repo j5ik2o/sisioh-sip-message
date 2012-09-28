@@ -54,7 +54,10 @@ case class ContentLength(contentLength: Int)
   extends SIPHeader with ContentLengthHeader {
 
   require(contentLength > 0)
+
   val headerName = ContentLengthHeader.NAME
+
+  val name = headerName
 
   def encodeByJson(builder: StringBuilder) = encode(builder, ContentLength.JsonEncoder)
 

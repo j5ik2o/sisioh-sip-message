@@ -91,6 +91,7 @@ class To
   type ParametersHeaderType = To
 
   val headerName = ToHeader.NAME
+  val name = headerName
 
   val parameters = tag.map(t => parametersParam.add(ParameterNames.TAG, t)).getOrElse(parametersParam)
 

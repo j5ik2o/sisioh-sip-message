@@ -49,6 +49,7 @@ case class Server(serverVals: List[ServerVal] = List.empty)
   extends SIPHeader with ServerHeader {
 
   val headerName = ServerHeader.NAME
+  val name = headerName
 
   def encodeByJson(builder: StringBuilder) = encode(builder, Server.JsonEncoder)
 

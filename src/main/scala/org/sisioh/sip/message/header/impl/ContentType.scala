@@ -60,14 +60,17 @@ object ContentType {
 case class ContentType
 (contentType: String,
  contentSubType: String,
- parameters: NameValuePairList = NameValuePairList()) extends ParametersHeader with ContentTypeHeader {
+ parameters: NameValuePairList = NameValuePairList())
+  extends ParametersHeader with ContentTypeHeader {
+
+  val headerName = ContentTypeHeader.NAME
+  val name = headerName
 
   type ParametersHeaderType = ContentType
 
   val charset = getParameter("charset")
 
   val mediaRange = MediaRange(contentType, contentSubType)
-  val headerName = ContentTypeHeader.NAME
   val duplicates = DuplicateNameValueList()
 
   def encodeByJson(builder: StringBuilder) = encode(builder, ContentType.JsonEncoder)

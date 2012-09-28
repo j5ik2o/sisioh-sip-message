@@ -97,6 +97,7 @@ case class Via
   type ParametersHeaderType = Via
 
   val headerName = ViaHeader.NAME
+  val name = headerName
 
   val duplicates = DuplicateNameValueList()
 
@@ -147,6 +148,8 @@ case class Via
 
 case class ViaList(headers: List[Via] = List.empty)
   extends SIPHeaderList[ViaList, Via](classOf[Via], ViaHeader.NAME, false, headers) {
+
+  val name = headerName
 
   protected def createInstance(_headers: List[Via]) = ViaList(_headers)
 

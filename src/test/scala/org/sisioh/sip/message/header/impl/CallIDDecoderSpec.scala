@@ -2,12 +2,12 @@ package org.sisioh.sip.message.header.impl
 
 import org.specs2.mutable.Specification
 
-class CallIDDecoderSpec extends Specification {
-  "CallIDDecoder" should {
+class CallIdDecoderSpec extends Specification {
+  "CallIdDecoder" should {
     "標準エンコード" in {
       val source = CallId("test@test")
       val encode = source.encode()
-      val dest = CallIDDecoder.decode(encode)
+      val dest = CallIdDecoder.decode(encode)
       "可逆的にデコードできること" in {
         source must_== dest
       }
