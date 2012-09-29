@@ -1,7 +1,9 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ServerHeader
-import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util._
+import net.liftweb.json._
+
 
 object ServerDecoder extends ServerDecoder
 
@@ -19,24 +21,53 @@ trait ServerParser extends ParserBase with UserAgentParser {
 
 }
 
+object ServerJsonDecoder extends JsonDecoder[Server] {
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(headerName) = json \ "headerName"
+    require(headerName == ServerHeader.NAME)
+    val JArray(list) = json \ "serverVals"
+    val serverVals: List[ServerVal] = list.map {
+      e =>
+        val JString(typeName) = e \ "type"
+        val JString(value) = e \ "value"
+        if (typeName == "comment") {
+          Comment(value)
+        } else if (typeName == "product") {
+          Product.from(value)
+        } else {
+          throw new ParseException()
+        }
+    }
+    Server(serverVals)
+  }
+
+}
+
+object ServerJsonEncoder extends JsonEncoder[Server] {
+
+  def encode(model: Server) = {
+    val list = model.serverVals.map {
+      e =>
+        val typeName = e match {
+          case Comment(_) => "comment"
+          case Product(_, _) => "product"
+        }
+        JObject(JField("type", JString(typeName)) :: JField("value", JString(e.toString)) :: Nil)
+    }.toList
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("serverVals", JArray(list)) :: Nil
+    )
+  }
+
+}
+
 object Server {
 
   def decode(source: String) = ServerDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[Server] {
-    def encode(model: Server, builder: StringBuilder) = {
-      import net.liftweb.json._
-
-      val list = model.serverVals.map {
-        e => JString(e.toString)
-      }.toList
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-          JField("serverVals", JArray(list)) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
+  def decodeFromJson(source: String) = ServerJsonDecoder.decode(source)
 
 }
 
@@ -51,8 +82,6 @@ case class Server(serverVals: List[ServerVal] = List.empty)
   val headerName = ServerHeader.NAME
   val name = headerName
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, Server.JsonEncoder)
-
   def addProduct(product: Product): Server = {
     Server(
       product :: serverVals
@@ -64,6 +93,7 @@ case class Server(serverVals: List[ServerVal] = List.empty)
 
   def encodeBody(builder: StringBuilder) = encodeProducts(builder)
 
-  override def toString = encode()
+  def encodeAsJValue() = ServerJsonEncoder.encode(this)
 
+  override def toString = encode()
 }

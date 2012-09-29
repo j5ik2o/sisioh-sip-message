@@ -18,6 +18,9 @@ package org.sisioh.sip.util
 
 import org.sisioh.sip.core.{GenericObjectList, GenericObject, Separators}
 import util.parsing.combinator.RegexParsers
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 
 object NameValuePairListDecoder {
   def apply
@@ -55,6 +58,31 @@ trait NameValuePairListParser extends RegexParsers with NameValuePairParser {
 }
 
 
+object NameValuePairListJsonDecoder extends JsonDecoder[NameValuePairList] {
+  def decode(json: JValue) = {
+    val JString(separator) = json \ "separator"
+    val l = (json \ "values").children.map {
+      v =>
+        NameValuePair(Some(v.asInstanceOf[JField].name), Some(v.asInstanceOf[JField].value))
+    }
+    NameValuePairList.fromValues(l, separator)
+  }
+}
+
+object NameValuePairListJsonEncoder extends JsonEncoder[NameValuePairList] {
+
+  def encode(model: NameValuePairList) = {
+    JObject(
+      JField("separator", JString(model.separator)) ::
+        JField("values",
+          model.flatMap {
+            e => e.value.map(v => JField(e.name.get, v.toString))
+          }.toList) :: Nil
+    )
+  }
+
+}
+
 object NameValuePairList {
 
   def apply(separator: String = Separators.SEMICOLON): NameValuePairList = new NameValuePairList(separator)
@@ -63,17 +91,6 @@ object NameValuePairList {
 
   def fromValues(nameValuePairs: List[NameValuePair], separator: String = Separators.SEMICOLON): NameValuePairList = {
     new NameValuePairList(separator, nameValuePairs.map(e => (e.name.get, e)).toMap)
-  }
-
-  object JsonEncoder extends Encoder[NameValuePairList] {
-    def encode(model: NameValuePairList, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = JObject(model.flatMap {
-        e => e.value.map(v => JField(e.name.get, v.toString))
-      }.toList)
-      builder.append(compact(render(json)))
-    }
   }
 
 }
@@ -141,6 +158,8 @@ class NameValuePairList
     }.mkString(separator))
   }
 
+  def encodeAsJValue() = NameValuePairListJsonEncoder.encode(this)
+
   override def hashCode() = 31 * separator.## + 31 * nameValuePairs.##
 
   override def equals(obj: Any) = obj match {
@@ -151,5 +170,4 @@ class NameValuePairList
 
   override def toString() = encode()
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, NameValuePairList.JsonEncoder)
 }

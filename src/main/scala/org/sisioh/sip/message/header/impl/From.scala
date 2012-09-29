@@ -4,11 +4,14 @@ import org.sisioh.sip.message.header.{ParameterNames, FromHeader}
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.{DefaultAddressParser, AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
+import net.liftweb.json._
+import net.liftweb.json._
+
 
 object FromDecoder extends FromDecoder
 
 class FromDecoder extends SIPDecoder[From] with FromParser {
-  def decode(source: String):From = decodeTarget(source, fromWithCrLfOpt)
+  def decode(source: String): From = decodeTarget(source, fromWithCrLfOpt)
 }
 
 trait FromParser extends ToOrFromParser with DefaultAddressParser {
@@ -20,6 +23,20 @@ trait FromParser extends ToOrFromParser with DefaultAddressParser {
   }
 
 }
+
+
+object FromJsonEncoder extends JsonEncoder[From] {
+
+  def encode(model: From) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("address", parse(model.address.encodeByJson())) ::
+        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
+    )
+  }
+
+}
+
 
 object From {
 
@@ -36,17 +53,6 @@ object From {
 
   def decode(source: String) = FromDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[From] {
-    def encode(model: From, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-        JField("address", parse(model.address.encodeByJson())) ::
-        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -78,6 +84,6 @@ class From
     new From(address, tag, _parameters)
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, From.JsonEncoder)
+  def encodeAsJValue() = FromJsonEncoder.encode(this)
 
 }

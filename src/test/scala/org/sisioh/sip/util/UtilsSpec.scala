@@ -5,7 +5,7 @@ import org.specs2.mutable.Specification
 class UtilsSpec extends Specification {
   "Utils" should {
     "signature" in {
-      val regex = """\d{6}""".r
+      val regex = """\d+""".r
       regex.findFirstMatchIn(Utils.signature).isDefined must_== true
     }
     "toHexString" in {

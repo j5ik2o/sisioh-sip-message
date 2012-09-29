@@ -17,36 +17,60 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.message.header.ContentLengthHeader
-import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util._
+import net.liftweb.json._
 
 object ContentLengthDecoder extends ContentLengthDecoder
 
 class ContentLengthDecoder extends SIPDecoder[ContentLength] with ContentLengthParser {
-  def decode(source: String):ContentLength = decodeTarget(source, Content_LengthWithCrLfOpt)
+  def decode(source: String): ContentLength = decodeTarget(source, Content_LengthWithCrLfOpt)
 }
 
 trait ContentLengthParser extends ParserBase {
-  lazy val Content_LengthWithCrLfOpt =  Content_Length <~ opt(CRLF)
+  lazy val Content_LengthWithCrLfOpt = Content_Length <~ opt(CRLF)
 
   lazy val Content_Length: Parser[ContentLength] = ("Content-Length" | "l") ~> HCOLON ~> rep1(DIGIT) ^^ {
     e => ContentLength(e.mkString.toInt)
   }
 }
 
+object ContentLengthEncoder extends SIPEncoder[ContentLength]{
+
+  def encode(model: ContentLength, builder: StringBuilder) = {
+    if (model.contentLength < 0)
+      builder.append("0")
+    else
+      builder.append(model.contentLength)
+  }
+
+}
+
+object ContentLengthJsonDecoder extends JsonDecoder[ContentLength]{
+  def decode(json: JsonAST.JValue) = {
+    val JString(headerName) = json \ "headerName"
+    require(ContentLengthHeader.NAME == headerName)
+    val JInt(contentLength) = json \ "contentLength"
+    ContentLength(contentLength.toInt)
+  }
+}
+
+object ContentLengthJsonEncoder extends JsonEncoder[ContentLength] {
+
+  def encode(model: ContentLength) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("contentLength", JInt(model.contentLength)) :: Nil
+    )
+  }
+
+}
+
 object ContentLength {
 
   def decode(source: String) = ContentLengthDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[ContentLength]{
-    def encode(model: ContentLength, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-        JField("contentLength", JInt(model.contentLength)) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
+  def decodeFromJson(source: String) = ContentLengthJsonDecoder.decode(source)
+
 
 }
 
@@ -56,17 +80,12 @@ case class ContentLength(contentLength: Int)
   require(contentLength > 0)
 
   val headerName = ContentLengthHeader.NAME
-
   val name = headerName
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, ContentLength.JsonEncoder)
+  def encodeBody(builder: StringBuilder) = ContentLengthEncoder.encode(this, builder)
 
-  def encodeBody(builder: StringBuilder) = {
-    if (contentLength < 0)
-      builder.append("0")
-    else
-      builder.append(contentLength)
-  }
+  def encodeAsJValue() = ContentLengthJsonEncoder.encode(this)
 
   override def toString = encode()
+
 }

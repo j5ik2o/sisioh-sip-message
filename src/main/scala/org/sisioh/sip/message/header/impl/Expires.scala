@@ -1,7 +1,8 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.ExpiresHeader
-import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util._
+import net.liftweb.json._
 
 object ExpiresDecoder extends ExpiresDecoder
 
@@ -18,20 +19,22 @@ trait ExpiresParser extends ParserBase {
   }
 }
 
+object ExpiresJsonEncoder extends JsonEncoder[Expires] {
+
+  def encode(model: Expires) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("expires", JInt(BigInt(model.expires))) :: Nil
+    )
+  }
+
+}
+
+
 object Expires {
 
   def decode(source: String) = ExpiresDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[Expires] {
-    def encode(model: Expires, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-        JField("expires", JInt(BigInt(model.expires))) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -42,10 +45,10 @@ case class Expires(expires: Int) extends SIPHeader with ExpiresHeader {
 
   val name = headerName
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, Expires.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) =
     builder.append(expires)
+
+  def encodeAsJValue() = ExpiresJsonEncoder.encode(this)
 
   override def toString = encode()
 

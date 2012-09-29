@@ -20,6 +20,8 @@ import org.sisioh.sip.message.header.ContentTypeHeader
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json.ext.EnumNameSerializer
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 
 object ContentTypeDecoder extends ContentTypeDecoder
 
@@ -37,23 +39,19 @@ trait ContentTypeParser extends ParserBase with MediaRangeParser {
 
 }
 
+object ContentTypeJsonEncoder extends JsonEncoder[ContentType] {
+
+  def encode(model: ContentType) = {
+    ("headerName" -> model.headerName) ~
+      ("contentType" -> model.contentType) ~
+      ("contentSubType" -> model.contentSubType) ~
+      ("parameters" -> parse(model.parameters.encodeByJson()))
+  }
+}
+
 object ContentType {
 
   def decode(source: String) = ContentTypeDecoder.decode(source)
-
-  object JsonEncoder extends Encoder[ContentType] {
-    def encode(model: ContentType, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
-      val json =
-        ("headerName" -> model.headerName) ~
-        ("contentType" -> model.contentType) ~
-        ("contentSubType" -> model.contentSubType) ~
-        ("parameters" -> parse(model.parameters.encodeByJson()))
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -73,8 +71,6 @@ case class ContentType
   val mediaRange = MediaRange(contentType, contentSubType)
   val duplicates = DuplicateNameValueList()
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, ContentType.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) = {
     mediaRange.encode(builder)
     if (hasParameters) {
@@ -90,4 +86,5 @@ case class ContentType
 
   override def toString = encode()
 
+  def encodeAsJValue() = ContentTypeJsonEncoder.encode(this)
 }

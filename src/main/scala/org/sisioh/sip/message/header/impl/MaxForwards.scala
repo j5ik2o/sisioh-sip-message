@@ -1,7 +1,10 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.MaxForwardsHeader
-import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util._
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
+
 
 object MaxForwardsDecoder extends MaxForwardsDecoder
 
@@ -17,19 +20,19 @@ trait MaxForwardsParser extends ParserBase {
   }
 }
 
+object MaxForwardsJsonEncoder extends JsonEncoder[MaxForwards] {
+
+  def encode(model: MaxForwards) = {
+    ("headerName" -> model.headerName) ~
+      ("maxForwards" -> model.maxForwards)
+  }
+
+}
+
 object MaxForwards {
 
   def decode(source: String) = MaxForwardsDecoder.decode(source: String)
 
-  object JsonEncoder extends Encoder[MaxForwards] {
-    def encode(model: MaxForwards, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = ("headerName" -> model.headerName) ~
-        ("maxForwards" -> model.maxForwards)
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -41,10 +44,10 @@ case class MaxForwards(maxForwards: Int) extends SIPHeader with MaxForwardsHeade
 
   def decrementMaxForwards = MaxForwards(maxForwards - 1)
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, MaxForwards.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) =
     builder.append(maxForwards)
+
+  def encodeAsJValue() = MaxForwardsJsonEncoder.encode(this)
 
   override def toString = encode()
 }

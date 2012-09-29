@@ -19,11 +19,8 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
-import util.parsing.combinator.RegexParsers
+import net.liftweb.json._
 import scala.Some
-import org.sisioh.sip.util.HostPort.JsonEncoder
-import net.liftweb.json.JsonAST.JValue
-import net.liftweb.json
 
 object AuthorityDecoder {
   def apply() = new AuthorityDecoder
@@ -51,46 +48,64 @@ trait AuthorityParser extends ParserBase with UserInfoParser with HostPortParser
   }
 }
 
+object AuthorityEncoder extends SIPEncoder[Authority] {
+
+  def encode(model: Authority, builder: StringBuilder) = {
+    (model.hostPort, model.userInfo) match {
+      case (Some(hp), Some(ui)) =>
+        ui.encode(builder).append(Separators.AT)
+        hp.encode(builder)
+        builder
+      case (Some(hp), None) =>
+        hp.encode(builder)
+        builder
+      case _ =>
+        builder
+    }
+  }
+
+}
+
+object AuthorityJsonDecoder extends JsonDecoder[Authority] {
+
+  def decode(json: JsonAST.JValue): Authority = {
+    val hostPortOpt = (json \ "hostPort").toOpt.map {
+      HostPortJsonDecoder.decode(_)
+    }
+    val userInfoOpt = (json \ "userInfo").toOpt.map {
+      UserInfoJsonDecoder.decode(_)
+    }
+    Authority(hostPortOpt, userInfoOpt)
+  }
+
+}
+
+object AuthorityJsonEncoder extends JsonEncoder[Authority] {
+
+  def encode(model: Authority) = {
+    (model.hostPort, model.userInfo) match {
+      case (Some(hp), Some(ui)) =>
+        JObject(JField("hostPort", hp.encodeAsJValue()) :: JField("userInfo", ui.encodeAsJValue()) :: Nil)
+      case (Some(hp), None) =>
+        JObject(JField("hostPort", hp.encodeAsJValue()) :: Nil)
+      case (None, Some(ui)) =>
+        JObject(JField("userInfo", ui.encodeAsJValue()) :: Nil)
+      case _ =>
+        JNull
+    }
+  }
+
+}
+
 
 /**
  * [[org.sisioh.sip.message.address.impl.Authority]]のためのコンパニオンオブジェクト。
  */
 object Authority {
 
-  def apply(hostPort: Option[HostPort], userInfo: Option[UserInfo]):Authority = new Authority(hostPort, userInfo)
+  def apply(hostPort: Option[HostPort], userInfo: Option[UserInfo]): Authority = new Authority(hostPort, userInfo)
 
   def decode(source: String) = AuthorityDecoder().decode(source)
-
-  import net.liftweb.json._
-
-//  object JsonDecoder extends Decoder[Authority]{
-//
-//    def decode(json : JsonAST.JValue): Authority = {
-//      val hostPort = HostPort.JsonDecoder.decode(json \ "hostPort")
-//      UserInfo.JsonDecoder
-//    }
-//
-//    def decode(source: String) = {
-//      decodec(parse(source))
-//    }
-//
-//  }
-
-  object JsonEncoder extends Encoder[Authority] {
-    def encode(model: Authority, builder: StringBuilder) = {
-      val json = (model.hostPort, model.userInfo) match {
-        case (Some(hp), Some(ui)) =>
-          JObject(JField("hostPort", parse(hp.encodeByJson())) :: JField("userInfo", parse(ui.encodeByJson())) :: Nil)
-        case (Some(hp), None) =>
-          JObject(JField("hostPort", parse(hp.encodeByJson())) :: Nil)
-        case (None, Some(ui)) =>
-          JObject(JField("userInfo", parse(ui.encode)) :: Nil)
-        case _ =>
-          JNull
-      }
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -109,19 +124,10 @@ class Authority(val hostPort: Option[HostPort], val userInfo: Option[UserInfo]) 
 
   def removeUserInfo: Authority = Authority(hostPort, None)
 
-  def encode(builder: StringBuilder): StringBuilder = {
-    (hostPort, userInfo) match {
-      case (Some(hp), Some(ui)) =>
-        ui.encode(builder).append(Separators.AT)
-        hp.encode(builder)
-        builder
-      case (Some(hp), None) =>
-        hp.encode(builder)
-        builder
-      case _ =>
-        builder
-    }
-  }
+  def encode(builder: StringBuilder): StringBuilder =
+    AuthorityEncoder.encode(this, builder)
+
+  def encodeAsJValue() = AuthorityJsonEncoder.encode(this)
 
   override def hashCode() = 31 * hostPort.## + 31 * userInfo.##
 
@@ -131,5 +137,4 @@ class Authority(val hostPort: Option[HostPort], val userInfo: Option[UserInfo]) 
     case _ => false
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, Authority.JsonEncoder)
 }

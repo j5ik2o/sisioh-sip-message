@@ -17,7 +17,7 @@ class CSeqDecoderSpec extends Specification {
       val source = CSeq("INVITE", 1)
       val encode = source.encodeByJson()
       println(encode)
-      val dest = CSeq.JsonDecoder.decode(encode)
+      val dest = CSeqJsonDecoder.decode(encode)
       "可逆的にデコードできること" in {
         source must_== dest
       }

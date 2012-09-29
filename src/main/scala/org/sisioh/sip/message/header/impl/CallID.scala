@@ -17,7 +17,8 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.message.header.CallIdHeader
-import org.sisioh.sip.util.{SIPDecoder, Decoder, Encoder, ParserBase}
+import org.sisioh.sip.util._
+import net.liftweb.json._
 
 object CallIdDecoder extends CallIdDecoder
 
@@ -42,31 +43,32 @@ trait CallIdParser extends ParserBase {
 
 }
 
+object CallIdJsonDecoder extends JsonDecoder[CallId] {
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(callId) = json \ "callId"
+    CallId(callId)
+  }
+
+}
+
+object CallIdJsonEncoder extends JsonEncoder[CallId] {
+
+  def encode(model: CallId) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("callId", JString(model.callId)) :: Nil
+    )
+  }
+
+}
+
 object CallId {
 
   def decode(source: String): CallId = CallIdDecoder.decode(source)
 
-  def decodeFromJson(source: String): CallId = JsonDecoder.decode(source)
+  def decodeFromJson(source: String): CallId = CallIdJsonDecoder.decode(source)
 
-  object JsonDecoder extends Decoder[CallId] {
-    def decode(source: String) = {
-      import net.liftweb.json._
-      val json = parse(source)
-      val JString(callId) = json \ "callId"
-      CallId(callId)
-    }
-  }
-
-  object JsonEncoder extends Encoder[CallId] {
-    def encode(model: CallId, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-        JField("callId", JString(model.callId)) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -75,10 +77,11 @@ case class CallId(callId: String) extends SIPHeader with CallIdHeader {
   val headerName = CallIdHeader.NAME
   val name = CallIdHeader.NAME
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, CallId.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) =
     callIdentity.encode(builder)
 
+  def encodeAsJValue() = CallIdJsonEncoder.encode(this)
+
   override def toString = encode()
+
 }

@@ -17,8 +17,8 @@ package org.sisioh.sip.util
  */
 
 import org.sisioh.sip.core.GenericObject
-import util.parsing.combinator.RegexParsers
-import net.liftweb.json
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 
 object HostPortDecoder extends HostPortDecoder
 
@@ -36,6 +36,32 @@ trait HostPortParser extends ParserBase with HostParser {
 
 }
 
+
+
+object HostPortJsonDecoder extends JsonDecoder[HostPort] {
+
+  def decode(json: JsonAST.JValue): HostPort = {
+    val host = HostJsonDecoder.decode(json \ "host")
+    val port = (json \ "port").toOpt.map {
+      e =>
+        val i = e.asInstanceOf[JInt]
+        i.num.toInt
+    }
+    HostPort(host, port)
+  }
+
+}
+
+/**
+ * Jsonエンコーダー。
+ */
+object HostPortJsonEncoder extends JsonEncoder[HostPort] {
+
+  def encode(model: HostPort) =
+    ("host" -> model.host.encodeAsJValue()) ~
+      ("port" -> model.port)
+
+}
 /**
  * [[org.sisioh.sip.util.HostPort]]のコンパニオンオブジェクト
  */
@@ -45,38 +71,9 @@ object HostPort {
 
   def decode(source: String) = HostPortDecoder.decode(source)
 
-  def decodeFromJson(source: String) = JsonDecoder.decode(source)
+  def decodeFromJson(source: String) = HostPortJsonDecoder.decode(source)
 
-  import net.liftweb.json._
-  import net.liftweb.json.JsonDSL._
 
-  object JsonDecoder extends JsonDecoder[HostPort] {
-
-    def decode(json: JsonAST.JValue): HostPort = {
-      val host = Host.JsonDecoder.decode(json \ "host")
-      val port = (json \ "port").toOpt.map {
-        e =>
-          val i = e.asInstanceOf[JInt]
-          i.num.toInt
-      }
-      HostPort(host, port)
-    }
-
-  }
-
-  /**
-   * Jsonエンコーダー。
-   */
-  object JsonEncoder extends JsonEncoder[HostPort] {
-
-    def encode(model: HostPort, builder: StringBuilder) =
-      builder.append(compact(render(encode(model))))
-
-    def encode(model: HostPort) =
-      ("host" -> parse(model.host.encodeByJson())) ~
-        ("port" -> model.port)
-
-  }
 
 }
 
@@ -98,6 +95,8 @@ class HostPort(val host: Host, val port: Option[Int]) extends GenericObject {
   def encode(builder: StringBuilder) =
     builder.append(port.map("%s:%s".format(host.encode(), _)).getOrElse(host.toString))
 
+  def encodeAsJValue() = HostPortJsonEncoder.encode(this)
+
   override def hashCode() = 31 * host.## + 31 * port.##
 
   override def equals(obj: Any) = obj match {
@@ -106,5 +105,4 @@ class HostPort(val host: Host, val port: Option[Int]) extends GenericObject {
     case _ => false
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, HostPort.JsonEncoder)
 }

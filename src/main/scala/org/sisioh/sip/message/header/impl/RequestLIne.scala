@@ -1,7 +1,7 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.{SIPConstants, SIPRequestLine}
-import org.sisioh.sip.message.address.impl.{SipUriParser, DefaultGenericURI, GenericURI}
+import org.sisioh.sip.message.address.impl.{DefaultGenericURIJsonDecoder, SipUriParser, DefaultGenericURI, GenericURI}
 import org.sisioh.sip.core.Separators
 import org.sisioh.sip.util._
 import net.liftweb.json._
@@ -30,36 +30,53 @@ trait RequestLineParser extends ParserBase with SipUriParser {
 
 }
 
+
+object RequestLineEncoder extends SIPEncoder[RequestLine] {
+
+  def encode(model: RequestLine, builder: StringBuilder) = {
+    model.method.foreach {
+      m =>
+        builder.append(m).append(Separators.SP)
+    }
+    model.uri.encode(builder).append(Separators.SP)
+    model.sipVersion.foreach {
+      s =>
+        builder.append(s)
+    }
+    builder.append(Separators.NEWLINE)
+    builder
+  }
+
+}
+
+object RequestLineJsonDecoder extends JsonDecoder[RequestLine] {
+
+  def decode(json: JsonAST.JValue) = {
+    val uriString = (json \ "uri")
+    val uri = DefaultGenericURIJsonDecoder.decode(uriString)
+    val JString(method) = (json \ "method")
+    val sipVersion = (json \ "sipVersion").toOpt.map {
+      _.asInstanceOf[JString].s
+    }
+    RequestLine(uri, Some(method), sipVersion)
+  }
+
+}
+
+object RequestLineJsonEncoder extends JsonEncoder[RequestLine] {
+
+  def encode(model: RequestLine) =
+    ("uri" -> model.uri.encodeAsJValue()) ~
+      ("method" -> model.method) ~
+      ("sipVersion" -> model.sipVersion)
+
+}
+
 object RequestLine {
 
   def decode(source: String) = RequestLineDecoder.decode(source)
 
-  def decodeFromJson(source: String) = JsonDecoder.decode(source)
-
-  object JsonDecoder extends JsonDecoder[RequestLine] {
-
-    def decode(json: JsonAST.JValue) = {
-      val uriString = (json \ "uri")
-      val uri = DefaultGenericURI.JsonDecoder.decode(uriString)
-      val JString(method) = (json \ "method")
-      val sipVersion = (json \ "sipVersion").toOpt.map {
-        _.asInstanceOf[JString].s
-      }
-      RequestLine(uri, Some(method), sipVersion)
-    }
-
-  }
-
-  object JsonEncoder extends JsonEncoder[RequestLine] {
-
-    def encode(model: RequestLine) =
-      ("uri" -> DefaultGenericURI.JsonEncoder.encode(model.uri)) ~
-        ("method" -> model.method) ~
-        ("sipVersion" -> model.sipVersion)
-
-    def encode(model: RequestLine, builder: StringBuilder) =
-      builder.append(compact(render(encode(model))))
-  }
+  def decodeFromJson(source: String) = RequestLineJsonDecoder.decode(source)
 
 }
 
@@ -90,25 +107,11 @@ case class RequestLine
     }
   }
 
-
   lazy val versionMajor = versionSplis(0)
 
   lazy val versionMinor = versionSplis(1)
 
+  def encode(builder: StringBuilder) = RequestLineEncoder.encode(this, builder)
 
-  def encode(builder: StringBuilder) = {
-    method.foreach {
-      m =>
-        builder.append(m).append(Separators.SP)
-    }
-    uri.encode(builder).append(Separators.SP)
-    sipVersion.foreach {
-      s =>
-        builder.append(s)
-    }
-    builder.append(Separators.NEWLINE)
-    builder
-  }
-
-  def encodeByJson(builder: StringBuilder) = encode(builder, RequestLine.JsonEncoder)
+  def encodeAsJValue() = RequestLineJsonEncoder.encode(this)
 }

@@ -16,9 +16,45 @@ package org.sisioh.sip.message.header.impl
  * governing permissions and limitations under the License.
  */
 
-import org.sisioh.sip.util.{Encoder, Encodable}
+import org.sisioh.sip.util.{JsonDecoder, JsonEncoder, Encoder, Encodable}
 import org.sisioh.sip.core.{GenericObject, Separators}
-import annotation.tailrec
+import net.liftweb.json._
+
+object CallIdentifierEncoder extends Encoder[CallIdentifier] {
+
+  def encode(model: CallIdentifier, builder: StringBuilder) = {
+    model.host.map {
+      builder.append(model.localId).append(Separators.AT).append(_)
+    }.getOrElse {
+      builder.append(model.localId)
+    }
+  }
+
+}
+
+
+object CallIdentifierJsonDecoder extends JsonDecoder[CallIdentifier] {
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(localId) = json \ "localId"
+    val hostOpt = (json \ "host").toOpt.map {
+      _.asInstanceOf[JString].s
+    }
+    CallIdentifier(localId, hostOpt)
+  }
+
+}
+
+object CallIdentifierJsonEncoder extends JsonEncoder[CallIdentifier] {
+
+  def encode(model: CallIdentifier) = {
+    JObject(model.host.map {
+      h =>
+        JField("localId", JString(model.localId)) :: JField("host", JString(h)) :: Nil
+    }.getOrElse(JField("localId", JString(model.localId)) :: Nil))
+  }
+
+}
 
 object CallIdentifier {
 
@@ -33,30 +69,14 @@ object CallIdentifier {
     }
   }
 
-  object JsonEncoder extends Encoder[CallIdentifier] {
-    def encode(model: CallIdentifier, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(model.host.map{h =>
-        JField("localId", JString(model.localId)) :: JField("host", JString(h)) :: Nil
-      }.getOrElse(JField("localId", JString(model.localId)) :: Nil))
-      builder.append(compact(render(json)))
-    }
-
-  }
-
 }
 
 case class CallIdentifier(localId: String, host: Option[String] = None) extends GenericObject {
 
-  def encode(builder: StringBuilder) = {
-    host.map {
-      builder.append(localId).append(Separators.AT).append(_)
-    }.getOrElse {
-      builder.append(localId)
-    }
-  }
+  def encode(builder: StringBuilder) = CallIdentifierEncoder.encode(this, builder)
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, CallIdentifier.JsonEncoder)
+  def encodeAsJValue() = CallIdentifierJsonEncoder.encode(this)
 
   override def toString = encode()
+
 }

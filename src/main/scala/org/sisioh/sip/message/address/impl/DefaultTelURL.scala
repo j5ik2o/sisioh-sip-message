@@ -19,7 +19,8 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.message.address.{ParameterNames, TelURL}
 import org.sisioh.sip.core.GenericObject
-import org.sisioh.sip.util.{SIPDecoder, Encoder, ParserBase}
+import org.sisioh.sip.util.{JsonEncoder, SIPDecoder, ParserBase}
+import net.liftweb.json._
 
 object DefaultTelURLDecoder extends DefaultTelURLDecoder
 
@@ -34,6 +35,17 @@ trait DefaultTelURLParser extends ParserBase with TelephoneNumberParser {
   }
 }
 
+object DefaultTelURLJsonEncoder extends JsonEncoder[DefaultTelURL]{
+
+  def encode(model: DefaultTelURL) = {
+      JObject(JField("scheme", JString(model.scheme)) ::
+        JField("isGlobal", JBool(model.isGlobal)) ::
+        JField("phoneNumber", JString(model.phoneNumber)) ::
+        JField("parameters", parse(model.params.encodeByJson())) :: Nil)
+  }
+
+}
+
 object DefaultTelURL {
 
   def apply(telephoneNumber: TelephoneNumber, phoneContext: Option[String] = None) =
@@ -44,16 +56,7 @@ object DefaultTelURL {
 
   def decode(telephoneNumber: String) = DefaultTelURLDecoder.decode(telephoneNumber)
 
-  object JsonEncoder extends Encoder[DefaultTelURL]{
-    def encode(model: DefaultTelURL, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(JField("scheme", JString(model.scheme)) ::
-        JField("isGlobal", JBool(model.isGlobal)) ::
-        JField("phoneNumber", JString(model.phoneNumber)) ::
-        JField("parameters", parse(model.params.encodeByJson())) :: Nil)
-      builder.append(compact(render(json)))
-    }
-  }
+
 }
 
 class DefaultTelURL
@@ -116,6 +119,8 @@ class DefaultTelURL
     builder
   }
 
+  def encodeAsJValue() = DefaultTelURLJsonEncoder.encode(this)
+
   override def hashCode() = 31 * telephoneNumber.##
 
   override def equals(obj: Any) = obj match {
@@ -124,5 +129,4 @@ class DefaultTelURL
     case _ => false
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultTelURL.JsonEncoder)
 }

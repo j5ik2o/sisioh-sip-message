@@ -23,6 +23,8 @@ import org.sisioh.sip.core.GenericObject
 import scala.Some
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json
+import json._
+import scala.Some
 
 /**
  * [[org.sisioh.sip.message.address.impl.DefaultGenericURIDecoder]]のコンパニオンオブジェクト。
@@ -97,6 +99,24 @@ trait DefaultGenericURIParser extends ParserBase with AuthorityParser {
   lazy val pchar: Parser[Char] = unreserved | escaped | elem(':') | '@' | '&' | '=' | '+' | '$' | ','
 }
 
+object DefaultGenericURIJsonDecoder extends JsonDecoder[GenericURI] {
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(uriString) = json \ "uriString"
+    if (uriString == "*")
+      WildCardURI
+    else
+      DefaultGenericURI(uriString)
+  }
+
+}
+
+object DefaultGenericURIJsonEncoder extends JsonEncoder[GenericURI] {
+
+  def encode(model: GenericURI) =
+    JObject(JField("uriString", JString(model.uriString)) :: Nil)
+
+}
 
 object DefaultGenericURI {
 
@@ -105,30 +125,6 @@ object DefaultGenericURI {
   def unapply(genericUri: GenericURI): Option[(String, String)] = Some(genericUri.uriString, genericUri.scheme)
 
   def decode(source: String) = DefaultGenericURIDecoder.decode(source)
-
-  import net.liftweb.json._
-
-  object JsonDecoder extends JsonDecoder[GenericURI] {
-
-    def decode(json: JsonAST.JValue) = {
-      val JString(uriString) = json \ "uriString"
-      if (uriString == "*")
-        WildCardURI
-      else
-        DefaultGenericURI(uriString)
-    }
-
-  }
-
-  object JsonEncoder extends JsonEncoder[GenericURI] {
-
-    def encode(model: GenericURI, builder: StringBuilder) =
-      builder.append(compact(render(encode(model))))
-
-    def encode(model: GenericURI) =
-      JObject(JField("uriString", JString(model.uriString)) :: Nil)
-
-  }
 
 }
 
@@ -139,7 +135,8 @@ trait GenericURI extends URI with GenericObject {
 
   override def equals(obj: Any) = obj match {
     case that: GenericURI =>
-      uriString == that.uriString && scheme == that.scheme
+      uriString == that.uriString &&
+        scheme == that.scheme
     case _ => false
   }
 
@@ -147,7 +144,6 @@ trait GenericURI extends URI with GenericObject {
     builder.append(uriString)
 
   override def toString = encode()
-
 
 }
 
@@ -161,7 +157,8 @@ class WildCardURI extends GenericURI {
   val scheme = ""
   val isSipURI = false
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultGenericURI.JsonEncoder)
+  def encodeAsJValue() = DefaultGenericURIJsonEncoder.encode(this)
+
 }
 
 class DefaultGenericURI
@@ -175,5 +172,6 @@ class DefaultGenericURI
 
   val isSipURI = isInstanceOf[SipUri]
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultGenericURI.JsonEncoder)
+  def encodeAsJValue() = DefaultGenericURIJsonEncoder.encode(this)
+
 }

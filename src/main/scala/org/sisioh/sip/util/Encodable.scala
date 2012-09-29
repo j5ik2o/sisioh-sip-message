@@ -1,5 +1,8 @@
 package org.sisioh.sip.util
 
+import net.liftweb.json
+import net.liftweb.json._
+
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
  *
@@ -23,9 +26,12 @@ trait Encodable {
 
   def encode(): String = encode(new StringBuilder).result()
   def encode(builder: StringBuilder): StringBuilder
-  def encodeByJson(): String = encodeByJson(new StringBuilder).result()
-  def encodeByJson(builder: StringBuilder): StringBuilder
-
   def encode[A](encoder: Encoder[A]): String = encode(new StringBuilder, encoder).result()
+
+  def encodeByJson(): String = encodeByJson(new StringBuilder).result()
+  def encodeByJson(builder: StringBuilder): StringBuilder = builder.append(compact(render(encodeAsJValue)))
+  def encodeAsJValue(): json.JValue
+
   def encode[A](builder: StringBuilder, encoder: Encoder[A]):StringBuilder = encoder.encode(this.asInstanceOf[A], builder)
+
 }

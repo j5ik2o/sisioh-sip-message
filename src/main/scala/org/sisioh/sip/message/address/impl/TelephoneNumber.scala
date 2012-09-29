@@ -19,8 +19,8 @@ package org.sisioh.sip.message.address.impl
 
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{Separators, GenericObject}
-import scala.Some
 import org.sisioh.sip.message.address.ParameterNames
+import net.liftweb.json._
 
 object TelephoneNumberDecoder extends TelephoneNumberDecoder
 
@@ -148,17 +148,19 @@ trait TelephoneNumberParser extends ParserBase {
   lazy val visualSeparator: Parser[Char] = elem('-') | '.' | '(' | ')'
 }
 
+object TelephoneNumberJsonEncoder extends JsonEncoder[TelephoneNumber] {
+
+  def encode(model: TelephoneNumber) = {
+      JObject(JField("isGlobal", JBool(model.isGlobal)) ::
+        JField("phoneNumber", JString(model.phoneNumber)) ::
+        JField("parameters", parse(model.params.encodeByJson())) :: Nil)
+  }
+
+}
+
+
 object TelephoneNumber {
 
-  object JsonEncoder extends Encoder[TelephoneNumber] {
-    def encode(model: TelephoneNumber, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(JField("isGlobal", JBool(model.isGlobal)) ::
-        JField("phoneNumber", JString(model.phoneNumber)) ::
-          JField("parameters", parse(model.params.encodeByJson())) :: Nil)
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -224,5 +226,6 @@ case class TelephoneNumber
     builder
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, TelephoneNumber.JsonEncoder)
+  def encodeAsJValue() = TelephoneNumberJsonEncoder.encode(this)
+
 }

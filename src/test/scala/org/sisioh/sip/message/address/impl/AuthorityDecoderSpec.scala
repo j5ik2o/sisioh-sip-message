@@ -23,12 +23,23 @@ class AuthorityDecoderSpec extends Specification {
       hostPort = Some(hostPort),
       userInfo = Some(userInfo)
     )
-    val target = AuthorityDecoder()
-    val encodeObject = authority.encode()
-    println(encodeObject)
-    val result = target.decode(encodeObject)
-    "可逆的にデコードできること" in {
-      result must_== authority
+    "標準" in {
+      val target = AuthorityDecoder()
+      val encodeObject = authority.encode()
+      println(encodeObject)
+      val result = target.decode(encodeObject)
+      "可逆的にデコードできること" in {
+        result must_== authority
+      }
+    }
+    "JSON" in {
+      val target = AuthorityJsonDecoder
+      val encodeObject = authority.encodeByJson()
+      println(encodeObject)
+      val result = target.decode(encodeObject)
+      "可逆的にデコードできること" in {
+        result must_== authority
+      }
     }
   }
 

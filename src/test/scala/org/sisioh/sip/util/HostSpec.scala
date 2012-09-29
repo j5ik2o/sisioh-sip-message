@@ -34,6 +34,8 @@ class HostSpec extends Specification {
       host.toString must_== "127.0.0.1"
       host.encode() must_== "127.0.0.1"
       host.encodeByJson() must_== """{"hostNameOrIpAddress":"127.0.0.1","addressType":1}"""
+      Host.decode("127.0.0.1") must_== host
+      Host.decodeFromJson("""{"hostNameOrIpAddress":"127.0.0.1","addressType":1}""") must_== host
     }
   }
 

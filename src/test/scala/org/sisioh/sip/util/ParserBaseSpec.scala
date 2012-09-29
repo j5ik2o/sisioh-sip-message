@@ -5,8 +5,10 @@ import org.apache.commons.lang.CharRange
 
 object BaseParser extends BaseParser
 
-class BaseParser extends ParserBase with SIPDecoder[Any]{
-  def decode(source: String) = null
+class BaseParser extends ParserBase with SIPDecoder[String]{
+  def decode(source: String) = {
+    source
+  }
 }
 
 class ParserBaseSpec extends Specification {

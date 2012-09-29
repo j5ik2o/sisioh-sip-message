@@ -20,6 +20,8 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.message.header._
 import org.sisioh.sip.core.Separators
 import scala.Some
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 
 trait ViaParser extends ParserBase with HostParser {
   lazy val VIA = ("Via" | "v") ~> HCOLON ~> rep1sep(viaParm, COMMA)
@@ -71,20 +73,19 @@ trait ViaParser extends ParserBase with HostParser {
   }
 }
 
+object ViaJsonEncoder extends JsonEncoder[Via] {
+
+  def encode(model: Via) = {
+    ("headerName" -> model.headerName) ~
+      ("sentBy" -> parse(model.sentBy.encodeByJson())) ~
+      ("sentProtocol" -> parse(model.sentProtocol.encodeByJson())) ~
+      ("parameters" -> parse(model.parameters.encodeByJson()))
+  }
+
+}
+
 object Via {
 
-  object JsonEncoder extends Encoder[Via] {
-    def encode(model: Via, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json =
-        ("headerName" -> model.headerName) ~
-        ("sentBy" -> parse(model.sentBy.encodeByJson())) ~
-        ("sentProtocol" -> parse(model.sentProtocol.encodeByJson())) ~
-        ("parameters" -> parse(model.parameters.encodeByJson()))
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -126,8 +127,6 @@ case class Via
 
   def withRPort(rPort: Int): Via = withParameter(ParameterNames.RPORT, rPort)
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, Via.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) = {
     sentProtocol.encode(builder)
     builder.append(Separators.SP)
@@ -144,6 +143,8 @@ case class Via
 
   val sentByField = sentBy.toString
   val sentByProtocolField = sentProtocol.toString
+
+  def encodeAsJValue() = ViaJsonEncoder.encode(this)
 }
 
 case class ViaList(headers: List[Via] = List.empty)

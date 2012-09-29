@@ -32,7 +32,7 @@ class DefaultAddressSpec extends Specification {
       val r = BigDecimal(json) / BigDecimal(org)
       println("raito = %.2f".format(r))
       address.encode() must_== """"かとう" <sip:KATO:password@localhost:8080>"""
-      address.encodeByJson() must_== """{"uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{},"qheaders":{}},"displayName":"かとう","addressType":0}"""
+      address.encodeByJson() must_== """{"uriType":"sip","uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0},"port":8080},"userInfo":{"name":"KATO","password":"password"}},"uriParams":{"separator":";","values":{}},"qheaders":{"separator":"&","values":{}}},"displayName":"かとう","addressType":0}"""
     }
   }
 

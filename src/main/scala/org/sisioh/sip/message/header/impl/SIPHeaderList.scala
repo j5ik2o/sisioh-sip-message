@@ -3,9 +3,8 @@ package org.sisioh.sip.message.header.impl
 import org.sisioh.sip.message.header.{SIPHeaderNames, Header}
 import org.sisioh.sip.core.Separators
 import collection.immutable.List
-import collection.{LinearSeq, mutable, LinearSeqOptimized, immutable}
-import collection.mutable.{Builder, ListBuffer}
-import collection.generic.GenericTraversableTemplate
+import net.liftweb.json._
+
 
 abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 (val clazz: Class[_],
@@ -26,12 +25,11 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
     }.mkString(Separators.SEMICOLON))
   }
 
-  def encodeByJson(builder: StringBuilder) = {
-    import net.liftweb.json._
-    val json = JObject(
+  def encodeAsJValue() = {
+    JObject(
       JField("headerNamne", JString(headerName)) ::
-        JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil)
-    builder.append(compact(render(json)))
+        JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil
+    )
   }
 
   override def encode(builder: StringBuilder) =

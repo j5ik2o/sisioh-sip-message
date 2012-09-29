@@ -19,7 +19,7 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.core.{GenericObject, Separators}
 import org.sisioh.sip.util._
 import util.parsing.combinator.RegexParsers
-import scala.Some
+import net.liftweb.json._
 
 object UserInfoDecoder extends UserInfoDecoder
 
@@ -53,6 +53,32 @@ object UserType extends Enumeration {
   val TELHPHONE_SUBSCRIBER, USER = Value
 }
 
+object UserInfoJsonDecoder extends JsonDecoder[UserInfo]{
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(name) = json \ "name"
+    val passwordOpt = (json \ "password").toOpt.map {
+      e => e.asInstanceOf[JString].s
+    }
+    UserInfo(name, passwordOpt)
+  }
+
+}
+
+object UserInfoJsonEncoder extends JsonEncoder[UserInfo] {
+
+  def encode(model: UserInfo) = {
+    JObject(model.password.map {
+      e =>
+        JField("name", JString(model.name)) :: JField("password", JString(e)) :: Nil
+    }.getOrElse {
+      JField("name", JString(model.name)) :: Nil
+    })
+  }
+
+}
+
+
 /**
  * [[org.sisioh.sip.message.address.impl.UserInfo]]のためのコンパニオンオブジェクト。
  */
@@ -77,24 +103,6 @@ object UserInfo {
    */
   def unapply(userInfo: UserInfo): Option[(String, Option[String], Option[UserType.Value])] =
     Some(userInfo.name, userInfo.password, Some(userInfo.userType))
-
-  //object JsonDecoder extends
-
-  object JsonEncoder extends Encoder[UserInfo] {
-
-    def encode(model: UserInfo, builder: StringBuilder): StringBuilder = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = JObject(model.password.map {
-        e =>
-          JField("name", model.name) :: JField("password", JString(e)) :: Nil
-      }.getOrElse {
-        JField("name", model.name) :: Nil
-      })
-      builder.append(compact(render(json)))
-    }
-
-  }
 
 }
 
@@ -146,5 +154,6 @@ class UserInfo
     case _ => false
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, UserInfo.JsonEncoder)
+  def encodeAsJValue() = UserInfoJsonEncoder.encode(this)
+
 }

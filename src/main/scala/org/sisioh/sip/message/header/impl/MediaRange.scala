@@ -2,6 +2,8 @@ package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 import scala.Some
 
 object MediaRangeDecoder extends MediaRangeDecoder
@@ -40,19 +42,27 @@ trait MediaRangeParser extends ParserBase {
   lazy val mValue = token | quotedString
 }
 
+object MediaRangeJsonDecoder extends JsonDecoder[MediaRange] {
+
+  def decode(json: JsonAST.JValue) = {
+    val JString(mediaType) = json \ "type"
+    val JString(mediaSubType) = json \ "subType"
+    MediaRange(mediaType, mediaSubType)
+  }
+
+}
+
+object MediaRangeJsonEncoder extends JsonEncoder[MediaRange] {
+
+  def encode(model: MediaRange) =
+    ("type" -> model.mediaType) ~
+      ("subType" -> model.mediaSubType)
+
+}
+
 object MediaRange {
 
   def decode(source: String) = MediaRangeDecoder.decode(source)
-
-  object JsonEncoder extends Encoder[MediaRange] {
-    def encode(model: MediaRange, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = ("type" -> model.mediaType) ~
-        ("subType" -> model.mediaSubType)
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -65,7 +75,10 @@ case class MediaRange(mediaType: String, mediaSubType: String) extends SIPObject
     builder
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, MediaRange.JsonEncoder)
+  def encodeAsJValue() = MediaRangeJsonEncoder.encode(this)
+
+  //def encodeByJson(builder: StringBuilder) = encode(builder, MediaRange.JsonEncoder)
 
   override def toString = encode()
+
 }

@@ -20,11 +20,14 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.message.address.{NetObject, SipURI}
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
+import net.liftweb.json._
+import net.liftweb.json
 
 object SipUriDecoder extends SipUriDecoder
 
 class SipUriDecoder extends SIPDecoder[SipUri] with SipUriParser {
   def decode(source: String) = decodeTarget(source, uri)
+
   lazy val uri = SIP_URI | SIPS_URI
 }
 
@@ -121,10 +124,35 @@ trait SipUriParser extends ParserBase with DefaultGenericURIParser with UserInfo
   lazy val paramUnreserved: Parser[Char] = elem('[') | ']' | '/' | ':' | '&' | '+' | '$'
 }
 
+object SipUriJsonDecoder extends JsonDecoder[SipUri] {
+  def decode(json: JsonAST.JValue) = {
+    val JString(scheme) = json \ "scheme"
+    val authority = AuthorityJsonDecoder.decode(json \ "authority")
+    val uriParams = NameValuePairListJsonDecoder.decode(json \ "uriParams")
+    val qheaders = NameValuePairListJsonDecoder.decode(json \ "qheaders")
+    SipUri(authority, scheme, uriParams, qheaders)
+  }
+}
+
+object SipUriJsonEncoder extends JsonEncoder[SipUri] {
+
+  def encode(model: SipUri) = {
+    JObject(JField("scheme", JString(model.scheme)) ::
+      JField("authority", parse(model.authority.encodeByJson())) ::
+      JField("uriParams", parse(model.uriParms.encodeByJson())) ::
+      JField("qheaders", parse(model.qheaders.encodeByJson())) :: Nil)
+  }
+
+}
+
 object SipUri {
 
-  def apply(authority: Authority, scheme: String = NetObject.SIP): SipUri =
-    new SipUri(authority, scheme)
+  def apply
+  (authority: Authority,
+   scheme: String = NetObject.SIP,
+   uriParms: NameValuePairList = NameValuePairList(),
+   qheaders: NameValuePairList = NameValuePairList("&")) =
+    new SipUri(authority, scheme, uriParms, qheaders)
 
   def decode(source: String) = SipUriDecoder.decode(source)
 
@@ -153,29 +181,23 @@ object SipUri {
     fromUserInfoAndHostPort(userInfo, hostPort, scheme)
   }
 
-  object JsonEncoder extends Encoder[SipUri] {
-    def encode(model: SipUri, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(JField("scheme", JString(model.scheme)) ::
-        JField("authority", parse(model.authority.encodeByJson())) ::
-        JField("uriParams", parse(model.uriParms.encodeByJson())) ::
-        JField("qheaders", parse(model.qheaders.encodeByJson())) :: Nil)
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
 class SipUri
 (val authority: Authority,
  override val scheme: String = NetObject.SIP,
- private val uriParms: NameValuePairList = NameValuePairList(),
- private val qheaders: NameValuePairList = NameValuePairList("&"))
+ val uriParms: NameValuePairList = NameValuePairList(),
+ val qheaders: NameValuePairList = NameValuePairList("&"))
   extends GenericURI with SipURI with GenericObject {
 
   override val userName = authority.userInfo.map(_.name)
   override val userPassword = authority.userInfo.flatMap(_.password)
-  override val host = authority.host.get.hostName.get
+  override val host = {
+    println("host",authority.host)
+    val host = authority.host.get
+    host.hostName.get
+  }
   override val port = authority.port
   override val isSecure: Boolean = scheme.equalsIgnoreCase(NetObject.SIPS)
   override val isSipURI: Boolean = true
@@ -341,5 +363,5 @@ class SipUri
 
   override def toString = encode()
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, SipUri.JsonEncoder)
+  def encodeAsJValue() = SipUriJsonEncoder.encode(this)
 }

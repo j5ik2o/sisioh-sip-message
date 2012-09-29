@@ -514,11 +514,11 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     builder
   }
 
-  def encodeByJson(builder: StringBuilder) = null
+//  def encodeByJson(builder: StringBuilder) = null
 
-  def removeFirst(headerName: String) = null
+//  def removeFirst(headerName: String) = null
 
-  def removeLast(headerName: String) = null
+//  def removeLast(headerName: String) = null
 
   lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 

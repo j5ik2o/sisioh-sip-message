@@ -63,6 +63,49 @@ trait NameValuePairParser extends RegexParsers {
 
 }
 
+//  object NameValuePairJsonDecoder extends JsonDecoder[NameValuePair] {
+//
+//    def decode(json: json.JValue) = {
+//      val JString(name) = json \ "name"
+//      val JString(valueType) = json \ "type"
+//      val value = json \ "value"
+//      (valueType, value) match {
+//        case ("boolean", JBool(b)) => b
+//        case ("string", JString(s)) => s
+//        case ("generic", value) =>
+//        case ("generic_list", value) =>
+//
+//      }
+//    }
+//
+//    def decode(source: String) =
+//      decode(parse(source))
+//
+//  }
+
+object NameValuePairJsonEncoder extends JsonEncoder[NameValuePair] {
+
+  def encode(model: NameValuePair) = {
+    JObject(model.value.map {
+      e =>
+        val (value, valueType) = e match {
+          case b: Boolean => (JBool(b), "boolean")
+          case s: String => (JString(s), "string")
+          case v: GenericObject =>
+            (v.encodeAsJValue(), "generic")
+          case v: GenericObjectList =>
+            (v.encodeAsJValue(), "generic_list")
+        }
+        JField("name", JString(model.name.get)) ::
+          JField("type", JString(valueType)) ::
+          JField("value", value) :: Nil
+    }.getOrElse {
+      JField("name", JString(model.name.get)) :: Nil
+    })
+  }
+
+}
+
 object NameValuePair {
 
   //implicit def stringToOption(value: String): Option[String] = Some(value)
@@ -89,51 +132,7 @@ object NameValuePair {
   def unapply(nameValuePair: NameValuePair): Option[(Option[String], Option[Any])] =
     Some(nameValuePair.name, nameValuePair.value)
 
-//  object JsonDecoder extends JsonDecoder[NameValuePair] {
-//
-//    def decode(json: json.JValue) = {
-//      val JString(name) = json \ "name"
-//      val JString(valueType) = json \ "type"
-//      val value = json \ "value"
-//      (valueType, value) match {
-//        case ("boolean", JBool(b)) => b
-//        case ("string", JString(s)) => s
-//        case ("generic", value) =>
-//        case ("generic_list", value) =>
-//
-//      }
-//    }
-//
-//    def decode(source: String) =
-//      decode(parse(source))
-//
-//  }
 
-  object JsonEncoder extends JsonEncoder[NameValuePair] {
-
-    def encode(model: NameValuePair) = {
-      JObject(model.value.map {
-        e =>
-          val (value, valueType) = e match {
-            case b: Boolean => (JBool(b), "boolean")
-            case s: String => (JString(s), "string")
-            case v: GenericObject =>
-              (parse(v.encodeByJson()), "generic")
-            case v: GenericObjectList =>
-              (parse(v.encodeByJson()), "generic_list")
-          }
-          JField("name", JString(model.name.get)) ::
-            JField("type", JString(valueType)) ::
-            JField("value", value) :: Nil
-      }.getOrElse {
-        JField("name", JString(model.name.get)) :: Nil
-      })
-    }
-
-    def encode(model: NameValuePair, builder: StringBuilder) =
-      builder.append(compact(render(encode(model))))
-
-  }
 
 }
 
@@ -244,5 +243,6 @@ class NameValuePair
 
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, NameValuePair.JsonEncoder)
+  def encodeAsJValue() = NameValuePairJsonEncoder.encode(this)
+
 }

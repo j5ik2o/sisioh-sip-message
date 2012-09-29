@@ -17,7 +17,8 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.message.header.UserAgentHeader
-import org.sisioh.sip.util.{SIPDecoder, Decoder, ParserBase, Encoder}
+import org.sisioh.sip.util._
+import net.liftweb.json._
 
 object UserAgentDecoder extends UserAgentDecoder
 
@@ -42,23 +43,24 @@ trait UserAgentParser extends ParserBase {
   lazy val productVersion = token
 }
 
+object UserAgentJsonEncoder extends JsonEncoder[UserAgent] {
+
+  def encode(model: UserAgent) = {
+    val list = model.serverVals.map {
+      e => JString(e.toString)
+    }.toList
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("serverVals", JArray(list)) :: Nil
+    )
+  }
+
+}
+
 object UserAgent {
 
   def decode(source: String) = UserAgentDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[UserAgent] {
-    def encode(model: UserAgent, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val list = model.serverVals.map {
-        e => JString(e.toString)
-      }.toList
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-          JField("serverVals", JArray(list)) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -127,7 +129,7 @@ case class UserAgent(serverVals: List[ServerVal] = List.empty)
     )
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, UserAgent.JsonEncoder)
+  //  def encodeByJson(builder: StringBuilder) = encode(builder, UserAgent.JsonEncoder)
 
   private def encodeProducts(builder: StringBuilder): StringBuilder = {
     builder.append(serverVals.mkString(" "))
@@ -135,5 +137,8 @@ case class UserAgent(serverVals: List[ServerVal] = List.empty)
 
   def encodeBody(builder: StringBuilder) = encodeProducts(builder)
 
+  def encodeAsJValue() = UserAgentJsonEncoder.encode(this)
+
   override def toString = encode()
+
 }

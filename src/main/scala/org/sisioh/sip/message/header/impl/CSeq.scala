@@ -17,7 +17,7 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.message.header.CSeqHeader
-import org.sisioh.sip.util.{SIPDecoder, Encoder, Decoder, ParserBase}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json._
 
@@ -38,33 +38,32 @@ trait CSeqParser extends ParserBase {
 
 }
 
+object CSeqJsonDecoder extends JsonDecoder[CSeq] {
+  def decode(json: JsonAST.JValue) = {
+    val JInt(seq) = json \ "seq"
+    val JString(method) = json \ "method"
+    CSeq(method, seq.toLong)
+  }
+}
+
+object CSeqJsonEncoder extends JsonEncoder[CSeq] {
+
+  def encode(model: CSeq) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("seq", JInt(BigInt(model.sequenceNumber))) ::
+        JField("method", JString(model.method)) :: Nil
+    )
+  }
+
+}
+
 object CSeq {
 
   def decode(source: String) = CSeqDecoder.decode(source)
 
-  def decodeFromJson(source: String) = JsonDecoder.decode(source)
+  def decodeFromJson(source: String) = CSeqJsonDecoder.decode(source)
 
-  object JsonDecoder extends Decoder[CSeq] {
-    def decode(source: String) = {
-      import net.liftweb.json._
-      val json = parse(source)
-      val JInt(seq) = json \ "seq"
-      val JString(method) = json \ "method"
-      CSeq(method, seq.toLong)
-    }
-  }
-
-  object JsonEncoder extends Encoder[CSeq] {
-    def encode(model: CSeq, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-          JField("seq", JInt(BigInt(model.sequenceNumber))) ::
-          JField("method", JString(model.method)) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -76,10 +75,10 @@ case class CSeq(method: String, sequenceNumber: Long)
   val headerName = CSeqHeader.NAME
   val name = headerName
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, CSeq.JsonEncoder)
-
   def encodeBody(builder: StringBuilder) =
     builder.append(sequenceNumber).append(Separators.SP).append(method.toUpperCase)
+
+  def encodeAsJValue() = CSeqJsonEncoder.encode(this)
 
   override def toString = encode()
 }

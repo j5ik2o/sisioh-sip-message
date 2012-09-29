@@ -32,8 +32,8 @@ class ViaListSpec extends Specification {
     "ただしいエンコード結果を取得できる" in {
       ViaList(List(via)).encode() must_== """Via: SIP/2.0/TCP localhost""" + Separators.NEWLINE
       ViaList(List(via, via2)).encode() must_== """Via: SIP/2.0/TCP localhost;SIP/2.1/TCP localhost""" + Separators.NEWLINE
-      ViaList(List(via)).encodeByJson() must_== """{"headerNamne":"Via","parameters":[{"headerName":"Via","sentBy":{"host":"localhost"},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.0","transport":"TCP"},"parameters":{}}]}"""
-      ViaList(List(via, via2)).encodeByJson() must_== """{"headerNamne":"Via","parameters":[{"headerName":"Via","sentBy":{"host":"localhost"},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.0","transport":"TCP"},"parameters":{}},{"headerName":"Via","sentBy":{"host":"localhost"},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.1","transport":"TCP"},"parameters":{}}]}"""
+      ViaList(List(via)).encodeByJson() must_== """{"headerNamne":"Via","parameters":[{"headerName":"Via","sentBy":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.0","transport":"TCP"},"parameters":{"separator":";","values":{}}}]}"""
+      ViaList(List(via, via2)).encodeByJson() must_== """{"headerNamne":"Via","parameters":[{"headerName":"Via","sentBy":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.0","transport":"TCP"},"parameters":{"separator":";","values":{}}},{"headerName":"Via","sentBy":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"sentProtocol":{"protocolName":"SIP","protocolVersion":"2.1","transport":"TCP"},"parameters":{"separator":";","values":{}}}]}"""
     }
 
   }

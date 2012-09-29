@@ -9,7 +9,7 @@ class NameValuePairListSpec extends Specification {
     target = target.add("name", "kato")
     target = target.add("age", 40)
     target.encode() must_== "name=kato;age=40"
-    target.encodeByJson() must_== """{"name":"kato","age":"40"}"""
+    target.encodeByJson() must_== """{"separator":";","values":{"name":"kato","age":"40"}}"""
   }
 
 }

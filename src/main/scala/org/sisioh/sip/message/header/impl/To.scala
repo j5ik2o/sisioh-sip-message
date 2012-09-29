@@ -19,17 +19,12 @@ package org.sisioh.sip.message.header.impl
 import org.sisioh.sip.message.header.{ParameterNames, ToHeader}
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl._
-import org.sisioh.sip.core.Separators
-import scala.Some
-import org.sisioh.sip.message.address.{URI, SipURI}
-import org.sisioh.sip.message.address.impl.AddressType
-import scala.Some
-import scala.Some
+import net.liftweb.json._
 
 object ToDecoder extends ToDecoder
 
 class ToDecoder extends SIPDecoder[To] with ToParser {
-  def decode(source: String):To = decodeTarget(source, toWithCrLfOpt)
+  def decode(source: String): To = decodeTarget(source, toWithCrLfOpt)
 }
 
 trait ToParser extends ToOrFromParser with DefaultAddressParser {
@@ -39,6 +34,18 @@ trait ToParser extends ToOrFromParser with DefaultAddressParser {
   lazy val to: Parser[To] = ("To" | "t") ~> HCOLON ~> ((nameAddrToDefaultAddress | addrSpecToDefaultAddress) ~ rep(SEMI ~> toParam)) ^^ {
     case da ~ toParams =>
       To(da, None, NameValuePairList.fromValues(toParams))
+  }
+
+}
+
+object ToJsonEncoder extends JsonEncoder[To] {
+
+  def encode(model: To) = {
+    JObject(
+      JField("headerName", JString(model.headerName)) ::
+        JField("address", parse(model.address.encodeByJson())) ::
+        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
+    )
   }
 
 }
@@ -61,17 +68,6 @@ object To {
 
   def decode(source: String) = ToDecoder.decode(source)
 
-  object JsonEncoder extends Encoder[To] {
-    def encode(model: To, builder: StringBuilder) = {
-      import net.liftweb.json._
-      val json = JObject(
-        JField("headerName", JString(model.headerName)) ::
-        JField("address", parse(model.address.encodeByJson())) ::
-        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
-      )
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -103,6 +99,6 @@ class To
     new To(address, tag, _parameters)
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, To.JsonEncoder)
+  def encodeAsJValue() = ToJsonEncoder.encode(this)
 
 }

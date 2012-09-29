@@ -17,24 +17,29 @@ package org.sisioh.sip.message.header
  */
 
 import org.sisioh.sip.core.{Separators, GenericObject}
-import org.sisioh.sip.util.Encoder
+import org.sisioh.sip.util.JsonEncoder
+import net.liftweb.json.JsonDSL._
 
-object Protocol {
+object ProtocolJsonEncoder extends JsonEncoder[Protocol] {
 
-  object JsonEncoder extends Encoder[Protocol] {
-    def encode(model: Protocol, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      val json = ("protocolName" -> model.protocolName) ~
-        ("protocolVersion" -> model.protocolVersion) ~
-        ("transport" -> model.transport)
-      builder.append(compact(render(json)))
-    }
+  def encode(model: Protocol) = {
+    ("protocolName" -> model.protocolName) ~
+      ("protocolVersion" -> model.protocolVersion) ~
+      ("transport" -> model.transport)
   }
 
 }
 
-case class Protocol(protocolName: String, protocolVersion: String, transport: String) extends GenericObject {
+object Protocol {
+
+
+}
+
+case class Protocol
+(protocolName: String,
+ protocolVersion: String,
+ transport: String)
+  extends GenericObject {
 
   def encode(builder: StringBuilder) = {
     builder.append(protocolName.toUpperCase)
@@ -44,6 +49,6 @@ case class Protocol(protocolName: String, protocolVersion: String, transport: St
       .append(transport.toUpperCase)
   }
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, Protocol.JsonEncoder)
+  def encodeAsJValue() = ProtocolJsonEncoder.encode(this)
 
 }

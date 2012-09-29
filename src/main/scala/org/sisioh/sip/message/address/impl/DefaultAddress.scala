@@ -19,8 +19,9 @@ package org.sisioh.sip.message.address.impl
 import org.sisioh.sip.message.address.{Address, URI}
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.{GenericObject, Separators}
-import net.liftweb.json.ext.{EnumNameSerializer, EnumSerializer}
-import scala.Some
+import net.liftweb.json.ext.EnumNameSerializer
+import net.liftweb.json._
+import net.liftweb.json.JsonDSL._
 
 /**
  * アドレスの種別を表す列挙型。
@@ -71,6 +72,65 @@ trait DefaultAddressParser extends ParserBase with SipUriParser {
 
 }
 
+object DefaultAddressEncoder extends SIPEncoder[DefaultAddress] {
+
+  def encode(model: DefaultAddress, builder: StringBuilder) = {
+    if (model.isWildcard) {
+      builder.append('*')
+    } else {
+      model.displayName.foreach {
+        dn =>
+          builder.append(Separators.DOUBLE_QUOTE)
+            .append(dn)
+            .append(Separators.DOUBLE_QUOTE)
+            .append(Separators.SP)
+      }
+      if (model.addressType == AddressType.NAME_ADDRESS || model.displayName.isDefined)
+        builder.append(Separators.LESS_THAN)
+      model.uri.encode(builder)
+      if (model.addressType == AddressType.NAME_ADDRESS || model.displayName.isDefined)
+        builder.append(Separators.GREATER_THAN)
+    }
+    builder
+  }
+
+}
+
+object DefaultAddressJsonDecoder extends JsonDecoder[DefaultAddress] {
+
+  def decode(json: JsonAST.JValue) = {
+    println("json = ", json.toString)
+    val JString(uriType) = json \ "uriType"
+    val uri = uriType match {
+      case "sip" => SipUriJsonDecoder.decode(json \ "uri")
+      case "generic" => DefaultGenericURIJsonDecoder.decode(json \ "uri")
+      case "wildcard" => WildCardURI
+    }
+    val displayNameOpt = (json \ "displayName").toOpt.map {
+      _.asInstanceOf[JString].s
+    }
+    val JInt(addressType) = json \ "addressType"
+    DefaultAddress(uri, displayNameOpt, Some(AddressType(addressType.toInt)))
+  }
+
+}
+
+object DefaultAddressJsonEncoder extends JsonEncoder[DefaultAddress] {
+
+  def encode(model: DefaultAddress) = {
+    implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
+    val uriType = model.uri match {
+      case uri: SipUri => "sip"
+      case uri: DefaultGenericURI => "generic"
+      case uri: WildCardURI => "wildcard"
+    }
+    ("uriType" -> uriType) ~
+      ("uri" -> model.uri.encodeAsJValue()) ~
+      ("displayName" -> model.displayName) ~
+      ("addressType" -> JInt(model.addressType.id))
+  }
+}
+
 object DefaultAddress {
 
   def apply(uri: GenericURI,
@@ -78,23 +138,16 @@ object DefaultAddress {
             addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
     new DefaultAddress(uri, displayName, addressTypeParam)
 
+  def unapply(defaultAddress: DefaultAddress): Option[(GenericURI, Option[String], AddressType.Value)] =
+    Some(defaultAddress.uri, defaultAddress.displayName, defaultAddress.addressType)
+
   def decode(source: String) = DefaultAddressDecoder.decode(source)
+
+  def decodeFromJson(source: String) = DefaultAddressJsonDecoder.decode(source)
 
   def fromURI(uri: URI, displayName: Option[String] = None,
               addressTypeParam: Option[AddressType.Value] = None): DefaultAddress =
     new DefaultAddress(uri.asInstanceOf[GenericURI], displayName, addressTypeParam)
-
-  object JsonEncoder extends Encoder[DefaultAddress] {
-    def encode(model: DefaultAddress, builder: StringBuilder) = {
-      import net.liftweb.json._
-      import net.liftweb.json.JsonDSL._
-      implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
-      val json = ("uri" -> parse(model.uri.encodeByJson())) ~
-        ("displayName" -> model.displayName) ~
-        ("addressType" -> JInt(model.addressType.id))
-      builder.append(compact(render(json)))
-    }
-  }
 
 }
 
@@ -125,26 +178,13 @@ class DefaultAddress
 
   val isSipURI = uri.isSipURI
 
-  def encode(builder: StringBuilder) = {
-    if (isWildcard) {
-      builder.append('*')
-    } else {
-      if (displayName.isDefined) {
-        builder.append(Separators.DOUBLE_QUOTE)
-          .append(displayName.get)
-          .append(Separators.DOUBLE_QUOTE)
-          .append(Separators.SP)
-      }
-      if (addressType == AddressType.NAME_ADDRESS || displayName.isDefined)
-        builder.append(Separators.LESS_THAN)
-      uri.encode(builder)
-      if (addressType == AddressType.NAME_ADDRESS || displayName.isDefined)
-        builder.append(Separators.GREATER_THAN)
-    }
-    builder
-  }
+  def encode(builder: StringBuilder) =
+    DefaultAddressEncoder.encode(this, builder)
 
-  override def hashCode() = super.hashCode()
+  def encodeAsJValue() = DefaultAddressJsonEncoder.encode(this)
+
+  override def hashCode() =
+    31 * uri.## + 31 * displayName.## + 31 * addressType.##
 
   override def equals(obj: Any) = obj match {
     case that: DefaultAddress =>
@@ -156,5 +196,4 @@ class DefaultAddress
 
   override def toString = encode()
 
-  def encodeByJson(builder: StringBuilder) = encode(builder, DefaultAddress.JsonEncoder)
 }
