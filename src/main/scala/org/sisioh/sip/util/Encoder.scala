@@ -1,7 +1,8 @@
 package org.sisioh.sip.util
 
+import net.liftweb.json._
+import org.sisioh.sip.message.header.impl.{SIPHeader, JsonFieldNames}
 import net.liftweb.json
-import json._
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -32,11 +33,13 @@ trait Encoder[A] {
 
 trait SIPEncoder[A] extends Encoder[A]
 
-trait JsonEncoder[A] extends Encoder[A] {
+trait JsonEncoder[A] extends Encoder[A] with JsonFieldNames {
 
   def encode(model: A): json.JValue
 
   def encode(model: A, builder: StringBuilder) =
     builder.append(compact(render(encode(model))))
+
+  protected def getHeaderNameAsJValue[T <: SIPHeader](model: T): JField = JField(HEADER_NAME, JString(model.headerName))
 
 }

@@ -19,7 +19,6 @@ package org.sisioh.sip.message.header.impl
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.header._
 import org.sisioh.sip.core.Separators
-import scala.Some
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 
@@ -73,13 +72,34 @@ trait ViaParser extends ParserBase with HostParser {
   }
 }
 
-object ViaJsonEncoder extends JsonEncoder[Via] {
+trait ViaJsonFiledNames extends JsonFieldNames {
+
+  val SENT_BY = "sentBy"
+  val SENT_PROTOCOL = "sentProtocol"
+
+}
+
+object ViaJsonDecoder extends JsonDecoder[Via] with ViaJsonFiledNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, ViaHeader.NAME)
+    val sentBy = HostPortJsonDecoder.decode(json \ SENT_BY)
+    val sentProtocol = ProtocolJsonDecoder.decode(json \ SENT_PROTOCOL)
+    val paramters = NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+    Via(sentBy, sentProtocol, paramters)
+  }
+
+}
+
+object ViaJsonEncoder extends JsonEncoder[Via] with ViaJsonFiledNames {
 
   def encode(model: Via) = {
-    ("headerName" -> model.headerName) ~
-      ("sentBy" -> parse(model.sentBy.encodeByJson())) ~
-      ("sentProtocol" -> parse(model.sentProtocol.encodeByJson())) ~
-      ("parameters" -> parse(model.parameters.encodeByJson()))
+    JObject(
+      getHeaderNameAsJValue(model) ::
+      JField(SENT_BY, model.sentBy.encodeAsJValue()) ::
+      JField(SENT_PROTOCOL, model.sentProtocol.encodeAsJValue()) ::
+      JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
+    )
   }
 
 }

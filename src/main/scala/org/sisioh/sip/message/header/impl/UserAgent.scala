@@ -43,15 +43,51 @@ trait UserAgentParser extends ParserBase {
   lazy val productVersion = token
 }
 
-object UserAgentJsonEncoder extends JsonEncoder[UserAgent] {
+
+trait UserAgentJsonFieldNames extends JsonFieldNames {
+  val SERVER_VALS = "serverVals"
+  val TYPE = "type"
+  val VALUE = "value"
+  val COMMENT_TYPE = "comment"
+  val PRODUCT_TYPE = "product"
+}
+
+object UserAgentJsonDecoder extends JsonDecoder[UserAgent] with UserAgentJsonFieldNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, UserAgentHeader.NAME)
+    val JArray(list) = json \ SERVER_VALS
+    val serverVals: List[ServerVal] = list.map {
+      e =>
+        val JString(typeName) = e \ TYPE
+        val JString(value) = e \ VALUE
+        if (typeName == COMMENT_TYPE) {
+          Comment(value)
+        } else if (typeName == PRODUCT_TYPE) {
+          Product.from(value)
+        } else {
+          throw new ParseException()
+        }
+    }
+    UserAgent(serverVals)
+  }
+
+}
+
+object UserAgentJsonEncoder extends JsonEncoder[UserAgent] with UserAgentJsonFieldNames {
 
   def encode(model: UserAgent) = {
     val list = model.serverVals.map {
-      e => JString(e.toString)
+      e =>
+        val typeName = e match {
+          case Comment(_) => COMMENT_TYPE
+          case Product(_, _) => PRODUCT_TYPE
+        }
+        JObject(JField(TYPE, JString(typeName)) :: JField(VALUE, JString(e.toString)) :: Nil)
     }.toList
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("serverVals", JArray(list)) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(SERVER_VALS, JArray(list)) :: Nil
     )
   }
 
@@ -61,6 +97,7 @@ object UserAgent {
 
   def decode(source: String) = UserAgentDecoder.decode(source)
 
+  def decodeFromJson(source: String) = UserAgentJsonDecoder.decode(source)
 
 }
 

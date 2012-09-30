@@ -24,8 +24,7 @@ trait ServerParser extends ParserBase with UserAgentParser {
 object ServerJsonDecoder extends JsonDecoder[Server] {
 
   def decode(json: JsonAST.JValue) = {
-    val JString(headerName) = json \ "headerName"
-    require(headerName == ServerHeader.NAME)
+    requireHeaderName(json, ServerHeader.NAME)
     val JArray(list) = json \ "serverVals"
     val serverVals: List[ServerVal] = list.map {
       e =>

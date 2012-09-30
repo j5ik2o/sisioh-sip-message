@@ -16,16 +16,39 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
+import impl.JsonFieldNames
 import org.sisioh.sip.core.{Separators, GenericObject}
-import org.sisioh.sip.util.JsonEncoder
+import org.sisioh.sip.util.{JsonDecoder, JsonEncoder}
+import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
+import net.liftweb.json.JsonAST.JValue
 
-object ProtocolJsonEncoder extends JsonEncoder[Protocol] {
+
+trait ProtocolJsonFieldNames extends JsonFieldNames {
+
+  protected val PROTOCOL_NAME = "protocolName"
+
+  protected val PROTOCOL_VERSION = "protocolVersion"
+
+  protected val TRANSPORT = "transport"
+
+}
+
+object ProtocolJsonDecoder extends JsonDecoder[Protocol] with ProtocolJsonFieldNames {
+  def decode(json: JValue) = {
+    val JString(protocolName) = json \ PROTOCOL_NAME
+    val JString(protocolVersion) = json \ PROTOCOL_VERSION
+    val JString(transport) = json \ TRANSPORT
+    Protocol(protocolName, protocolVersion, transport)
+  }
+}
+
+object ProtocolJsonEncoder extends JsonEncoder[Protocol] with ProtocolJsonFieldNames {
 
   def encode(model: Protocol) = {
-    ("protocolName" -> model.protocolName) ~
-      ("protocolVersion" -> model.protocolVersion) ~
-      ("transport" -> model.transport)
+    (PROTOCOL_NAME -> model.protocolName) ~
+      (PROTOCOL_VERSION -> model.protocolVersion) ~
+      (TRANSPORT -> model.transport)
   }
 
 }

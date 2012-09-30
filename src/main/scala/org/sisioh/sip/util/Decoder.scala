@@ -2,6 +2,8 @@ package org.sisioh.sip.util
 
 import net.liftweb.json
 import json.JsonAST
+import org.sisioh.sip.message.header.impl.JsonFieldNames
+import org.sisioh.sip.message.header.ViaHeader
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -22,16 +24,34 @@ import json.JsonAST
 
 trait Decoder[A] {
 
-  def decode(source: String):A
+  def decode(source: String): A
 
 }
 
-trait JsonDecoder[A] extends Decoder[A] {
+trait JsonDecoder[A] extends Decoder[A] with JsonFieldNames {
+
   import net.liftweb.json._
 
   def decode(source: String) = decode(parse(source))
 
-  def decode(json : JsonAST.JValue): A
+  def decode(json: JsonAST.JValue): A
+
+
+  protected def requireHeaderName(json: JValue, headerName: String): Unit =
+    require(headerName == getHeaderNameAsString(json))
+
+  protected def getHeaderNameAsJString(json: JValue): JString =
+    (json \ HEADER_NAME).asInstanceOf[JString]
+
+  protected def getHeaderNameAsString(json: JValue): String =
+    getHeaderNameAsJString(json).s
+
+  protected def getParameters(json: JValue): JArray =
+    (json \ PARAMETERS).asInstanceOf[JArray]
+
+  protected def getNameValuePairList(json: JValue) =
+    NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+
 
 }
 
