@@ -22,5 +22,6 @@ trait Conent {
   val content: Any
   val contentTypeHeader: Option[ContentTypeHeader]
   val contentDispositionHeader: Option[ContentDispositionHeader]
+
   def extensionHeaders: Iterator[Header]
 }

@@ -16,7 +16,7 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
-trait ViaHeader {
+trait ViaHeader extends Parameters with Header {
   val host: String
   val port: Option[Int]
   val transport: String
@@ -28,6 +28,7 @@ trait ViaHeader {
   val branch: Option[String]
   val rPort: Option[Int]
 }
+
 object ViaHeader {
   val NAME = "Via"
 }

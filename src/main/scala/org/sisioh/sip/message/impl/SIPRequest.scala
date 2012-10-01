@@ -53,7 +53,7 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
     builder.withRemotePort(vo.remotePort)
     builder.withLocalAddress(vo.localAddress)
     builder.withLocalPort(vo.localPort)
-    builder.withUnrecogizedHeaders(vo.unrecognizedHeaders)
+    builder.withHeaders(vo.headers)
   }
 
   protected def createValueObject = new SIPRequest(
@@ -62,7 +62,7 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
     messageContent,
     remoteAddress, remotePort, localAddress, localPort,
     applicationData,
-    unrecognizedHeaders,
+    headers,
     size
   )
 }
@@ -83,7 +83,7 @@ class SIPRequest
  val localAddress: Option[InetAddress],
  val localPort: Option[Int],
  val applicationData: Option[Any],
- val unrecognizedHeaders: List[Header],
+ headersParam: List[SIPHeader],
  val size: Int
   ) extends SIPMessage[Any] {
 
@@ -120,7 +120,7 @@ class SIPRequest
 
   private var nameTable: Map[String, String] = Map.empty
 
-  private def putName(name: String):Unit = nameTable += (name -> name)
+  private def putName(name: String): Unit = nameTable += (name -> name)
 
   putName(Request.INVITE)
   putName(Request.BYE)
@@ -185,9 +185,11 @@ class SIPRequest
       encodeSIPHeaders(sb)
   }
 
-  toParam.foreach {
-    addHeader(_)
-  }
+  headersParam.
+    filter(e => SIPHeaderNamesCache.toLowerCase(e.name) == ViaHeader.NAME.toLowerCase).
+    foreach(addHeader)
+
+  toParam.foreach(addHeader)
   fromParam.foreach {
     addHeader(_)
   }
@@ -197,7 +199,6 @@ class SIPRequest
   cSeqParam.foreach {
     addHeader(_)
   }
-
   maxForwardsParam.foreach {
     addHeader(_)
   }
@@ -205,7 +206,10 @@ class SIPRequest
     mc =>
       addHeader(mc.contentType)
   }
-
+  headersParam.filterNot(e => SIPHeaderNamesCache.toLowerCase(e.name) == ViaHeader.NAME.toLowerCase).foreach {
+      addHeader(_)
+  }
+  val headers = headerListMap.toList
 
   val to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
   val from = getHeader(FromHeader.NAME).map(_.asInstanceOf[From])

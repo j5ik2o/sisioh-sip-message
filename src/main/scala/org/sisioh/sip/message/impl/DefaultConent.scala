@@ -34,10 +34,10 @@ case class DefaultConent
     if (contentTypeHeader.isDefined) {
       sb.append(contentTypeHeader.get.toString)
     }
-    if (contentDispositionHeader.isDefined){
+    if (contentDispositionHeader.isDefined) {
       sb.append(contentDispositionHeader.get.toString)
     }
-    _extensionHeaders.foreach{
+    _extensionHeaders.foreach {
       e =>
         sb.append(e)
     }

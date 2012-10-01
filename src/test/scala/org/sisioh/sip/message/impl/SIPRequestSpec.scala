@@ -2,11 +2,13 @@ package org.sisioh.sip.message.impl
 
 import org.specs2.mutable.Specification
 import org.sisioh.sip.message.header.impl._
-import org.sisioh.sip.util.{NameValuePair, NameValuePairList, Utils}
+import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.{SipUri, DefaultAddressFactory, DefaultGenericURI}
 import org.sisioh.sip.core.Separators
 import scala.Some
 import org.sisioh.sip.message.Request
+import scala.Some
+import org.sisioh.sip.message.header.Protocol
 
 class SIPRequestSpec extends Specification {
   "SIPRequest" should {
@@ -37,7 +39,10 @@ class SIPRequestSpec extends Specification {
         val fromParams = NameValuePairList.fromValues(List(NameValuePair(Some("a"), Some("b"))))
         val from = From(fromAddress, None, fromParams)
 
+        val via = ViaList(List(Via(HostPort(Host("localhost"), None), Protocol("SIP", "2.0", "TCP"))))
+
         val target2 = SIPRequestBuilder().
+          withHeaders(List(via)).
           withTo(Some(to)).
           withFrom(Some(from)).
           withCallId(Some(CallId(Utils.generateCallIdentifier("hogehoge")))).
@@ -45,22 +50,22 @@ class SIPRequestSpec extends Specification {
           withRequestLine(Some(RequestLine(DefaultGenericURI("test:test"), Some(Request.INVITE)))).
           withMaxForwards(Some(MaxForwards(1))).
           withContentLength(Some(ContentLength(100))).
-          withMessageContent(
-          Some(MessageContent(ContentType("application", "sdp"), "ABC"))
-        ).build
+          withMessageContent(Some(MessageContent(ContentType("application", "sdp"), "ABC"))).
+          build
 
         val encodeRequest = target2.encode()
         println(encodeRequest)
         val lines = encodeRequest.split(Separators.NEWLINE)
 
         lines(0) must_== "INVITE test:test SIP/2.0"
-        lines(1) must_== """To: "kato" <sip:hoge@localhost>;a=b"""
-        lines(2) must_== """From: "kato" <sip:hoge@localhost>;a=b"""
-        lines(3) must beMatching( """Call-ID: [a-zA-Z0-9]+@hogehoge""".r)
-        lines(4) must_== """CSeq: 1 INVITE"""
-        lines(5) must_== """Max-Forwards: 1"""
-        lines(6) must_== """Content-Type: application/sdp"""
-        lines(7) must_== """Content-Length: 100"""
+        lines(1) must_== """Via: SIP/2.0/TCP localhost"""
+        lines(2) must_== """To: "kato" <sip:hoge@localhost>;a=b"""
+        lines(3) must_== """From: "kato" <sip:hoge@localhost>;a=b"""
+        lines(4) must beMatching( """Call-ID: [a-zA-Z0-9]+@hogehoge""".r)
+        lines(5) must_== """CSeq: 1 INVITE"""
+        lines(6) must_== """Max-Forwards: 1"""
+        lines(7) must_== """Content-Type: application/sdp"""
+        lines(8) must_== """Content-Length: 100"""
       }
     }
   }

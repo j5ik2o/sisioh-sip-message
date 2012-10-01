@@ -16,7 +16,7 @@ package org.sisioh.sip.message.impl
  * governing permissions and limitations under the License.
  */
 
-object DefaultMessageFactory{
+object DefaultMessageFactory {
   val defaultContentEncodingCharset = "UTF-8"
 }
 

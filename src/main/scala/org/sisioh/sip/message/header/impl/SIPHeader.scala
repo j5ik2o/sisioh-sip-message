@@ -18,11 +18,12 @@ package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.core.{GenericObject, Separators}
 import org.sisioh.sip.util.Encoder
+import org.sisioh.sip.message.header.Header
 
 /**
  * SIPヘッダを表すトレイト。
  */
-trait SIPHeader extends GenericObject {
+trait SIPHeader extends GenericObject with Header {
 
   val headerName: String
   val name: String
