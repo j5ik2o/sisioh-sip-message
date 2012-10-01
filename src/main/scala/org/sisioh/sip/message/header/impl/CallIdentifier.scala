@@ -32,12 +32,17 @@ object CallIdentifierEncoder extends Encoder[CallIdentifier] {
 
 }
 
+trait CallIdentifierJsonFieldNames extends JsonFieldNames {
+  val LOCAL_ID = "localId"
+  val HOST = "host"
+}
 
-object CallIdentifierJsonDecoder extends JsonDecoder[CallIdentifier] {
+
+object CallIdentifierJsonDecoder extends JsonDecoder[CallIdentifier] with CallIdentifierJsonFieldNames {
 
   def decode(json: JsonAST.JValue) = {
-    val JString(localId) = json \ "localId"
-    val hostOpt = (json \ "host").toOpt.map {
+    val JString(localId) = json \ LOCAL_ID
+    val hostOpt = (json \ HOST).toOpt.map {
       _.asInstanceOf[JString].s
     }
     CallIdentifier(localId, hostOpt)
@@ -45,18 +50,20 @@ object CallIdentifierJsonDecoder extends JsonDecoder[CallIdentifier] {
 
 }
 
-object CallIdentifierJsonEncoder extends JsonEncoder[CallIdentifier] {
+object CallIdentifierJsonEncoder extends JsonEncoder[CallIdentifier] with CallIdentifierJsonFieldNames {
 
   def encode(model: CallIdentifier) = {
     JObject(model.host.map {
       h =>
-        JField("localId", JString(model.localId)) :: JField("host", JString(h)) :: Nil
-    }.getOrElse(JField("localId", JString(model.localId)) :: Nil))
+        JField(LOCAL_ID, JString(model.localId)) :: JField(HOST, JString(h)) :: Nil
+    }.getOrElse(JField(LOCAL_ID, JString(model.localId)) :: Nil))
   }
 
 }
 
 object CallIdentifier {
+
+  def decodeFromJson(source: String) = CallIdentifierJsonDecoder.decode(source)
 
   def from(localIdWithHost: String): CallIdentifier = {
     val index = localIdWithHost.indexOf('@')

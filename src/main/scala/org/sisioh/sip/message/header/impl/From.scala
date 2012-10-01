@@ -2,10 +2,10 @@ package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.{ParameterNames, FromHeader}
 import org.sisioh.sip.util._
-import org.sisioh.sip.message.address.impl.{DefaultAddressParser, AddressType, DefaultAddress}
+import org.sisioh.sip.message.address.impl.{DefaultAddressJsonDecoder, DefaultAddressParser, AddressType, DefaultAddress}
 import org.sisioh.sip.core.Separators
 import net.liftweb.json._
-import net.liftweb.json._
+import scala.Some
 
 
 object FromDecoder extends FromDecoder
@@ -24,14 +24,29 @@ trait FromParser extends ToOrFromParser with DefaultAddressParser {
 
 }
 
+trait FromJsonFieldNames extends JsonFieldNames {
+  val ADDRESS = "address"
+}
 
-object FromJsonEncoder extends JsonEncoder[From] {
+object FromJsonDecoder extends JsonDecoder[From] with FromJsonFieldNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, FromHeader.NAME)
+    val address = DefaultAddressJsonDecoder.decode(json \ ADDRESS)
+    val parameters = NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+    From(address, None, parameters)
+  }
+
+}
+
+
+object FromJsonEncoder extends JsonEncoder[From] with FromJsonFieldNames {
 
   def encode(model: From) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("address", parse(model.address.encodeByJson())) ::
-        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(ADDRESS, model.address.encodeAsJValue()) ::
+        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
     )
   }
 
@@ -52,6 +67,8 @@ object From {
     Some(from.address, from.parameters)
 
   def decode(source: String) = FromDecoder.decode(source)
+
+  def decodeFromJson(source: String) = FromJsonDecoder.decode(source)
 
 
 }

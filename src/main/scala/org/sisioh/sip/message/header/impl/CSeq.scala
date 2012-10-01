@@ -38,21 +38,27 @@ trait CSeqParser extends ParserBase {
 
 }
 
-object CSeqJsonDecoder extends JsonDecoder[CSeq] {
+trait CSeqJsonFieldNames extends JsonFieldNames {
+  val SEQ = "seq"
+  val METHOD = "method"
+}
+
+object CSeqJsonDecoder extends JsonDecoder[CSeq] with CSeqJsonFieldNames {
   def decode(json: JsonAST.JValue) = {
-    val JInt(seq) = json \ "seq"
-    val JString(method) = json \ "method"
+    requireHeaderName(json, CSeqHeader.NAME)
+    val JInt(seq) = json \ SEQ
+    val JString(method) = json \ METHOD
     CSeq(method, seq.toLong)
   }
 }
 
-object CSeqJsonEncoder extends JsonEncoder[CSeq] {
+object CSeqJsonEncoder extends JsonEncoder[CSeq] with CSeqJsonFieldNames {
 
   def encode(model: CSeq) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("seq", JInt(BigInt(model.sequenceNumber))) ::
-        JField("method", JString(model.method)) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(SEQ, JInt(BigInt(model.sequenceNumber))) ::
+        JField(METHOD, JString(model.method)) :: Nil
     )
   }
 

@@ -52,10 +52,18 @@ trait UserAgentJsonFieldNames extends JsonFieldNames {
   val PRODUCT_TYPE = "product"
 }
 
-object UserAgentJsonDecoder extends JsonDecoder[UserAgent] with UserAgentJsonFieldNames {
+object UserAgentJsonDecoder extends JsonDecoder[UserAgent] with UserAgentJsonDecoderSupport {
 
   def decode(json: JsonAST.JValue) = {
     requireHeaderName(json, UserAgentHeader.NAME)
+    UserAgent(decodeServerVals(json))
+  }
+
+}
+
+trait UserAgentJsonDecoderSupport extends UserAgentJsonFieldNames {
+
+  def decodeServerVals(json: JsonAST.JValue) = {
     val JArray(list) = json \ SERVER_VALS
     val serverVals: List[ServerVal] = list.map {
       e =>
@@ -69,15 +77,27 @@ object UserAgentJsonDecoder extends JsonDecoder[UserAgent] with UserAgentJsonFie
           throw new ParseException()
         }
     }
-    UserAgent(serverVals)
+    serverVals
   }
 
 }
 
-object UserAgentJsonEncoder extends JsonEncoder[UserAgent] with UserAgentJsonFieldNames {
+object UserAgentJsonEncoder extends JsonEncoder[UserAgent] with UserAgentJsonEncoderSupport {
 
   def encode(model: UserAgent) = {
-    val list = model.serverVals.map {
+    JObject(
+      getHeaderNameAsJValue(model) ::
+        encodeServerVals(model.serverVals) ::
+        Nil
+    )
+  }
+
+}
+
+trait UserAgentJsonEncoderSupport extends UserAgentJsonFieldNames {
+
+  def encodeServerVals(serverVals: List[ServerVal]): JField = {
+    val list = serverVals.map {
       e =>
         val typeName = e match {
           case Comment(_) => COMMENT_TYPE
@@ -85,10 +105,7 @@ object UserAgentJsonEncoder extends JsonEncoder[UserAgent] with UserAgentJsonFie
         }
         JObject(JField(TYPE, JString(typeName)) :: JField(VALUE, JString(e.toString)) :: Nil)
     }.toList
-    JObject(
-      getHeaderNameAsJValue(model) ::
-        JField(SERVER_VALS, JArray(list)) :: Nil
-    )
+    JField(SERVER_VALS, JArray(list))
   }
 
 }

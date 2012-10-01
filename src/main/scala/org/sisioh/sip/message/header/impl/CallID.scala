@@ -43,21 +43,27 @@ trait CallIdParser extends ParserBase {
 
 }
 
-object CallIdJsonDecoder extends JsonDecoder[CallId] {
+trait CallIdJsonFieldNames extends JsonFieldNames {
+  val CALL_ID = "callId"
+}
+
+
+object CallIdJsonDecoder extends JsonDecoder[CallId] with CallIdJsonFieldNames {
 
   def decode(json: JsonAST.JValue) = {
-    val JString(callId) = json \ "callId"
+    requireHeaderName(json, CallIdHeader.NAME)
+    val JString(callId) = json \ CALL_ID
     CallId(callId)
   }
 
 }
 
-object CallIdJsonEncoder extends JsonEncoder[CallId] {
+object CallIdJsonEncoder extends JsonEncoder[CallId] with CallIdJsonFieldNames {
 
   def encode(model: CallId) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("callId", JString(model.callId)) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(CALL_ID, JString(model.callId)) :: Nil
     )
   }
 
@@ -68,7 +74,6 @@ object CallId {
   def decode(source: String): CallId = CallIdDecoder.decode(source)
 
   def decodeFromJson(source: String): CallId = CallIdJsonDecoder.decode(source)
-
 
 }
 

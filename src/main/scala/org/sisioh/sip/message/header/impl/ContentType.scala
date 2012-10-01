@@ -39,13 +39,20 @@ trait ContentTypeParser extends ParserBase with MediaRangeParser {
 
 }
 
-object ContentTypeJsonEncoder extends JsonEncoder[ContentType] {
+trait ContentTypeJsonFieldNames extends JsonFieldNames {
+  val CONTENT_TYPE = "contentType"
+  val CONTENT_SUB_TYPE = "contentSubType"
+}
+
+object ContentTypeJsonEncoder extends JsonEncoder[ContentType] with ContentTypeJsonFieldNames {
 
   def encode(model: ContentType) = {
-    ("headerName" -> model.headerName) ~
-      ("contentType" -> model.contentType) ~
-      ("contentSubType" -> model.contentSubType) ~
-      ("parameters" -> parse(model.parameters.encodeByJson()))
+    JObject(
+      getHeaderNameAsJValue(model) ::
+        JField(CONTENT_TYPE, JString(model.contentType)) ::
+        JField(CONTENT_SUB_TYPE, JString(model.contentSubType)) ::
+        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
+    )
   }
 }
 

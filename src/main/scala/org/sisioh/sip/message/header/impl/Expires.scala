@@ -23,7 +23,7 @@ object ExpiresJsonEncoder extends JsonEncoder[Expires] {
 
   def encode(model: Expires) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
+      getHeaderNameAsJValue(model) ::
         JField("expires", JInt(BigInt(model.expires))) :: Nil
     )
   }

@@ -4,7 +4,6 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
-import scala.Some
 
 object MediaRangeDecoder extends MediaRangeDecoder
 
@@ -42,21 +41,41 @@ trait MediaRangeParser extends ParserBase {
   lazy val mValue = token | quotedString
 }
 
-object MediaRangeJsonDecoder extends JsonDecoder[MediaRange] {
+object MediaRangeEncoder extends SIPEncoder[MediaRange] {
+
+  def encode(model: MediaRange, builder: StringBuilder) = {
+    builder.append(model.mediaType)
+      .append(Separators.SLASH)
+      .append(model.mediaSubType)
+    builder
+  }
+
+}
+
+trait MediaRangeJsonFieldNames extends JsonFieldNames {
+
+  val TYPE = "type"
+  val SUB_TYPE = "subType"
+
+}
+
+object MediaRangeJsonDecoder extends JsonDecoder[MediaRange] with MediaRangeJsonFieldNames {
 
   def decode(json: JsonAST.JValue) = {
-    val JString(mediaType) = json \ "type"
-    val JString(mediaSubType) = json \ "subType"
+    val JString(mediaType) = json \ TYPE
+    val JString(mediaSubType) = json \ SUB_TYPE
     MediaRange(mediaType, mediaSubType)
   }
 
 }
 
-object MediaRangeJsonEncoder extends JsonEncoder[MediaRange] {
+object MediaRangeJsonEncoder extends JsonEncoder[MediaRange] with MediaRangeJsonFieldNames {
 
   def encode(model: MediaRange) =
-    ("type" -> model.mediaType) ~
-      ("subType" -> model.mediaSubType)
+    JObject(
+      JField(TYPE, JString(model.mediaType)) ::
+        JField(SUB_TYPE, JString(model.mediaSubType)) :: Nil
+    )
 
 }
 
@@ -64,20 +83,14 @@ object MediaRange {
 
   def decode(source: String) = MediaRangeDecoder.decode(source)
 
+  def decodeFromJson(source: String) = MediaRangeJsonDecoder.decode(source)
 }
 
 case class MediaRange(mediaType: String, mediaSubType: String) extends SIPObject {
 
-  def encode(builder: StringBuilder) = {
-    builder.append(mediaType)
-      .append(Separators.SLASH)
-      .append(mediaSubType)
-    builder
-  }
+  def encode(builder: StringBuilder) = MediaRangeEncoder.encode(this, builder)
 
   def encodeAsJValue() = MediaRangeJsonEncoder.encode(this)
-
-  //def encodeByJson(builder: StringBuilder) = encode(builder, MediaRange.JsonEncoder)
 
   override def toString = encode()
 

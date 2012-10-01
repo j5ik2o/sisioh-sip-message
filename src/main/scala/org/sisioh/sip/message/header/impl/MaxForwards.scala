@@ -20,11 +20,27 @@ trait MaxForwardsParser extends ParserBase {
   }
 }
 
-object MaxForwardsJsonEncoder extends JsonEncoder[MaxForwards] {
+trait MaxForwardsJsonFieldNames extends JsonFieldNames {
+  val MAX_FORWARDS = "maxForwards"
+}
+
+object MaxForwardsJsonDecoder extends JsonDecoder[MaxForwards] with MaxForwardsJsonFieldNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, MaxForwardsHeader.NAME)
+    val JInt(maxForwards) = json \ MAX_FORWARDS
+    MaxForwards(maxForwards.toInt)
+  }
+
+}
+
+object MaxForwardsJsonEncoder extends JsonEncoder[MaxForwards] with MaxForwardsJsonFieldNames {
 
   def encode(model: MaxForwards) = {
-    ("headerName" -> model.headerName) ~
-      ("maxForwards" -> model.maxForwards)
+    JObject(
+      getHeaderNameAsJValue(model) ::
+        JField(MAX_FORWARDS, JInt(model.maxForwards)) :: Nil
+    )
   }
 
 }
@@ -33,6 +49,7 @@ object MaxForwards {
 
   def decode(source: String) = MaxForwardsDecoder.decode(source: String)
 
+  def decodeFromJson(source: String) = MaxForwardsJsonDecoder.decode(source)
 
 }
 

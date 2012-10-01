@@ -21,42 +21,22 @@ trait ServerParser extends ParserBase with UserAgentParser {
 
 }
 
-object ServerJsonDecoder extends JsonDecoder[Server] {
+object ServerJsonDecoder extends JsonDecoder[Server] with UserAgentJsonDecoderSupport {
 
   def decode(json: JsonAST.JValue) = {
     requireHeaderName(json, ServerHeader.NAME)
-    val JArray(list) = json \ "serverVals"
-    val serverVals: List[ServerVal] = list.map {
-      e =>
-        val JString(typeName) = e \ "type"
-        val JString(value) = e \ "value"
-        if (typeName == "comment") {
-          Comment(value)
-        } else if (typeName == "product") {
-          Product.from(value)
-        } else {
-          throw new ParseException()
-        }
-    }
-    Server(serverVals)
+    Server(decodeServerVals(json))
   }
 
 }
 
-object ServerJsonEncoder extends JsonEncoder[Server] {
+object ServerJsonEncoder extends JsonEncoder[Server] with UserAgentJsonEncoderSupport {
 
   def encode(model: Server) = {
-    val list = model.serverVals.map {
-      e =>
-        val typeName = e match {
-          case Comment(_) => "comment"
-          case Product(_, _) => "product"
-        }
-        JObject(JField("type", JString(typeName)) :: JField("value", JString(e.toString)) :: Nil)
-    }.toList
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("serverVals", JArray(list)) :: Nil
+      getHeaderNameAsJValue(model) ::
+        encodeServerVals(model.serverVals) ::
+        Nil
     )
   }
 

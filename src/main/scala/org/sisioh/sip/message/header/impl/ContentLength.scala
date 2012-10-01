@@ -34,7 +34,7 @@ trait ContentLengthParser extends ParserBase {
   }
 }
 
-object ContentLengthEncoder extends SIPEncoder[ContentLength]{
+object ContentLengthEncoder extends SIPEncoder[ContentLength] {
 
   def encode(model: ContentLength, builder: StringBuilder) = {
     if (model.contentLength < 0)
@@ -45,21 +45,24 @@ object ContentLengthEncoder extends SIPEncoder[ContentLength]{
 
 }
 
-object ContentLengthJsonDecoder extends JsonDecoder[ContentLength]{
+trait ContentLengthJsonFieldNames extends JsonFieldNames {
+  val CONTENT_LENGTH = "contentLength"
+}
+
+object ContentLengthJsonDecoder extends JsonDecoder[ContentLength] with ContentLengthJsonFieldNames {
   def decode(json: JsonAST.JValue) = {
-    val JString(headerName) = json \ "headerName"
-    require(ContentLengthHeader.NAME == headerName)
-    val JInt(contentLength) = json \ "contentLength"
+    requireHeaderName(json, ContentLengthHeader.NAME)
+    val JInt(contentLength) = json \ CONTENT_LENGTH
     ContentLength(contentLength.toInt)
   }
 }
 
-object ContentLengthJsonEncoder extends JsonEncoder[ContentLength] {
+object ContentLengthJsonEncoder extends JsonEncoder[ContentLength] with ContentLengthJsonFieldNames {
 
   def encode(model: ContentLength) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("contentLength", JInt(model.contentLength)) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(CONTENT_LENGTH, JInt(model.contentLength)) :: Nil
     )
   }
 

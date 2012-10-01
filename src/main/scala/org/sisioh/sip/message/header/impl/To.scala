@@ -38,13 +38,17 @@ trait ToParser extends ToOrFromParser with DefaultAddressParser {
 
 }
 
-object ToJsonEncoder extends JsonEncoder[To] {
+trait ToJsonFieldNames extends JsonFieldNames {
+  val ADDRESS = "address"
+}
+
+object ToJsonEncoder extends JsonEncoder[To] with ToJsonFieldNames {
 
   def encode(model: To) = {
     JObject(
-      JField("headerName", JString(model.headerName)) ::
-        JField("address", parse(model.address.encodeByJson())) ::
-        JField("paramters", parse(model.parameters.encodeByJson())) :: Nil
+      getHeaderNameAsJValue(model) ::
+        JField(ADDRESS, model.address.encodeAsJValue()) ::
+        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
     )
   }
 

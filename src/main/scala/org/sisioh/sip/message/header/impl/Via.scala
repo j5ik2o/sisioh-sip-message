@@ -20,12 +20,20 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.message.header._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json._
-import net.liftweb.json.JsonDSL._
 
-trait ViaParser extends ParserBase with HostParser {
-  lazy val VIA = ("Via" | "v") ~> HCOLON ~> rep1sep(viaParm, COMMA)
+object ViaListDecoder extends ViaListDecoder
 
-  lazy val viaParm = sentProtocol ~ (LWS ~> sentBy) ~ rep(SEMI ~> viaParams) ^^ {
+class ViaListDecoder extends SIPDecoder[ViaList] with ViaListParser {
+  def decode(source: String) = decodeTarget(source, VIA)
+}
+
+trait ViaListParser extends ParserBase with HostParser {
+
+  lazy val VIA: Parser[ViaList] = ("Via" | "v") ~> HCOLON ~> rep1sep(viaParm, COMMA) ^^ {
+    case vias => ViaList(vias)
+  }
+
+  lazy val viaParm: Parser[Via] = sentProtocol ~ (LWS ~> sentBy) ~ rep(SEMI ~> viaParams) ^^ {
     case sp ~ sb ~ params =>
       Via(sb, sp, NameValuePairList.fromValues(params))
   }
@@ -75,6 +83,7 @@ trait ViaParser extends ParserBase with HostParser {
 trait ViaJsonFiledNames extends JsonFieldNames {
 
   val SENT_BY = "sentBy"
+
   val SENT_PROTOCOL = "sentProtocol"
 
 }
