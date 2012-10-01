@@ -286,10 +286,12 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
       build(this.asInstanceOf[A])
   }
 
-  def getHeader(name: String) = getHeaderLowerCase(name)
+  def getHeader(headerName: String) = getHeaderLowerCase(SIPHeaderNamesCache.toLowerCase(headerName))
 
   def getHeaderLowerCase(lowerCassHeaderName: String) = {
-    headerTable.get(lowerCassHeaderName).map {
+    val headerOpt = headerTable.get(lowerCassHeaderName)
+    // printf("headerOpt = (%s), %s, %s\n", headerTable, lowerCassHeaderName, headerOpt)
+    headerOpt.map {
       case l: SIPHeaderList[_, _] =>
         l.getHead.asInstanceOf[Header]
       case h =>

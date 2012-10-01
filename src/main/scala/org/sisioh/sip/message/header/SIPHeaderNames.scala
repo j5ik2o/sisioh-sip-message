@@ -16,18 +16,44 @@ package org.sisioh.sip.message.header
  * governing permissions and limitations under the License.
  */
 
-object SIPHeaderNames extends SIPHeaderNames
+object SIPHeaderNames extends SIPHeaderNames {
+  val values = List(
+    MIN_EXPIRES,
+    ERROR_INFO,
+    MIME_VERSION,
+    IN_REPLY_TO,
+    ALLOW,
+    CONTENT_LANGUAGE,
+    VIA,
+    ROUTE,
+    PROXY_AUTHENTICATE,
+    AUTHORIZATION,
+    PROXY_AUTHORIZATION,
+    WWW_AUTHENTICATE
+  )
+}
 
 trait SIPHeaderNames {
 
-  val MIN_EXPIRES = MinExpiresHeader.NAME; //1
-  val ERROR_INFO = ErrorInfoHeader.NAME; //2
-  val MIME_VERSION = MimeVersionHeader.NAME; //3
-  val IN_REPLY_TO = InReplyToHeader.NAME; //4
-  val ALLOW = AllowHeader.NAME; //5
-  val CONTENT_LANGUAGE = ContentLanguageHeader.NAME;
+  val MIN_EXPIRES = MinExpiresHeader.NAME
+
+  val ERROR_INFO = ErrorInfoHeader.NAME
+
+  val MIME_VERSION = MimeVersionHeader.NAME
+
+  val IN_REPLY_TO = InReplyToHeader.NAME
+
+  val ALLOW = AllowHeader.NAME
+
+  val CONTENT_LANGUAGE = ContentLanguageHeader.NAME
+
+  val CSEQ = CSeqHeader.NAME
+
+  val CALL_ID = CallIdHeader.NAME
+
 
   val VIA = ViaHeader.NAME
+
   val ROUTE = RouteHeader.NAME
 
   val PROXY_AUTHORIZATION = ProxyAuthorizationHeader.NAME

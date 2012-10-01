@@ -2,8 +2,9 @@ package org.sisioh.sip.message.impl
 
 import org.sisioh.sip.message.header.impl._
 import java.net.InetAddress
-import org.sisioh.sip.message.header.Header
+import org.sisioh.sip.message.header._
 import org.sisioh.sip.message.Request
+import scala.Some
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -68,11 +69,11 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 
 class SIPRequest
 (val requestLine: Option[RequestLine],
- val to: Option[To],
- val from: Option[From],
- val callId: Option[CallId],
- val cSeq: Option[CSeq],
- val maxForwards: Option[MaxForwards],
+ toParam: Option[To],
+ fromParam: Option[From],
+ callIdParam: Option[CallId],
+ cSeqParam: Option[CSeq],
+ maxForwardsParam: Option[MaxForwards],
 
  val contentLength: Option[ContentLength],
  val messageContent: Option[MessageContent],
@@ -93,7 +94,6 @@ class SIPRequest
 
   def newBuilder = SIPRequestBuilder()
 
-  val fromTag = from.flatMap(_.tag)
 
   val forkId = {
     (callId, fromTag) match {
@@ -120,7 +120,7 @@ class SIPRequest
 
   private var nameTable: Map[String, String] = Map.empty
 
-  private def putName(name: String) = nameTable += (name -> name)
+  private def putName(name: String):Unit = nameTable += (name -> name)
 
   putName(Request.INVITE)
   putName(Request.BYE)
@@ -141,7 +141,7 @@ class SIPRequest
 
   private def getCannonicalName(method: String): Option[String] = {
     if (nameTable.contains(method))
-      nameTable.get(method).map(_.asInstanceOf[String])
+      nameTable.get(method)
     else
       Some(method)
   }
@@ -161,10 +161,10 @@ class SIPRequest
 
   override def encode(builder: StringBuilder): StringBuilder = {
     if (requestLine.isDefined) {
-      getRequestLineByDefaults.map {
+      getRequestLineByDefaults.foreach {
         rl =>
           builder.append(rl.encode())
-      }.get
+      }
       super.encode(builder)
     } else if (isNullRequest) {
       builder.append("\r\n\r\n")
@@ -185,19 +185,20 @@ class SIPRequest
       encodeSIPHeaders(sb)
   }
 
-  to.foreach {
+  toParam.foreach {
     addHeader(_)
   }
-  from.foreach {
+  fromParam.foreach {
     addHeader(_)
   }
-  callId.foreach {
+  callIdParam.foreach {
     addHeader(_)
   }
-  cSeq.foreach {
+  cSeqParam.foreach {
     addHeader(_)
   }
-  maxForwards.foreach {
+
+  maxForwardsParam.foreach {
     addHeader(_)
   }
   messageContent.foreach {
@@ -205,5 +206,14 @@ class SIPRequest
       addHeader(mc.contentType)
   }
 
+
+  val to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
+  val from = getHeader(FromHeader.NAME).map(_.asInstanceOf[From])
+  val cSeq = getHeader(CSeqHeader.NAME).map(_.asInstanceOf[CSeq])
+  val callId = getHeader(CallIdHeader.NAME).map(_.asInstanceOf[CallId])
+  val maxForwards = getHeader(MaxForwardsHeader.NAME).map(_.asInstanceOf[MaxForwards])
+  val fromTag = from.flatMap(_.tag)
+
   def encodeAsJValue() = null
+
 }

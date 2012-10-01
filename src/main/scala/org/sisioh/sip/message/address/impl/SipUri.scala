@@ -194,7 +194,7 @@ class SipUri
   override val userName = authority.userInfo.map(_.name)
   override val userPassword = authority.userInfo.flatMap(_.password)
   override val host = {
-    println("host",authority.host)
+    //println("host",authority.host)
     val host = authority.host.get
     host.hostName.get
   }
