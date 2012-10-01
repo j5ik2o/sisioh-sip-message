@@ -91,7 +91,5 @@ case class ContentType
     new ContentType(contentType, contentSubType, _parameters)
   }
 
-  override def toString = encode()
-
   def encodeAsJValue() = ContentTypeJsonEncoder.encode(this)
 }

@@ -11,20 +11,38 @@ class ExpiresDecoder extends SIPDecoder[Expires] with ExpiresParser {
 }
 
 trait ExpiresParser extends ParserBase {
+
   lazy val expireWithCrLfOpt = expires <~ opt(CRLF)
 
   lazy val expires: Parser[Expires] = "Expires" ~> HCOLON ~> deltaSeconds ^^ {
     e =>
       Expires(e.toInt)
   }
+
 }
 
-object ExpiresJsonEncoder extends JsonEncoder[Expires] {
+trait ExpiresJsonFieldNames extends JsonFieldNames {
+
+  val EXPIRES = "expires"
+
+}
+
+object ExpiresJsonDecoder extends JsonDecoder[Expires] with ExpiresJsonFieldNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, ExpiresHeader.NAME)
+    val JInt(expires) = json \ EXPIRES
+    Expires(expires.toInt)
+  }
+
+}
+
+object ExpiresJsonEncoder extends JsonEncoder[Expires] with ExpiresJsonFieldNames {
 
   def encode(model: Expires) = {
     JObject(
       getHeaderNameAsJValue(model) ::
-        JField("expires", JInt(BigInt(model.expires))) :: Nil
+        JField(EXPIRES, JInt(BigInt(model.expires))) :: Nil
     )
   }
 
@@ -35,6 +53,7 @@ object Expires {
 
   def decode(source: String) = ExpiresDecoder.decode(source)
 
+  def decodeFromJson(source: String) = ExpiresJsonDecoder.decode(source)
 
 }
 
@@ -49,7 +68,5 @@ case class Expires(expires: Int) extends SIPHeader with ExpiresHeader {
     builder.append(expires)
 
   def encodeAsJValue() = ExpiresJsonEncoder.encode(this)
-
-  override def toString = encode()
 
 }

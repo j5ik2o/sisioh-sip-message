@@ -205,9 +205,5 @@ class SIPRequest
       addHeader(mc.contentType)
   }
 
-  def removeFirst(headerName: String) = null
-
-  def removeLast(headerName: String) = null
-
   def encodeAsJValue() = null
 }

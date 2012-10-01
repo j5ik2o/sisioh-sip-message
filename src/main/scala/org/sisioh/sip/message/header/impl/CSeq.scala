@@ -86,5 +86,4 @@ case class CSeq(method: String, sequenceNumber: Long)
 
   def encodeAsJValue() = CSeqJsonEncoder.encode(this)
 
-  override def toString = encode()
 }

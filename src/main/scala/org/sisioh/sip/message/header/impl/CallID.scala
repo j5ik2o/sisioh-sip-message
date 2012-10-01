@@ -43,6 +43,13 @@ trait CallIdParser extends ParserBase {
 
 }
 
+object CallIdEncoder extends SIPEncoder[CallId] {
+
+  def encode(model: CallId, builder: StringBuilder) =
+    model.callIdentity.encode(builder)
+
+}
+
 trait CallIdJsonFieldNames extends JsonFieldNames {
   val CALL_ID = "callId"
 }
@@ -78,12 +85,13 @@ object CallId {
 }
 
 case class CallId(callId: String) extends SIPHeader with CallIdHeader {
-  val callIdentity = CallIdentifier.from(callId)
-  val headerName = CallIdHeader.NAME
-  val name = CallIdHeader.NAME
 
-  def encodeBody(builder: StringBuilder) =
-    callIdentity.encode(builder)
+  val callIdentity = CallIdentifier.from(callId)
+
+  val headerName = CallIdHeader.NAME
+  val name = headerName
+
+  def encodeBody(builder: StringBuilder) = CallIdEncoder.encode(this, builder)
 
   def encodeAsJValue() = CallIdJsonEncoder.encode(this)
 

@@ -197,6 +197,7 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   import scala.collection.mutable._
 
+
   val headers: ListBuffer[SIPHeader] = ListBuffer.empty
   val headerTable: Map[String, SIPHeader] = Map.empty
 
@@ -373,56 +374,49 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     addLast(header)
   }
 
-  def attachHeader(header: Header) = {
+  def attachHeader(header: Header, replace: Boolean = false, first: Boolean = false) = {
     val headerNameLowerCase = header.name.toLowerCase
     val sipHeader = header.asInstanceOf[SIPHeader]
+
+    val targetHeader: SIPHeader = if (SIPHeaderListMapping.hasList(sipHeader) &&
+      classOf[SIPHeaderList[_,_]].isAssignableFrom(sipHeader.getClass) == false) {
+      SIPHeaderListMapping.getList(sipHeader).get
+    } else {
+      sipHeader
+    }
+
+    if (replace) {
+      headerTable -= (headerNameLowerCase)
+    } else if (headerTable.contains(headerNameLowerCase) && targetHeader.isInstanceOf[SIPHeaderList[_,_]] == false) {
+      if (targetHeader.isInstanceOf[ContentLength]) {
+        val contentLength = targetHeader.asInstanceOf[ContentLength]
+        // 更新
+      }
+    }
+
     // 更新系
     if (headerTable.contains(headerNameLowerCase) == false) {
-      headerTable += (headerNameLowerCase -> sipHeader)
-      headers += sipHeader
+      headerTable += (headerNameLowerCase -> targetHeader)
+      headers += targetHeader
       // 追加系
     } else {
-      if (sipHeader.isInstanceOf[SIPHeaderList[_, _]]) {
+      if (targetHeader.isInstanceOf[SIPHeaderList[_, _]]) {
         val hdrList = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeaderList[_, SIPHeader]])
-        val htble = hdrList.map {
+        hdrList.map {
           e =>
             val list = sipHeader.asInstanceOf[SIPHeaderList[_, _]]
             val newHdrList = e.concatenate(list, false)
             headerTable += (headerNameLowerCase -> newHdrList.asInstanceOf[SIPHeader])
         }.getOrElse {
-          headerTable += (headerNameLowerCase -> sipHeader)
+          headerTable += (headerNameLowerCase -> targetHeader)
         }
       } else {
-        headerTable + (headerNameLowerCase -> sipHeader)
+        headerTable + (headerNameLowerCase -> targetHeader)
       }
     }
     this
   }
 
-
-  //  def attachHeader(header: Header, replace: Boolean, top: Boolean): SIPMessage[T] = {
-  //    val headerNameLowerCase = header.name.toLowerCase
-  //    val sipHeader = header.asInstanceOf[SIPHeader]
-  //    if (headerTable.contains(headerNameLowerCase) == false) {
-  //      newBuilder.withHeaderTable(headerTable + (headerNameLowerCase -> sipHeader)).withHeaders(headers :+ sipHeader).build(this.asInstanceOf[A])
-  //    } else {
-  //      if (sipHeader.isInstanceOf[SIPHeaderList[_, _]]) {
-  //        val hdrList = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeaderList[_, SIPHeader]])
-  //        val htble = hdrList.map {
-  //          e =>
-  //            val list = sipHeader.asInstanceOf[SIPHeaderList[_, _]]
-  //            val newHdrList = e.concatenate(list, false)
-  //            headerTable + (headerNameLowerCase -> newHdrList)
-  //        }.getOrElse {
-  //          headerTable + (headerNameLowerCase -> sipHeader)
-  //        }
-  //        newBuilder.withHeaderTable(htble).build(this.asInstanceOf[A])
-  //      } else {
-  //        newBuilder.withHeaderTable(headerTable + (headerNameLowerCase -> sipHeader)).build(this.asInstanceOf[A])
-  //      }
-  //    }
-  //
-  //  }
 
   def addLast(header: Header) = {
     attachHeader(header)
@@ -433,15 +427,20 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     this
   }
 
-  //def removeFirst(headerName: String) = null
-  def removeHeader(headerName: String, top: Boolean) = {
+  def removeFirst(headerName: String) =
+    removeHeader(headerName, true)
+
+  def removeLast(headerName: String) =
+    removeHeader(headerName)
+
+  def removeHeader(headerName: String, first: Boolean = false): SIPMessage[T] = {
     val headerNameLowerCase = SIPHeaderNamesCache.toLowerCase(headerName)
-    val toRemove = headerTable.get(headerNameLowerCase).map(_.asInstanceOf[SIPHeader])
+    val toRemove = headerTable.get(headerNameLowerCase)
     toRemove.foreach {
       h =>
         h match {
           case sipHeaderList: SIPHeaderList[_, _] =>
-            val newSHL = (if (top) sipHeaderList.removeHead else sipHeaderList.removeLast).asInstanceOf[SIPHeader]
+            val newSHL = (if (first) sipHeaderList.removeHead else sipHeaderList.removeLast).asInstanceOf[SIPHeader]
             headerTable += (headerNameLowerCase -> newSHL)
 
             if (sipHeaderList.isEmpty) {
@@ -473,6 +472,7 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
             }
         }
     }
+    this
   }
 
   def removeHeader(headerName: String) = {
@@ -514,11 +514,11 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     builder
   }
 
-//  def encodeByJson(builder: StringBuilder) = null
+  //  def encodeByJson(builder: StringBuilder) = null
 
-//  def removeFirst(headerName: String) = null
+  //  def removeFirst(headerName: String) = null
 
-//  def removeLast(headerName: String) = null
+  //  def removeLast(headerName: String) = null
 
   lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 

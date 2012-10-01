@@ -28,7 +28,7 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
   def encodeAsJValue() = {
     JObject(
       JField("headerNamne", JString(headerName)) ::
-        JField("parameters", JArray(headers.map(e => parse(e.encodeByJson())))) :: Nil
+        JField("parameters", JArray(headers.map(_.encodeAsJValue()))) :: Nil
     )
   }
 

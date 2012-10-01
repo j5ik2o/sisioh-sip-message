@@ -36,12 +36,8 @@ trait ContentLengthParser extends ParserBase {
 
 object ContentLengthEncoder extends SIPEncoder[ContentLength] {
 
-  def encode(model: ContentLength, builder: StringBuilder) = {
-    if (model.contentLength < 0)
-      builder.append("0")
-    else
-      builder.append(model.contentLength)
-  }
+  def encode(model: ContentLength, builder: StringBuilder) =
+    builder.append(model.contentLength)
 
 }
 
@@ -80,7 +76,7 @@ object ContentLength {
 case class ContentLength(contentLength: Int)
   extends SIPHeader with ContentLengthHeader {
 
-  require(contentLength > 0)
+  require(contentLength >= 0)
 
   val headerName = ContentLengthHeader.NAME
   val name = headerName
@@ -88,7 +84,5 @@ case class ContentLength(contentLength: Int)
   def encodeBody(builder: StringBuilder) = ContentLengthEncoder.encode(this, builder)
 
   def encodeAsJValue() = ContentLengthJsonEncoder.encode(this)
-
-  override def toString = encode()
 
 }
