@@ -1,5 +1,7 @@
 package org.sisioh.sip.message.impl
 
+import org.sisioh.sip.message.header.{ServerHeader, UserAgentHeader}
+
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
  *
@@ -17,9 +19,11 @@ package org.sisioh.sip.message.impl
  */
 
 object DefaultMessageFactory {
+
   val defaultContentEncodingCharset = "UTF-8"
+
+  def apply(userAgent: UserAgentHeader, server: ServerHeader) = new DefaultMessageFactory(userAgent, server)
+
 }
 
-class DefaultMessageFactory {
-
-}
+class DefaultMessageFactory(userAgent: UserAgentHeader, server: ServerHeader)

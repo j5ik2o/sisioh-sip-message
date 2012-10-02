@@ -18,7 +18,7 @@ package org.sisioh.sip.message.header
 
 trait FromHeader extends HeaderAddress with Parameters with Header {
 
-  val tag: Option[String]
+  def tag: Option[String]
 
 }
 

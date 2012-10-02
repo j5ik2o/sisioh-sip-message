@@ -20,6 +20,39 @@ import org.sisioh.sip.message.header.CSeqHeader
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json._
+import org.sisioh.dddbase.core.ValueObjectBuilder
+
+class CSeqBuilder extends ValueObjectBuilder[CSeq, CSeqBuilder]{
+
+  private var method: String = _
+
+  private var sequenceNumber: Long = _
+
+  def withMethod(method: String) = {
+    addConfigurator{
+      _.method = method
+    }
+    getThis
+  }
+
+  def withSequenceNumber(sequenceNumber: Long) = {
+    addConfigurator{
+      _.sequenceNumber = sequenceNumber
+    }
+    getThis
+  }
+
+  protected def getThis = this
+
+  protected def newInstance = new CSeqBuilder
+
+  protected def apply(vo: CSeq, builder: CSeqBuilder) {
+    builder.withMethod(vo.method)
+    builder.withSequenceNumber(vo.sequenceNumber)
+  }
+
+  protected def createValueObject = CSeq(method, sequenceNumber)
+}
 
 object CSeqDecoder extends CSeqDecoder
 
@@ -69,7 +102,6 @@ object CSeq {
   def decode(source: String) = CSeqDecoder.decode(source)
 
   def decodeFromJson(source: String) = CSeqJsonDecoder.decode(source)
-
 
 }
 

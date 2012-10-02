@@ -24,6 +24,7 @@ import org.sisioh.sip.util.Utils
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
+import org.specs2.internal.scalaz.Digit._0
 
 abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
@@ -133,26 +134,25 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
   }
 
 
-  var headers: List[SIPHeader] = List.empty
+  protected var headers: List[SIPHeader] = List.empty
 
-  var from: Option[From] = None
-  var to: Option[To] = None
-  var cSeq: Option[CSeq] = None
-  var callId: Option[CallId] = None
-  var contentLength: Option[ContentLength] = None
-  var maxForwards: Option[MaxForwards] = None
-  var size: Int = 0
+  protected var from: Option[From] = None
+  protected var to: Option[To] = None
+  protected var cSeq: Option[CSeq] = None
+  protected var callId: Option[CallId] = None
+  protected var contentLength: Option[ContentLength] = None
+  protected var maxForwards: Option[MaxForwards] = None
+  protected var size: Int = 0
 
-  var messageContent: Option[MessageContent] = None
+  protected var messageContent: Option[MessageContent] = None
 
-  var applicationData: Option[Any] = null
-  var forkId: String = ""
+  protected var applicationData: Option[Any] = null
+  protected var forkId: String = ""
 
-  var remoteAddress: Option[InetAddress] = None
-  var remotePort: Option[Int] = None
-  var localAddress: Option[InetAddress] = None
-  var localPort: Option[Int] = None
-
+  protected var remoteAddress: Option[InetAddress] = None
+  protected var remotePort: Option[Int] = None
+  protected var localAddress: Option[InetAddress] = None
+  protected var localPort: Option[Int] = None
 
 }
 
@@ -284,19 +284,24 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   val unrecognizedHeaders: List[Header] = List.empty
   protected val headerListMap: HeaderListMap = new HeaderListMap
 
-  val headers: List[SIPHeader]
+  def headers: List[SIPHeader]
 
   //val headers: ListBuffer[SIPHeader]
   // val headerTable: Map[String, SIPHeader] = Map.empty
 
-  val from: Option[From]
-  val to: Option[To]
-  val cSeq: Option[CSeq]
-  val callId: Option[CallId]
-  val maxForwards: Option[MaxForwards]
-  val contentLength: Option[ContentLength]
+  def from: Option[From]
 
-  val forkId: Option[String]
+  def to: Option[To]
+
+  def cSeq: Option[CSeq]
+
+  def callId: Option[CallId]
+
+  def maxForwards: Option[MaxForwards]
+
+  def contentLength: Option[ContentLength]
+
+  def forkId: Option[String]
 
   val messageContent: Option[MessageContent]
 
@@ -399,24 +404,16 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   def getViaHeadHeader = getViaHeaders.map(_.getHead)
 
-  def getDialogId(isServer: Boolean, toTag: Option[String]) = {
-    val toAndFromTags = List(
-      from.get.tag.toList.flatMap {
-        tg =>
-          List(Separators.COLON, tg)
-      },
-      toTag.toList.flatMap {
-        tg =>
-          List(Separators.COLON, tg)
-      }
-    ).flatten
+  def getDialogId(isServer: Boolean): Option[String] = getDialogId(isServer, None)
+
+  def getDialogId(isServer: Boolean, toTag: Option[String]): Option[String] = {
+    val toAndFromTags = (from.flatMap(_.tag) :: to.flatMap(_.tag).orElse(toTag) :: Nil).flatten
     val r = if (isServer) {
       toAndFromTags.reverse
     } else {
       toAndFromTags
     }
-    val rr = callId.get.callId :: r
-    rr.mkString
+    callId.map(e => (e.callId :: r).mkString(Separators.COLON))
   }
 
 
@@ -431,11 +428,15 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
         topVia.get.branch.get.toLowerCase
       }
     } else {
+
       val retVal =
-        from.get.tag.map {
-          tag =>
-            new StringBuilder().append(tag).append("-")
+        from.flatMap {
+          _.tag.map {
+            tag =>
+              new StringBuilder().append(tag).append("-")
+          }
         }.getOrElse(new StringBuilder)
+
       val cid = callId.get.callId
       retVal.append(cid).append("-")
       retVal.append(cSeq.get.sequenceNumber).append("-").append(cSeq.get.method)
@@ -466,24 +467,15 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   }
 
   protected def attachHeader(header: Header, first: Boolean = false) = {
-    val headerNameLowerCase = header.name.toLowerCase
     val sipHeader = header.asInstanceOf[SIPHeader]
 
-    val targetHeader: SIPHeader = if (SIPHeaderListMapping.hasList(sipHeader)) {
-      SIPHeaderListMapping.getList(sipHeader).get
-    } else {
-      sipHeader
-    }
-
-
-    if (headerListMap.contains(headerNameLowerCase) && targetHeader.isInstanceOf[SIPHeaderList[_, _]] == false) {
-      if (targetHeader.isInstanceOf[ContentLength]) {
-        val contentLength = targetHeader.asInstanceOf[ContentLength]
-        // 更新
+    val targetHeader: SIPHeader =
+      if (SIPHeaderListMapping.hasList(sipHeader)) {
+        SIPHeaderListMapping.getList(sipHeader).get
+      } else {
+        sipHeader
       }
-    }
     headerListMap.addOrUpdate(targetHeader, first)
-
     this
   }
 
@@ -547,12 +539,6 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     }
     builder
   }
-
-  //  def encodeByJson(builder: StringBuilder) = null
-
-  //  def removeFirst(headerName: String) = null
-
-  //  def removeLast(headerName: String) = null
 
   lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 

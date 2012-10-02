@@ -72,6 +72,8 @@ abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 
   def addLast(sipHeader: HDR): A = createInstance(headers :+ sipHeader)
 
+  def removeAll: A = createInstance(List.empty)
+
   def remove(sipHeader: HDR): A = createInstance(headers.filterNot(_ == sipHeader))
 
   def removeHead: A = createInstance(headers.drop(1))

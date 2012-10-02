@@ -28,7 +28,7 @@ class FromSpec extends Specification {
       val address = new DefaultAddressFactory().createAddress(SipUri.decode("sip:hoge@localhost"), Some("kato"))
       val from = From(address)
       from.encode() must_== """From: "kato" <sip:hoge@localhost>""" + Separators.NEWLINE
-      from.encodeByJson() must_== """{"headerName":"From","address":{"uriType":"sip","uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"userInfo":{"name":"hoge"}},"uriParams":{"separator":";","values":{}},"qheaders":{"separator":"&","values":{}}},"displayName":"kato","addressType":0},"paramters":{"separator":";","values":{}}}"""
+      from.encodeByJson() must_== """{"headerName":"From","address":{"uriType":"sip","uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"userInfo":{"name":"hoge"}},"uriParams":{"separator":";","values":{}},"qheaders":{"separator":"&","values":{}}},"displayName":"kato","addressType":0},"parameters":{"separator":";","values":{}}}"""
       from.address must_== address
     }
     "アドレスとパラメータを指定した場合" in {
@@ -36,7 +36,7 @@ class FromSpec extends Specification {
       val params = NameValuePairList.fromValues(List(NameValuePair(Some("a"), Some("b"))))
       val from = From(address, None, params)
       from.encode() must_== """From: "kato" <sip:hoge@localhost>;a=b""" + Separators.NEWLINE
-      from.encodeByJson() must_== """{"headerName":"From","address":{"uriType":"sip","uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"userInfo":{"name":"hoge"}},"uriParams":{"separator":";","values":{}},"qheaders":{"separator":"&","values":{}}},"displayName":"kato","addressType":0},"paramters":{"separator":";","values":{"a":"b"}}}"""
+      from.encodeByJson() must_== """{"headerName":"From","address":{"uriType":"sip","uri":{"scheme":"sip","authority":{"hostPort":{"host":{"hostNameOrIpAddress":"localhost","addressType":0}},"userInfo":{"name":"hoge"}},"uriParams":{"separator":";","values":{}},"qheaders":{"separator":"&","values":{}}},"displayName":"kato","addressType":0},"parameters":{"separator":";","values":{"a":"b"}}}"""
       from.address must_== address
       from.parameters must_== params
     }

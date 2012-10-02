@@ -7,6 +7,57 @@ import org.sisioh.sip.util._
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 import scala.Some
+import org.sisioh.dddbase.core.ValueObjectBuilder
+
+object RequestLineBuilder {
+
+  def apply() = new RequestLineBuilder
+
+}
+
+class RequestLineBuilder extends ValueObjectBuilder[RequestLine, RequestLineBuilder] {
+
+  protected def getThis = this
+
+  protected def newInstance = new RequestLineBuilder
+
+  protected def apply(vo: RequestLine, builder: RequestLineBuilder) {
+    builder.withUri(vo.uri)
+    builder.withMethod(vo.method)
+    builder.withSipVersion(vo.sipVersion)
+  }
+
+  private var uri: GenericURI = _
+
+  private var method: Option[String] = None
+
+  private var sipVersion: Option[String] = None
+
+  def withUri(uri: GenericURI) = {
+    addConfigurator {
+      _.uri = uri
+    }
+    getThis
+  }
+
+  def withMethod(method: Option[String]) = {
+    addConfigurator {
+      _.method = method
+    }
+    getThis
+  }
+
+  def withSipVersion(sipVersion: Option[String]) = {
+    addConfigurator {
+      _.sipVersion = sipVersion
+    }
+    getThis
+  }
+
+
+  protected def createValueObject = RequestLine(uri, method, sipVersion)
+
+}
 
 object RequestLineDecoder extends RequestLineDecoder
 

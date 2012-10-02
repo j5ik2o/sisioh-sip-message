@@ -33,7 +33,7 @@ trait ToOrFromParser extends ParserBase with HostParser {
 
 trait ToOrFromHeader extends AddressParametersHeader {
 
-  val tag: Option[String]
+  def tag: Option[String]
   val parameters: NameValuePairList
 
   def encodeBody(builder: StringBuilder) = {

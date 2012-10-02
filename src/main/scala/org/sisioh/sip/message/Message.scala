@@ -40,7 +40,7 @@ trait Message {
 
   val unrecognizedHeaders: List[Header]
 
-  val contentLength: Option[ContentLengthHeader]
+  def contentLength: Option[ContentLengthHeader]
 
   val contentLanguage: Option[ContentLanguageHeader]
 

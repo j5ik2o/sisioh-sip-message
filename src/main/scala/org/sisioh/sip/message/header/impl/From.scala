@@ -77,12 +77,12 @@ object From {
  * Fromヘッダを表す値オブジェクト。
  *
  * @param address
- * @param tag
+ * @param tagParam
  * @param parametersParam
  */
 class From
 (val address: DefaultAddress,
- val tag: Option[String] = None,
+ tagParam: Option[String] = None,
  parametersParam: NameValuePairList = NameValuePairList())
   extends ToOrFromHeader with FromHeader {
 
@@ -91,11 +91,20 @@ class From
   val headerName = FromHeader.NAME
   val name = headerName
 
-  val parameters = tag.map(t => parametersParam.add(ParameterNames.TAG, t)).getOrElse(parametersParam)
 
   val duplicates: DuplicateNameValueList = DuplicateNameValueList()
 
   def hasTag: Boolean = hasParameter(ParameterNames.TAG)
+
+  def tag = {
+    (tagParam, parametersParam.getValueAsString(ParameterNames.TAG)) match {
+      case (Some(tp), _) => Some(tp)
+      case (_, Some(tp)) => Some(tp)
+      case _ => None
+    }
+  }
+
+  val parameters = tagParam.map(t => parametersParam.add(ParameterNames.TAG, t)).getOrElse(parametersParam)
 
   protected def createParametersHeader(_duplicates: DuplicateNameValueList, _parameters: NameValuePairList) = {
     new From(address, tag, _parameters)
