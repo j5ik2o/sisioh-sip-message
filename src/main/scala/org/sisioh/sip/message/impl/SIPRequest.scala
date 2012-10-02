@@ -3,11 +3,12 @@ package org.sisioh.sip.message.impl
 import org.sisioh.sip.message.header.impl._
 import java.net.InetAddress
 import org.sisioh.sip.message.header._
-import org.sisioh.sip.message.Request
+import org.sisioh.sip.message.{StatusCode, Request}
 import scala.Some
 import org.sisioh.sip.message.address.URI
 import org.sisioh.sip.util.ParseException
 import org.sisioh.sip.message.address.impl.GenericURI
+import com.twitter.finagle.http.Response
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -82,20 +83,9 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 
   protected def newInstance = new SIPRequestBuilder
 
-  protected def apply(vo: SIPRequest, builder: SIPRequestBuilder) {
+  override protected def apply(vo: SIPRequest, builder: SIPRequestBuilder) {
+    super.apply(vo, builder)
     builder.withRequestLine(vo.requestLine)
-    builder.withTo(vo.to)
-    builder.withFrom(vo.from)
-    builder.withCallId(vo.callId)
-    builder.withCSeq(vo.cSeq)
-    builder.withMaxForwards(vo.maxForwards)
-    builder.withContentLength(vo.contentLength)
-    builder.withMessageContent(vo.messageContent)
-    builder.withRemoteAddress(vo.remoteAddress)
-    builder.withRemotePort(vo.remotePort)
-    builder.withLocalAddress(vo.localAddress)
-    builder.withLocalPort(vo.localPort)
-    builder.withHeaders(vo.headers)
   }
 
   protected def createValueObject = new SIPRequest(
@@ -110,6 +100,39 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
     headers,
     size
   )
+}
+
+object SIPRequest {
+  val headersToIncludeInResponse = Set(
+    FromHeader.NAME.toLowerCase,
+    ToHeader.NAME.toLowerCase,
+    ViaHeader.NAME.toLowerCase,
+    RecordRouteHeader.NAME.toLowerCase,
+    CallIdHeader.NAME.toLowerCase,
+    CSeqHeader.NAME.toLowerCase,
+    TimeStampHeader.NAME.toLowerCase
+  )
+
+  private var nameTable: Map[String, String] = Map.empty
+
+  private def putName(name: String): Unit = nameTable += (name -> name)
+
+  putName(Request.INVITE)
+  putName(Request.BYE)
+  putName(Request.CANCEL)
+  putName(Request.ACK)
+  putName(Request.PRACK)
+  putName(Request.INFO)
+  putName(Request.MESSAGE)
+  putName(Request.NOTIFY)
+  putName(Request.OPTIONS)
+  putName(Request.PRACK)
+  putName(Request.PUBLISH)
+  putName(Request.REFER)
+  putName(Request.REGISTER)
+  putName(Request.SUBSCRIBE)
+  putName(Request.UPDATE)
+
 }
 
 class SIPRequest
@@ -130,7 +153,7 @@ class SIPRequest
  val applicationData: Option[Any],
  headersParam: List[SIPHeader],
  val size: Int
-  ) extends SIPMessage[Any] {
+  ) extends SIPMessage[Any] with Request {
 
   type A = SIPRequest
   type B = SIPRequestBuilder
@@ -149,7 +172,27 @@ class SIPRequest
 
   val method = requestLine.flatMap(_.method)
 
-  override val sipVersion = requestLine.flatMap(_.sipVersion).getOrElse(SIPConstants.SIP_VERSION_STRING)
+  override val sipVersion: Option[String] = requestLine.flatMap(_.sipVersion).orElse(Some(SIPConstants.SIP_VERSION_STRING))
+
+
+  def contentLength: Option[ContentLength] = (contentLengthParam,
+    headersParam.find(_.isInstanceOf[ContentLength]).map(_.asInstanceOf[ContentLength])) match {
+    case (Some(clp), _) => Some(clp)
+    case (_, Some(clp)) => Some(clp)
+    case _ => None
+  }
+
+  def createResponse(statusCode: Int): SIPResponse = {
+    val reasonPhrase = SIPResponse.getReasonPhrase(statusCode)
+    createResponse(statusCode, reasonPhrase)
+  }
+
+  def createResponse(statusCode: Int, reasonPhrase: Option[String], server: Option[Server] = None): SIPResponse = {
+    val statusLine = StatusLine(statusCode, reasonPhrase)
+    SIPResponseBuilder().withStatusLine(Some(statusLine)).withHeaders(server.toList).build
+    // TODO Record-Routeからコピーする
+  }
+
 
   def createAckRequest(responseToHeader: To) = {
     val newRL = requestLine.map {
@@ -206,13 +249,6 @@ class SIPRequest
     super.removeContent
   }
 
-  def forkId = {
-    (callId, fromTag) match {
-      case (Some(cid), Some(ftag)) =>
-        Some((cid.callId + ":" + ftag).toLowerCase)
-      case _ => None
-    }
-  }
 
   override def encodeAsBytes(transport: String): Array[Byte] = {
     if (isNullRequest) {
@@ -229,30 +265,10 @@ class SIPRequest
     }
   }
 
-  private var nameTable: Map[String, String] = Map.empty
-
-  private def putName(name: String): Unit = nameTable += (name -> name)
-
-  putName(Request.INVITE)
-  putName(Request.BYE)
-  putName(Request.CANCEL)
-  putName(Request.ACK)
-  putName(Request.PRACK)
-  putName(Request.INFO)
-  putName(Request.MESSAGE)
-  putName(Request.NOTIFY)
-  putName(Request.OPTIONS)
-  putName(Request.PRACK)
-  putName(Request.PUBLISH)
-  putName(Request.REFER)
-  putName(Request.REGISTER)
-  putName(Request.SUBSCRIBE)
-  putName(Request.UPDATE)
-
 
   private def getCannonicalName(method: String): Option[String] = {
-    if (nameTable.contains(method))
-      nameTable.get(method)
+    if (SIPRequest.nameTable.contains(method))
+      SIPRequest.nameTable.get(method)
     else
       Some(method)
   }
@@ -324,30 +340,10 @@ class SIPRequest
     filterNot(e => SIPHeaderNamesCache.toLowerCase(e.name) == ViaHeader.NAME.toLowerCase).
     foreach(addHeader)
 
-  def headers = headerListMap.toList
-
-  def to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
-
-  def from = getHeader(FromHeader.NAME).map(_.asInstanceOf[From])
-
-  def cSeq = getHeader(CSeqHeader.NAME).map(_.asInstanceOf[CSeq])
-
-  def callId = getHeader(CallIdHeader.NAME).map(_.asInstanceOf[CallId])
-
-  def maxForwards = getHeader(MaxForwardsHeader.NAME).map(_.asInstanceOf[MaxForwards])
-
-  def fromTag = from.flatMap(_.tag)
-
   def encodeAsJValue() = null
 
-  def contentLength: Option[ContentLength] = (contentLengthParam,
-    headersParam.find(_.isInstanceOf[ContentLength]).map(_.asInstanceOf[ContentLength])) match {
-    case (Some(clp), _) => Some(clp)
-    case (_, Some(clp)) => Some(clp)
-    case _ => None
-  }
 
-  def vaildateHeaders = {
+  def validateHeaders: Unit = {
     val prefix = "Missing a required header : "
     if (cSeq.isEmpty) {
       throw new ParseException(Some(prefix + CSeqHeader.NAME))

@@ -38,6 +38,7 @@ trait ParserBase extends RegexParsers {
   lazy val LF = chr(0x0A) // \n
   lazy val SP = chr(0x20)
   lazy val HT = chr(0x09)
+  lazy val HTAB = HT
   lazy val DQUOTE: Parser[Char] = '\"'
   lazy val WSP = SP | HT
 
@@ -182,5 +183,11 @@ trait ParserBase extends RegexParsers {
   lazy val genValue = token | host | quotedString
 
   lazy val port = DIGIT
+
+  lazy val SIP_Version: Parser[String] = "SIP" ~ "/" ~ rep1(DIGIT) ~ "." ~ rep1(DIGIT) ^^ {
+    case sip ~ slash ~ major ~ dot ~ minar =>
+      List(sip, slash, major.mkString, dot, minar.mkString).mkString
+  }
+
 
 }

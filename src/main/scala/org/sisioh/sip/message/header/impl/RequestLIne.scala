@@ -74,11 +74,6 @@ trait RequestLineParser extends ParserBase with SipUriParser {
 
   lazy val Request_URI: Parser[GenericURI] = SIP_URI | SIPS_URI | absoluteURI
 
-  lazy val SIP_Version: Parser[String] = "SIP" ~ "/" ~ rep1(DIGIT) ~ "." ~ rep1(DIGIT) ^^ {
-    case sip ~ slash ~ major ~ dot ~ minar =>
-      List(sip, slash, major.mkString, dot, minar.mkString).mkString
-  }
-
 }
 
 
@@ -135,32 +130,11 @@ case class RequestLine
 (uri: GenericURI,
  method: Option[String] = None,
  sipVersion: Option[String] = Some(SIPConstants.SIP_VERSION_STRING))
-  extends SIPObject with SIPRequestLine {
+  extends SIPObject with SIPRequestLine with VersionSpliter {
 
-  private def versionSplis(index: Int) = {
-    sipVersion.flatMap {
-      e =>
-        val versions = e.split('/').toList match {
-          case List(l) => Some(l)
-          case List(_, l) => Some(l)
-          case _ => None
-        }
-        versions.flatMap {
-          v =>
-            v.toArray.toList match {
-              case List(major, '.', _) if (index == 0) =>
-                Some(major.toString)
-              case List(_, '.', minar) if (index == 1) =>
-                Some(minar.toString)
-              case _ => None
-            }
-        }
-    }
-  }
+  lazy val versionMajor = versionSplis(sipVersion, 0)
 
-  lazy val versionMajor = versionSplis(0)
-
-  lazy val versionMinor = versionSplis(1)
+  lazy val versionMinor = versionSplis(sipVersion, 1)
 
   def encode(builder: StringBuilder) = RequestLineEncoder.encode(this, builder)
 

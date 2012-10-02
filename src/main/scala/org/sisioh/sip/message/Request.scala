@@ -19,8 +19,8 @@ package org.sisioh.sip.message
 import address.URI
 
 trait Request extends Message {
-  val method: String
-  val requestURI: URI
+  val method: Option[String]
+  val requestURI: Option[URI]
 }
 
 object Request {

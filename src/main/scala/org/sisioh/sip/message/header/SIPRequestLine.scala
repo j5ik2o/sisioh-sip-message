@@ -22,6 +22,7 @@ trait SIPRequestLine {
   val uri: URI
   val method: Option[String]
   val sipVersion: Option[String]
+
   val versionMajor: Option[String]
   val versionMinor: Option[String]
 }

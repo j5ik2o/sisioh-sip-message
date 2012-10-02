@@ -154,6 +154,20 @@ abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S
   protected var localAddress: Option[InetAddress] = None
   protected var localPort: Option[Int] = None
 
+  protected def apply(vo: T, builder: S) {
+    builder.withTo(vo.to)
+    builder.withFrom(vo.from)
+    builder.withCallId(vo.callId)
+    builder.withCSeq(vo.cSeq)
+    builder.withMaxForwards(vo.maxForwards)
+    builder.withContentLength(vo.contentLength)
+    builder.withMessageContent(vo.messageContent)
+    builder.withRemoteAddress(vo.remoteAddress)
+    builder.withRemotePort(vo.remotePort)
+    builder.withLocalAddress(vo.localAddress)
+    builder.withLocalPort(vo.localPort)
+    builder.withHeaders(vo.headers)
+  }
 }
 
 
@@ -177,10 +191,12 @@ case class MessageContent
 }
 
 
-class HeaderListMap {
+case class HeaderListMap
+(headers: ListBuffer[SIPHeader] = ListBuffer.empty,
+ headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty) {
 
-  private val headers: ListBuffer[SIPHeader] = ListBuffer.empty
-  private val headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty
+//  private val headers: ListBuffer[SIPHeader] = ListBuffer.empty
+//  private val headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty
 
   def toList = headers.result()
 
@@ -280,28 +296,24 @@ class HeaderListMap {
 
 trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
-  //import scala.collection.mutable._
   val unrecognizedHeaders: List[Header] = List.empty
   protected val headerListMap: HeaderListMap = new HeaderListMap
 
-  def headers: List[SIPHeader]
+  def headers = headerListMap.toList
 
-  //val headers: ListBuffer[SIPHeader]
-  // val headerTable: Map[String, SIPHeader] = Map.empty
+  def to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
 
-  def from: Option[From]
+  def from = getHeader(FromHeader.NAME).map(_.asInstanceOf[From])
 
-  def to: Option[To]
+  def cSeq = getHeader(CSeqHeader.NAME).map(_.asInstanceOf[CSeq])
 
-  def cSeq: Option[CSeq]
+  def callId = getHeader(CallIdHeader.NAME).map(_.asInstanceOf[CallId])
 
-  def callId: Option[CallId]
+  def maxForwards = getHeader(MaxForwardsHeader.NAME).map(_.asInstanceOf[MaxForwards])
 
-  def maxForwards: Option[MaxForwards]
+  def fromTag = from.flatMap(_.tag)
 
   def contentLength: Option[ContentLength]
-
-  def forkId: Option[String]
 
   val messageContent: Option[MessageContent]
 
@@ -344,7 +356,7 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
     val soruceVia = getHeader(ViaHeader.NAME).asInstanceOf[Via]
     val topVia = Via(soruceVia.sentBy, Protocol(soruceVia.sentProtocol.protocolName, soruceVia.sentProtocol.protocolVersion, transport))
-    // TODO topViaを更新する
+    headerListMap.addOrUpdate(topVia, false)
 
     val encoding = new StringBuilder()
     headers.synchronized {
@@ -453,9 +465,16 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     }
   }
 
-  override def hashCode() = 31 * callId.##
 
-  //  def newBuilder[A <: SIPMessage[T], B <: SIPMessageBuilder[A, B]]: SIPMessageBuilder[A, B]
+  def getForkId = {
+    (callId, fromTag) match {
+      case (Some(cid), Some(ftag)) =>
+        Some((cid.callId + ":" + ftag).toLowerCase)
+      case _ => None
+    }
+  }
+
+
   def newBuilder: SIPMessageBuilder[A, B]
 
 
@@ -540,6 +559,10 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
     builder
   }
 
+  lazy val CONTENT_DISPOSITION_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentDispositionHeader.NAME)
+
+  lazy val contentDispositionHeader = getHeaderLowerCase(CONTENT_DISPOSITION_LOWERCASE).map(_.asInstanceOf[ContentDispositionHeader])
+
   lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 
   lazy val contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
@@ -569,5 +592,16 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
   }
 
 
-  val sipVersion = SIPConstants.SIP_VERSION_STRING
+  val sipVersion: Option[String] = Some(SIPConstants.SIP_VERSION_STRING)
+
+  override def hashCode = 31 * headerListMap.##
+
+  override def equals(obj: Any) = obj match {
+    case that: SIPMessage[_] =>
+      headerListMap == that.headerListMap
+    case _ =>
+      false
+  }
+
+  def validateHeaders: Unit
 }

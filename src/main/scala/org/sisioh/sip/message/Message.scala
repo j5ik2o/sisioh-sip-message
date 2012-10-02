@@ -56,5 +56,5 @@ trait Message {
 
   def removeContent: Message
 
-  val sipVersion: String
+  val sipVersion: Option[String]
 }
