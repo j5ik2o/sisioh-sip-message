@@ -38,4 +38,6 @@ object SIPConstants extends SIPHeaderNames with org.sisioh.sip.message.address.P
    * constant SIP_VERSION_STRING
    */
   val SIP_VERSION_STRING = "SIP/2.0"
+
+
 }

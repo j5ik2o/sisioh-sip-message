@@ -24,170 +24,126 @@ import org.sisioh.sip.util.Utils
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
-import org.specs2.internal.scalaz.Digit._0
 
 abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
   def withHeaders(headers: List[SIPHeader]): S = {
     addConfigurator {
-      _.headers = headers
+      _.headers ++= headers
     }
     getThis
   }
 
   def withFrom(from: Option[From]) = {
     addConfigurator {
-      _.from = from
+      _.headers ++= from.toList
     }
     getThis
   }
 
   def withTo(to: Option[To]) = {
     addConfigurator {
-      _.to = to
+      _.headers ++= to.toList
     }
     getThis
   }
 
   def withCSeq(cSeq: Option[CSeq]) = {
     addConfigurator {
-      _.cSeq = cSeq
+      _.headers ++= cSeq.toList
     }
     getThis
   }
 
   def withCallId(callId: Option[CallId]) = {
     addConfigurator {
-      _.callId = callId
+      _.headers ++= callId.toList
     }
     getThis
   }
 
   def withContentLength(contentLength: Option[ContentLength]) = {
     addConfigurator {
-      _.contentLength = contentLength
+      _.headers ++= contentLength.toList
     }
     getThis
   }
 
   def withMaxForwards(maxForwards: Option[MaxForwards]) = {
     addConfigurator {
-      _.maxForwards = maxForwards
-    }
-    getThis
-  }
-
-  def withSize(size: Int) = {
-    addConfigurator {
-      _.size = size
+      _.headers ++= maxForwards.toList
     }
     getThis
   }
 
   def withMessageContent(messageContent: Option[MessageContent]) = {
     addConfigurator {
-      _.messageContent = messageContent
+      e =>
+        e.messageContent = messageContent
     }
     getThis
   }
 
-  def withApplicationData(applicationData: Option[Any]) = {
+  def withMetaData(metaData: Option[MetaData]) = {
     addConfigurator {
-      _.applicationData = applicationData
-    }
-    getThis
-  }
-
-  def withForkId(forkId: String) = {
-    addConfigurator {
-      _.forkId = forkId
-    }
-    getThis
-  }
-
-  def withRemoteAddress(remoteAddress: Option[InetAddress]) = {
-    addConfigurator {
-      _.remoteAddress = remoteAddress
-    }
-    getThis
-  }
-
-  def withRemotePort(remotePort: Option[Int]) = {
-    addConfigurator {
-      _.remotePort = remotePort
-    }
-    getThis
-  }
-
-  def withLocalAddress(localAddress: Option[InetAddress]) = {
-    addConfigurator {
-      _.localAddress = localAddress
-    }
-    getThis
-  }
-
-  def withLocalPort(localPort: Option[Int]) = {
-    addConfigurator {
-      _.localPort = localPort
+      e =>
+        e.metaData = metaData
     }
     getThis
   }
 
 
-  protected var headers: List[SIPHeader] = List.empty
+  protected var headers: ListBuffer[SIPHeader] = ListBuffer.empty
 
-  protected var from: Option[From] = None
-  protected var to: Option[To] = None
-  protected var cSeq: Option[CSeq] = None
-  protected var callId: Option[CallId] = None
-  protected var contentLength: Option[ContentLength] = None
-  protected var maxForwards: Option[MaxForwards] = None
-  protected var size: Int = 0
 
   protected var messageContent: Option[MessageContent] = None
 
-  protected var applicationData: Option[Any] = null
-  protected var forkId: String = ""
 
-  protected var remoteAddress: Option[InetAddress] = None
-  protected var remotePort: Option[Int] = None
-  protected var localAddress: Option[InetAddress] = None
-  protected var localPort: Option[Int] = None
+  protected var metaData: Option[MetaData] = None
 
   protected def apply(vo: T, builder: S) {
-    builder.withTo(vo.to)
-    builder.withFrom(vo.from)
-    builder.withCallId(vo.callId)
-    builder.withCSeq(vo.cSeq)
-    builder.withMaxForwards(vo.maxForwards)
-    builder.withContentLength(vo.contentLength)
-    builder.withMessageContent(vo.messageContent)
-    builder.withRemoteAddress(vo.remoteAddress)
-    builder.withRemotePort(vo.remotePort)
-    builder.withLocalAddress(vo.localAddress)
-    builder.withLocalPort(vo.localPort)
     builder.withHeaders(vo.headers)
+    builder.withMessageContent(vo.messageContent)
+    builder.withMetaData(vo.metaData)
   }
 }
 
 
 object MessageContent {
 
+  def apply
+  (contentBytes: Array[Byte]): MessageContent = new MessageContent(contentBytes, None)
 
-  def apply(contentType: ContentType,
-            contentAsString: String): MessageContent = MessageContent(contentType, contentAsString.getBytes)
+  def apply
+  (contentBytes: Array[Byte],
+   contentType: Option[ContentType]): MessageContent = new MessageContent(contentBytes, contentType)
+
+  def apply
+  (contentAsString: String): MessageContent = new MessageContent(contentAsString.getBytes, None)
+
+  def apply
+  (contentAsString: String,
+   contentType: Option[ContentType]): MessageContent = new MessageContent(contentAsString.getBytes, contentType)
 
 }
 
-case class MessageContent
-(contentType: ContentType,
- contentBytes: Array[Byte]) {
+class MessageContent
+(val contentBytes: Array[Byte],
+ val contentType: Option[ContentType] = None) {
 
   def getContentAsString
   (charset: String = DefaultMessageFactory.defaultContentEncodingCharset): String =
     new String(contentBytes, charset)
 
+  override def hashCode() = 31 * contentBytes.## + 31 * contentType.##
 
+  override def equals(obj: Any) = obj match {
+    case that: MessageContent =>
+      contentBytes == that.contentBytes &&
+        contentType == that.contentType
+    case _ =>
+      false
+  }
 }
 
 
@@ -195,8 +151,8 @@ case class HeaderListMap
 (headers: ListBuffer[SIPHeader] = ListBuffer.empty,
  headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty) {
 
-//  private val headers: ListBuffer[SIPHeader] = ListBuffer.empty
-//  private val headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty
+  //  private val headers: ListBuffer[SIPHeader] = ListBuffer.empty
+  //  private val headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty
 
   def toList = headers.result()
 
@@ -293,13 +249,32 @@ case class HeaderListMap
 
 }
 
+case class MetaData(
+                     remoteAddress: Option[InetAddress],
+                     remotePort: Option[Int],
+                     localAddress: Option[InetAddress],
+                     localPort: Option[Int],
+                     applicationData: Any)
 
-trait SIPMessage[T] extends MessageObject with Message with MessageExt {
+
+object SIPMessage {
+
+
+
+
+}
+
+
+abstract class SIPMessage[T]
+(headersParam: List[Header])
+  extends MessageObject with Message with MessageExt {
 
   val unrecognizedHeaders: List[Header] = List.empty
   protected val headerListMap: HeaderListMap = new HeaderListMap
 
   def headers = headerListMap.toList
+
+  headersParam.foreach(addHeader)
 
   def to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
 
@@ -313,22 +288,21 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   def fromTag = from.flatMap(_.tag)
 
-  def contentLength: Option[ContentLength]
-
   val messageContent: Option[MessageContent]
 
-  val applicationData: Any
-  val size: Int
+  val headerSize: Int = headers.size
 
-  val remoteAddress: Option[InetAddress]
-  val remotePort: Option[Int]
+  val metaData: Option[MetaData]
 
-  val localAddress: Option[InetAddress]
-  val localPort: Option[Int]
+  val applicationData = metaData.map(_.applicationData)
+
+  def contentLength: Option[ContentLength] =
+    headers.find(_.isInstanceOf[ContentLength]).
+      map(_.asInstanceOf[ContentLength])
 
 
   def getMessageAsEncodedStrings(): List[String] = {
-    headerListMap.toList.flatMap {
+    headers.flatMap {
       case l: SIPHeaderList[_, _] =>
         l.getHeadersAsEncodedStrings
       case h: SIPHeader =>
@@ -396,7 +370,6 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   def getHeaderLowerCase(lowerCassHeaderName: String) = {
     val headerOpt = headerListMap.get(lowerCassHeaderName)
-    // printf("headerOpt = (%s), %s, %s\n", headerTable, lowerCassHeaderName, headerOpt)
     headerOpt.map {
       case l: SIPHeaderList[_, _] =>
         l.getHead.asInstanceOf[Header]
@@ -407,7 +380,7 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
 
   val CONTENT_TYPE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME)
 
-  val contentType: Option[ContentType] = getHeaderLowerCase(CONTENT_TYPE_LOWERCASE).map(_.asInstanceOf[ContentType])
+  def contentType: Option[ContentType] = getHeaderLowerCase(CONTENT_TYPE_LOWERCASE).map(_.asInstanceOf[ContentType])
 
   def getSIPHeaderListLowerCase(lowerCaseHeaderName: String): Option[SIPHeader] =
     headerListMap.get(lowerCaseHeaderName)
@@ -550,8 +523,9 @@ trait SIPMessage[T] extends MessageObject with Message with MessageExt {
         builder.append(header).append(Separators.NEWLINE)
     }
     contentLength.foreach {
-      _.encode(builder).append(Separators.NEWLINE)
+      _.encode(builder)
     }
+    builder.append(Separators.NEWLINE)
     messageContent.foreach {
       e =>
         builder.append(e.getContentAsString(getCharset))

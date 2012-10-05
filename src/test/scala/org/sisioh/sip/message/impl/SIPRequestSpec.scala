@@ -8,7 +8,7 @@ import org.sisioh.sip.core.Separators
 import scala.Some
 import org.sisioh.sip.message.Request
 import scala.Some
-import org.sisioh.sip.message.header.Protocol
+import org.sisioh.sip.message.header.{SIPConstants, Protocol}
 import scala.Some
 import org.sisioh.sip.message.header.impl.ViaList
 
@@ -77,56 +77,64 @@ class SIPRequestSpec extends Specification with SIPMessageSpecSupport {
       val to = createTo("sip:test@localhost", "TEST")
       val request = createBasicRequest
       val ackRequest = request.createAckRequest(to)
-      val encodeObject = ackRequest.encode()
-      println(ackRequest.encode())
       ackRequest.to must beSome(to)
-      val lines = encodeObject.split(Separators.NEWLINE)
-      lines(0) must_== """ACK test:test SIP/2.0"""
-      lines(1) must_== """Via: SIP/2.0/TCP localhost"""
-      lines(2) must_== """To: "TEST" <sip:test@localhost>;a=b"""
-      lines(3) must_== """From: "kato" <sip:hoge@localhost>;a=b"""
-      lines(4) must beMatching( """Call-ID: [a-zA-Z0-9]+@hogehoge""".r)
-      lines(5) must_== """CSeq: 1 ACK"""
-      lines(6) must_== """Max-Forwards: 1"""
-      lines(7) must_== """Content-Length: 0"""
+      ackRequest.headers must contain(to)
+      ackRequest.headers must contain(request.from.get)
+      ackRequest.headers must contain(request.maxForwards.get)
+      ackRequest.headers must contain(request.callId.get)
+      ackRequest.headers must contain(request.contentLength.get)
+      ackRequest.requestLine.get.method must beSome(Request.ACK)
+      ackRequest.requestLine.get.uri.uriString must_== "test:test"
+      ackRequest.requestLine.get.sipVersion must beSome(SIPConstants.SIP_VERSION_STRING)
+      ackRequest.getViaHeadHeader.get.protocol must_== "SIP"
+      ackRequest.getViaHeadHeader.get.protocolVersion must_== "2.0"
+      ackRequest.getViaHeadHeader.get.transport must_== "TCP"
+      ackRequest.getViaHeadHeader.get.host must_== "localhost"
+      ackRequest.getViaHeadHeader.get.port must beNone
+      ackRequest.viaHost must beSome("localhost")
+      ackRequest.viaPort must beNone
+      ackRequest.cSeq.get.method must_== Request.ACK
+      ackRequest.cSeq.get.sequenceNumber must_== 1L
     }
     "エンコード結果が取得できること" in {
       "RequestLineのメソッド名が指定されてなければCSeqのメソッド名を利用できること" in {
         val builder = SIPRequestBuilder()
-        val target2 = builder.
-          withCSeq(Some(CSeq("INVITE", 1))).
+        val target = builder.
+          withCSeq(Some(CSeq(Request.INVITE, 1))).
           withRequestLine(Some(RequestLine(DefaultGenericURI("test:test")))).build
-        val encodeObject = target2.encode()
-        val lines = encodeObject.split(Separators.NEWLINE)
-        lines(0) must_== """INVITE test:test SIP/2.0"""
-        lines(1) must_== """CSeq: 1 INVITE"""
+        target.requestLine.get.method must beNone
+        target.requestLine.get.uri.uriString must_== "test:test"
+        target.requestLine.get.sipVersion must beSome(SIPConstants.SIP_VERSION_STRING)
+        target.cSeq.get.method must_== Request.INVITE
+        target.cSeq.get.sequenceNumber must_== 1L
       }
       "headersにContentLengthを追加した場合" in {
         val contentLength = ContentLength(200)
         val builder = SIPRequestBuilder()
-        val target2 = builder.
+        val target = builder.
           withHeaders(List(contentLength)).build
-        val encodeObject = target2.encode()
-        val lines = encodeObject.split(Separators.NEWLINE)
-        lines(0) must_== """Content-Length: 200"""
+        target.contentLength must beSome(contentLength)
       }
       "すべてのヘッダーを変換できること" in {
         val target = createBasicRequest
         target.validateHeaders
 
-        val encodeRequest = target.encode()
-        println(encodeRequest)
-        val lines = encodeRequest.split(Separators.NEWLINE)
-
-        lines(0) must_== "INVITE test:test SIP/2.0"
-        lines(1) must_== """Via: SIP/2.0/TCP localhost;SIP/2.0/TCP localhost"""
-        lines(2) must_== """To: "kato" <sip:hoge@localhost>;a=b"""
-        lines(3) must_== """From: "kato" <sip:hoge@localhost>;a=b"""
-        lines(4) must beMatching( """Call-ID: [a-zA-Z0-9]+@hogehoge""".r)
-        lines(5) must_== """CSeq: 1 INVITE"""
-        lines(6) must_== """Max-Forwards: 1"""
-        lines(7) must_== """Content-Type: application/sdp"""
-        lines(8) must_== """Content-Length: 100"""
+        target.requestLine.get.method must beSome(Request.INVITE)
+        target.requestLine.get.uri.uriString must_== "test:test"
+        target.requestLine.get.sipVersion must beSome(SIPConstants.SIP_VERSION_STRING)
+        target.getViaHeadHeader.get.protocol must_== "SIP"
+        target.getViaHeadHeader.get.protocolVersion must_== "2.0"
+        target.getViaHeadHeader.get.transport must_== "TCP"
+        target.getViaHeadHeader.get.host must_== "localhost"
+        target.getViaHeadHeader.get.port must beNone
+        target.headers must contain(target.to.get)
+        target.headers must contain(target.from.get)
+        target.headers must contain(target.maxForwards.get)
+        target.headers must contain(target.callId.get)
+        target.headers must contain(target.cSeq.get)
+        target.headers must contain(target.maxForwards.get)
+        target.headers must contain(target.contentType.get)
+        target.headers must contain(target.contentLength.get)
       }
     }
   }

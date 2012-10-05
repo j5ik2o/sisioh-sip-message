@@ -38,17 +38,17 @@ trait Message {
 
   def getHeader(headerName: String): Option[Header]
 
-  val unrecognizedHeaders: List[Header]
+  def unrecognizedHeaders: List[Header]
 
   def contentLength: Option[ContentLengthHeader]
 
-  val contentLanguage: Option[ContentLanguageHeader]
+  def contentLanguage: Option[ContentLanguageHeader]
 
-  val contentEncoding: Option[ContentEncodingHeader]
+  def contentEncoding: Option[ContentEncodingHeader]
 
-  val contentType: Option[ContentTypeHeader]
+  def contentType: Option[ContentTypeHeader]
 
-  val expires: Option[ExpiresHeader]
+  def expires: Option[ExpiresHeader]
 
   def getRawContent: Option[Array[Byte]]
 

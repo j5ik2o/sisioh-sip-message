@@ -62,14 +62,17 @@ class RequestLineBuilder extends ValueObjectBuilder[RequestLine, RequestLineBuil
 object RequestLineDecoder extends RequestLineDecoder
 
 class RequestLineDecoder extends SIPDecoder[RequestLine] with RequestLineParser {
-  def decode(source: String) = decodeTarget(source, Request_Line)
+  def decode(source: String) = decodeTarget(source, Request_Line_WithCrLfOpt)
 }
 
 trait RequestLineParser extends ParserBase with SipUriParser {
+  lazy val Request_Line_WithCrLfOpt = Request_Line <~ opt(CRLF)
 
-  lazy val Request_Line = Method ~ (SP ~> Request_URI) ~ (SP ~> SIP_Version <~ CRLF) ^^ {
+  lazy val Request_Line = Method ~ (SP ~> Request_URI) ~ (SP ~> SIP_Version) ^^ {
     case m ~ uri ~ sipVersion =>
-      RequestLine(uri, Some(m), Some(sipVersion))
+      val rl = RequestLine(uri, Some(m), Some(sipVersion))
+      //println("rl="+rl)
+      rl
   }
 
   lazy val Request_URI: Parser[GenericURI] = SIP_URI | SIPS_URI | absoluteURI
@@ -99,6 +102,7 @@ object RequestLineJsonDecoder extends JsonDecoder[RequestLine] {
 
   def decode(json: JsonAST.JValue) = {
     val uriString = (json \ "uri")
+    // TODO SIPURIの場合も考慮する
     val uri = DefaultGenericURIJsonDecoder.decode(uriString)
     val JString(method) = (json \ "method")
     val sipVersion = (json \ "sipVersion").toOpt.map {

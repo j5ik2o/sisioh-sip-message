@@ -59,7 +59,7 @@ trait SIPDecoder[A] extends Decoder[A] with ParserBase {
 
   def decodeTarget[T](source: String, parser: Parser[T]): T = parseAll[T](parser, source) match {
     case Success(result, _) => result
-    case Failure(msg, _) => throw new ParseException(Some(msg))
+    case Failure(msg, next) => throw new ParseException(Some(msg+":" + next.first))
     case Error(msg, _) => throw new ParseException(Some(msg))
   }
 

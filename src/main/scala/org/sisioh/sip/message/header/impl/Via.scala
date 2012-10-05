@@ -64,20 +64,13 @@ trait ViaListParser extends ParserBase with HostParser {
   lazy val protocolName = "SIP" | token
   lazy val protocolVersion = token
   lazy val transport = "UDP" | "TCP" | "TLS" | "SCTP" | otherTransport
-  lazy val otherTransport = token
 
   lazy val sentBy: Parser[HostPort] = host ~ opt(COLON ~> port) ^^ {
     case f ~ s =>
       HostPort(Host(f), s.map(_.toInt))
   }
 
-  lazy val ttl: Parser[Int] = DIGIT ~ opt(DIGIT ~ opt(DIGIT) ^^ {
-    case f ~ s =>
-      List(Some(f), s).mkString
-  }) ^^ {
-    case f ~ s =>
-      List(Some(f), s).mkString.toInt
-  }
+
 }
 
 trait ViaJsonFiledNames extends JsonFieldNames {

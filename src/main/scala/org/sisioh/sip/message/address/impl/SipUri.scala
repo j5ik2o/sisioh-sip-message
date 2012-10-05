@@ -75,8 +75,6 @@ trait SipUriParser extends ParserBase with DefaultGenericURIParser with UserInfo
       NameValuePair(Some(NetObject.TRANSPORT), Some(transport))
   }
 
-  lazy val otherTransport: Parser[String] = token
-
   lazy val userParam: Parser[NameValuePair] = "user=" ~> ("phone" | "ip" | otherUser) ^^ {
     user =>
       NameValuePair(Some(NetObject.USER), Some(user))
@@ -94,9 +92,9 @@ trait SipUriParser extends ParserBase with DefaultGenericURIParser with UserInfo
       NameValuePair(Some(NetObject.TTL), Some(ttl))
   }
 
-  lazy val ttl: Parser[Int] = repN(3, DIGIT) ^^ {
-    _.mkString.toInt
-  }
+//  lazy val ttl: Parser[Int] = repN(3, DIGIT) ^^ {
+//    _.mkString.toInt
+//  }
 
   lazy val maddrParam: Parser[NameValuePair] = "maddr=" ~> host ^^ {
     case host =>

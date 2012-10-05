@@ -28,7 +28,7 @@ trait SIPMessageSpecSupport {
     val via = ViaList(List(via1, via2))
 
 
-    SIPRequestBuilder().
+    val r = SIPRequestBuilder().
       withHeaders(List(via)).
       withTo(Some(createTo())).
       withFrom(Some(createFrom)).
@@ -37,8 +37,9 @@ trait SIPMessageSpecSupport {
       withRequestLine(Some(RequestLine(DefaultGenericURI("test:test"), Some(Request.INVITE)))).
       withMaxForwards(Some(MaxForwards(1))).
       withContentLength(Some(ContentLength(100))).
-      withMessageContent(Some(MessageContent(ContentType("application", "sdp"), "ABC"))).
-
+      withMessageContent(Some(MessageContent("ABC", Some(ContentType("application", "sdp"))))).
       build
+
+    r
   }
 }

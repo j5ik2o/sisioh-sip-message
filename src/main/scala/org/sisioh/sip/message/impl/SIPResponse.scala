@@ -1,9 +1,9 @@
 package org.sisioh.sip.message.impl
 
 import java.net.InetAddress
-import org.sisioh.sip.message.header.impl.{SIPHeader, ContentLength, StatusLine}
-import org.sisioh.sip.message.StatusCode
+import org.sisioh.sip.message.{Response, StatusCode}
 import org.sisioh.sip.message.header._
+import impl.{SIPHeader, ContentLength, StatusLine, StatusLineBuilder}
 import scala.Some
 import org.sisioh.sip.util.ParseException
 
@@ -23,7 +23,7 @@ import org.sisioh.sip.util.ParseException
  * governing permissions and limitations under the License.
  */
 
-object SIPResponseBuilder{
+object SIPResponseBuilder {
 
   def apply() = new SIPResponseBuilder
 
@@ -31,18 +31,53 @@ object SIPResponseBuilder{
 
 class SIPResponseBuilder extends SIPMessageBuilder[SIPResponse, SIPResponseBuilder] {
 
-  private var statusLine: Option[StatusLine] = None
+  private val statusLineBuilder = StatusLineBuilder()
+  private var isDefinedStatusLine = false
+
   private var isRetransmission = false
 
+  def withStatusCode(statusCode: StatusCode.Value) = {
+    addConfigurator {
+      e =>
+        e.statusLineBuilder.withStatusCode(statusCode)
+        e.isDefinedStatusLine = true
+    }
+    getThis
+  }
+
+  def withReasonPhrase(reasonPhrase: Option[String]) = {
+    addConfigurator {
+      e =>
+        e.statusLineBuilder.withReasonPhrase(reasonPhrase)
+        e.isDefinedStatusLine = true
+    }
+    getThis
+  }
+
+  def withSipVersion(sipVersion: Option[String]) = {
+    addConfigurator {
+      e =>
+        e.statusLineBuilder.withSipVersion(sipVersion)
+        e.isDefinedStatusLine = true
+    }
+    getThis
+  }
+
+
   def withStatusLine(statusLine: Option[StatusLine]) = {
-    addConfigurator{
-      _.statusLine = statusLine
+    addConfigurator {
+      e =>
+        e.statusLineBuilder.
+          withStatusCode(statusLine.map(_.statusCode).get).
+          withReasonPhrase(statusLine.flatMap(_.reasonPhrase)).
+          withSipVersion(statusLine.flatMap(_.sipVersion))
+        e.isDefinedStatusLine = true
     }
     getThis
   }
 
   def withIsRetransmission(isRetransmission: Boolean) = {
-    addConfigurator{
+    addConfigurator {
       _.isRetransmission = isRetransmission
     }
     getThis
@@ -58,12 +93,17 @@ class SIPResponseBuilder extends SIPMessageBuilder[SIPResponse, SIPResponseBuild
     builder.withIsRetransmission(vo.isRetransmission)
   }
 
-  protected def createValueObject = SIPResponse(
-    statusLine, isRetransmission,
-    contentLength, messageContent,
-    remoteAddress, remotePort,
-    localAddress, localPort,
-    applicationData, headers, size)
+  private def getStatusLine = {
+    if (isDefinedStatusLine) Some(statusLineBuilder.build) else None
+  }
+
+  protected def createValueObject = new SIPResponse(
+    getStatusLine,
+    isRetransmission,
+    headers.result(),
+    messageContent,
+    metaData
+  )
 
 }
 
@@ -72,19 +112,10 @@ object SIPResponse {
   def apply
   (statusLine: Option[StatusLine],
    isRetransmission: Boolean = false,
-   contentLength: Option[ContentLength] = None,
-   messageContent: Option[MessageContent] = None,
-   remoteAddress: Option[InetAddress] = None,
-   remotePort: Option[Int] = None,
-   localAddress: Option[InetAddress] = None,
-   localPort: Option[Int] = None,
-   applicationData: Option[Any] = None,
    headers: List[SIPHeader] = List.empty,
-   size: Int = 0) =
-    new SIPResponse(
-      statusLine, isRetransmission, contentLength,
-      messageContent, remoteAddress, remotePort,
-      localAddress, localPort, applicationData, headers, size)
+   messageContent: Option[MessageContent] = None,
+   metaData: Option[MetaData] = None) =
+    new SIPResponse(statusLine, isRetransmission, headers, messageContent, metaData)
 
   def isFinalResponse(rc: Int) = {
     rc >= 200 && rc < 700
@@ -99,26 +130,13 @@ object SIPResponse {
 class SIPResponse
 (val statusLine: Option[StatusLine],
  val isRetransmission: Boolean = false,
- contentLengthParam: Option[ContentLength] = None,
- val messageContent: Option[MessageContent] = None,
- val remoteAddress: Option[InetAddress] = None,
- val remotePort: Option[Int] = None,
- val localAddress: Option[InetAddress] = None,
- val localPort: Option[Int] = None,
- val applicationData: Option[Any] = None,
  headersParam: List[SIPHeader] = List.empty,
- val size: Int = 0)
-  extends SIPMessage[Any] {
+ val messageContent: Option[MessageContent] = None,
+ val metaData: Option[MetaData])
+  extends SIPMessage[Any](headersParam) with Response {
 
   type A = SIPResponse
   type B = SIPResponseBuilder
-
-  def contentLength: Option[ContentLength] = (contentLengthParam,
-    headersParam.find(_.isInstanceOf[ContentLength]).map(_.asInstanceOf[ContentLength])) match {
-    case (Some(clp), _) => Some(clp)
-    case (_, Some(clp)) => Some(clp)
-    case _ => None
-  }
 
   override def encodeAsBytes(transport: String) = {
     val slBytes = statusLine.get.encode().getBytes("UTF-8")
@@ -160,18 +178,26 @@ class SIPResponse
 
   val statusCode = statusLine.map(_.statusCode)
 
-  val reasonPhrase = statusLine.map(_.reasonPhrase)
+  val reasonPhrase = statusLine.flatMap(_.reasonPhrase)
 
   override val sipVersion: Option[String] = statusLine.flatMap(_.sipVersion)
 
-  val isFinalResponse = statusLine.map(e => SIPResponse.isFinalResponse(e.statusCode))
+  val isFinalResponse = {
+    statusLine.map {
+      e =>
+        SIPResponse.isFinalResponse(e.statusCode.id)
+    }
+  }
 
   headersParam.
     foreach(addHeader)
 
   messageContent.foreach {
     mc =>
-      addHeader(mc.contentType)
+      mc.contentType.foreach {
+        ct =>
+          addHeader(ct)
+      }
   }
 
   def validateHeaders: Unit = {
@@ -195,7 +221,7 @@ class SIPResponse
     }
     statusCode.foreach {
       sc =>
-        if (sc > 699) {
+        if (sc.id > 699) {
           throw new ParseException(Some("Unknown error code!" + sc))
         }
     }

@@ -166,7 +166,8 @@ trait ParserBase extends RegexParsers {
   }
 
   lazy val genericParam: Parser[NameValuePair] = token ~ opt(EQUAL ~> genValue) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
+    case n ~ v =>
+      NameValuePair(Some(n), v)
   }
 
   lazy val L_BRACKET = """\[""".r
@@ -189,5 +190,13 @@ trait ParserBase extends RegexParsers {
       List(sip, slash, major.mkString, dot, minar.mkString).mkString
   }
 
+  lazy val otherTransport: Parser[String] = token
 
+  lazy val ttl: Parser[Int] = DIGIT ~ opt(DIGIT ~ opt(DIGIT) ^^ {
+    case f ~ s =>
+      List(Some(f), s).mkString
+  }) ^^ {
+    case f ~ s =>
+      List(Some(f), s).mkString.toInt
+  }
 }

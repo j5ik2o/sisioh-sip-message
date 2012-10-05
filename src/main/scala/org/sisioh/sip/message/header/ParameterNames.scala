@@ -84,7 +84,7 @@ trait ParameterNames {
 
   val REDIRECT = "redirect"
 
-  val EXPIRES = "expires"
+  val PRAM_EXPIRES = "expires"
 
   val Q = "q"
 

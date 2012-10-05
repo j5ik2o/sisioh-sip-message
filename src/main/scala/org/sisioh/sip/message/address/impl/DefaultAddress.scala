@@ -99,7 +99,7 @@ object DefaultAddressEncoder extends SIPEncoder[DefaultAddress] {
 object DefaultAddressJsonDecoder extends JsonDecoder[DefaultAddress] {
 
   def decode(json: JsonAST.JValue) = {
-    println("json = ", json.toString)
+//    println("json = ", json.toString)
     val JString(uriType) = json \ "uriType"
     val uri = uriType match {
       case "sip" => SipUriJsonDecoder.decode(json \ "uri")

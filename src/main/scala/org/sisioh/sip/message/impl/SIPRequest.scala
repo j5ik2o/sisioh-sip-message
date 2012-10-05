@@ -1,14 +1,14 @@
 package org.sisioh.sip.message.impl
 
 import org.sisioh.sip.message.header.impl._
-import java.net.InetAddress
 import org.sisioh.sip.message.header._
+import impl.ViaList
 import org.sisioh.sip.message.{StatusCode, Request}
-import scala.Some
 import org.sisioh.sip.message.address.URI
-import org.sisioh.sip.util.ParseException
+import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.GenericURI
-import com.twitter.finagle.http.Response
+import scala.Some
+import org.sisioh.sip.util.ParseException
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -90,17 +90,87 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 
   protected def createValueObject = new SIPRequest(
     getRequestLine,
-    to, from,
-    callId, cSeq, maxForwards,
-    contentLength,
+    headers.result(),
     messageContent,
-    remoteAddress, remotePort,
-    localAddress, localPort,
-    applicationData,
-    headers,
-    size
+    metaData
   )
 }
+
+object SIPRequestDecoder extends SIPRequestDecoder
+
+class SIPRequestDecoder extends SIPDecoder[SIPRequest] with SIPRequestParser {
+
+  def decode(source: String) = decodeTarget(source, Request)
+
+}
+
+
+trait SIPRequestParser extends ParserBase
+with RequestLineParser
+with CallIdParser
+with CSeqParser
+with FromParser
+with ToParser
+with MaxForwardsParser
+with UserAgentParser
+with ServerParser
+with ExpiresParser
+with ViaListParser
+with ContentTypeParser
+with ContentLengthParser {
+
+
+  lazy val Request: Parser[SIPRequest] = (Request_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ~ opt(messageBody) ^^ {
+    case rl ~ mh ~ mbOpt =>
+      SIPRequestBuilder().
+        withRequestLine(Some(rl)).
+        withHeaders(mh).
+        withMessageContent(mbOpt.map(MessageContent(_))).
+        build
+  }
+
+  //  lazy val messageHeader = (Accept | Accept_Encoding | Accept_Language | Alert_Info |
+  //    Allow | Authentication_Info | Authorization | Call_ID |
+  //    Call_Info | Contact | Content_Disposition |
+  //    Content_Encoding | Content_Language | Content_Length | Content_Type |
+  //    CSeq | Date | Error_Info | Expires |
+  //    From | In_Reply_To | Max_Forwards |
+  //    MIME_Version | Min_Expires | Organization |
+  //    Priority | Proxy_Authenticate | Proxy_Authorization |
+  //    Proxy_Require | Record_Route | Reply_To |
+  //    Require | Retry_After | Route |
+  //    Server | Subject | Supported | Timestamp |
+  //    To | Unsupported | User_Agent | Via |
+  //    Warning | WWW_Authenticate | extensionHeader) ~ CRLF
+
+  lazy val messageHeader: Parser[SIPHeader] = (Call_ID | cseq | expires |
+    contentType | Content_Length |
+    from | Max_Forwards | SERVER |
+    to | USER_AGENT | VIA /*| extensionHeader */) <~ CRLF ^^ {
+    e =>
+    //      println("header = " + e)
+      e
+  }
+
+  lazy val TEXT_UTF8_TRIM: Parser[String] = rep1sep(TEXT_UTF8char, rep(LWS)) ^^ {
+    _.mkString
+  }
+  lazy val TEXT_UTF8char: Parser[String] = chrRange(0x21, 0x7E) ^^ {
+    _.toString
+  } | UTF8_NONASCII
+  //  lazy val extensionHeader: Parser[Header] = headerName ~ (HCOLON ~> headerValue) ^^ {
+  //    case n ~ v =>
+  //
+  //  }
+  lazy val headerName = token
+  lazy val headerValue = rep(TEXT_UTF8char | UTF8_CONT | LWS)
+
+  lazy val messageBody = rep1( """.""".r) ^^ {
+    _.map(_.toByte).toArray[Byte]
+  }
+
+}
+
 
 object SIPRequest {
   val headersToIncludeInResponse = Set(
@@ -133,30 +203,38 @@ object SIPRequest {
   putName(Request.SUBSCRIBE)
   putName(Request.UPDATE)
 
+  def apply(requestLine: Option[RequestLine] = None,
+            to: Option[To] = None,
+            from: Option[From] = None,
+            callId: Option[CallId] = None,
+            cSeq: Option[CSeq] = None,
+            maxForwards: Option[MaxForwards] = None,
+            contentLength: Option[ContentLength] = None,
+            otherHeaders: List[Header] = List.empty,
+            messageContent: Option[MessageContent] = None,
+            metaData: Option[MetaData] = None) = {
+    val headers = (to :: from :: callId :: cSeq :: maxForwards :: contentLength :: Nil).flatten ++ messageContent.flatMap(_.contentType).toList
+    new SIPRequest(
+      requestLine,
+      headers ++ otherHeaders,
+      messageContent,
+      metaData
+    )
+  }
+
 }
 
 class SIPRequest
 (val requestLine: Option[RequestLine],
- toParam: Option[To],
- fromParam: Option[From],
- callIdParam: Option[CallId],
- cSeqParam: Option[CSeq],
- maxForwardsParam: Option[MaxForwards],
-
- contentLengthParam: Option[ContentLength],
+ headersParam: List[Header],
  val messageContent: Option[MessageContent],
-
- val remoteAddress: Option[InetAddress],
- val remotePort: Option[Int],
- val localAddress: Option[InetAddress],
- val localPort: Option[Int],
- val applicationData: Option[Any],
- headersParam: List[SIPHeader],
- val size: Int
-  ) extends SIPMessage[Any] with Request {
+ val metaData: Option[MetaData] = None
+  ) extends SIPMessage[Any](headersParam) with Request {
 
   type A = SIPRequest
   type B = SIPRequestBuilder
+
+  messageContent.flatMap(_.contentType).foreach(addHeader)
 
   val isNullRequest: Boolean = false
 
@@ -166,7 +244,7 @@ class SIPRequest
 
   val viaHost = getViaHeaders.map(_.getHead.host)
 
-  val viaPort = getViaHeaders.map(_.getHead.port)
+  val viaPort = getViaHeaders.flatMap(_.getHead.port)
 
   val firstLine = requestLine.map(_.encode())
 
@@ -174,22 +252,22 @@ class SIPRequest
 
   override val sipVersion: Option[String] = requestLine.flatMap(_.sipVersion).orElse(Some(SIPConstants.SIP_VERSION_STRING))
 
-
-  def contentLength: Option[ContentLength] = (contentLengthParam,
-    headersParam.find(_.isInstanceOf[ContentLength]).map(_.asInstanceOf[ContentLength])) match {
-    case (Some(clp), _) => Some(clp)
-    case (_, Some(clp)) => Some(clp)
-    case _ => None
-  }
-
-  def createResponse(statusCode: Int): SIPResponse = {
-    val reasonPhrase = SIPResponse.getReasonPhrase(statusCode)
+  def createResponse(statusCode: StatusCode.Value): SIPResponse = {
+    val reasonPhrase = SIPResponse.getReasonPhrase(statusCode.id)
     createResponse(statusCode, reasonPhrase)
   }
 
-  def createResponse(statusCode: Int, reasonPhrase: Option[String], server: Option[Server] = None): SIPResponse = {
+  def createResponse
+  (statusCode: StatusCode.Value,
+   reasonPhrase: Option[String],
+   messageConent: Option[MessageContent] = None,
+   headers: List[Header] = List.empty): SIPResponse = {
+
     val statusLine = StatusLine(statusCode, reasonPhrase)
-    SIPResponseBuilder().withStatusLine(Some(statusLine)).withHeaders(server.toList).build
+    SIPResponseBuilder().
+      withStatusLine(Some(statusLine)).
+      withMessageContent(messageConent).
+      withHeaders(headers.map(_.asInstanceOf[SIPHeader])).build
     // TODO Record-Routeからコピーする
   }
 
@@ -204,13 +282,16 @@ class SIPRequest
         new CSeqBuilder().withMethod(Request.ACK).build(cs)
     }
     val newHeaders = headers.filterNot(e =>
-      SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(RouteHeader.NAME) ||
+      SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ToHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(CSeqHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(RouteHeader.NAME) ||
         SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ProxyAuthorizationHeader.NAME) ||
         SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME) ||
         SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContactHeader.NAME) ||
         SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME) ||
         SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ViaHeader.NAME)
-    )
+    ) ++ newCseq.toList ++ List(responseToHeader)
+
     val viaListOpt = getViaHeaders.map {
       e => ViaList(List(e.headers.head))
     }
@@ -222,22 +303,9 @@ class SIPRequest
 
     new SIPRequest(
       requestLine = newRL,
-      toParam = Some(responseToHeader),
-      fromParam = from,
-      callIdParam = callId,
-      cSeqParam = newCseq,
-      maxForwardsParam = maxForwards,
-      contentLengthParam = Some(ContentLength(0)),
-      messageContent = None,
-      remoteAddress = None,
-      remotePort = None,
-      localAddress = None,
-      localPort = None,
-      applicationData = None,
       headersParam = newHeaderWithVia,
-      size = size
+      messageContent = None
     )
-
   }
 
   override def removeHeader(headerName: String): SIPRequest = {
@@ -312,34 +380,6 @@ class SIPRequest
       encodeSIPHeaders(sb)
   }
 
-  private val newHeadersParam = headersParam.filterNot {
-    e =>
-      SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ToHeader.NAME) ||
-        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(FromHeader.NAME) ||
-        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(CallIdHeader.NAME) ||
-        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(CSeqHeader.NAME) ||
-        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(MaxForwardsHeader.NAME)
-  }
-
-  newHeadersParam.
-    filter(e => SIPHeaderNamesCache.toLowerCase(e.name) == ViaHeader.NAME.toLowerCase).
-    foreach(addHeader)
-
-  toParam.foreach(addHeader)
-  fromParam.foreach(addHeader)
-  callIdParam.foreach(addHeader)
-  cSeqParam.foreach(addHeader)
-  maxForwardsParam.foreach(addHeader)
-
-  messageContent.foreach {
-    mc =>
-      addHeader(mc.contentType)
-  }
-
-  newHeadersParam.
-    filterNot(e => SIPHeaderNamesCache.toLowerCase(e.name) == ViaHeader.NAME.toLowerCase).
-    foreach(addHeader)
-
   def encodeAsJValue() = null
 
 
@@ -387,4 +427,15 @@ class SIPRequest
 
   }
 
+  override def equals(obj: Any) = obj match {
+    case that: SIPRequest =>
+//      println("requestLine = ", requestLine, that.requestLine, (requestLine == that.requestLine))
+//      println("headers = ", headers, that.headers, (headers == that.headers))
+      requestLine == that.requestLine &&
+        headers == that.headers
+    case _ =>
+      false
+  }
+
+  override def hashCode = 31 * requestLine.## + 31 * headers.##
 }

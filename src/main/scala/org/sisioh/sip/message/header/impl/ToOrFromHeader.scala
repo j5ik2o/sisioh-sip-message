@@ -25,7 +25,8 @@ trait ToOrFromParser extends ParserBase with HostParser {
   lazy val toParam = tagParam | genericParam
 
   lazy val tagParam: Parser[NameValuePair] = "tag" ~ (EQUAL ~> token) ^^ {
-    case n ~ v => NameValuePair(Some(n), Some(v))
+    case n ~ v =>
+      NameValuePair(Some(n), Some(v))
   }
 
 

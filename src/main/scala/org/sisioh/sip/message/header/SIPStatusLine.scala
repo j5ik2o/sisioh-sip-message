@@ -1,8 +1,10 @@
 package org.sisioh.sip.message.header
 
+import org.sisioh.sip.message.StatusCode
+
 trait SIPStatusLine {
 
-  val statusCode: Int
+  val statusCode: StatusCode.Value
   val reasonPhrase: Option[String]
   val sipVersion: Option[String]
 

@@ -1,12 +1,5 @@
 package org.sisioh.sip.message.address
 
-/**
- * Created with IntelliJ IDEA.
- * User: junichi_kato
- * Date: 12/09/26
- * Time: 18:33
- * To change this template use File | Settings | File Templates.
- */
 trait ParameterNames {
   val SIP_URI_SCHEME = "sip"
   val SIPS_URI_SCHEME = "sips"

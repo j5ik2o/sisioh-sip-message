@@ -17,5 +17,5 @@ package org.sisioh.sip.message.impl
  */
 
 trait MessageExt {
-  val applicationData: Any
+  val applicationData: Option[Any]
 }

@@ -527,9 +527,9 @@ object StatusCode extends Enumeration {
 
 trait Response extends Message {
 
-  val statusCode: StatusCode.Value
+  val statusCode: Option[StatusCode.Value]
 
-  val reasonPhrase: String
+  val reasonPhrase: Option[String]
 
 }
 
