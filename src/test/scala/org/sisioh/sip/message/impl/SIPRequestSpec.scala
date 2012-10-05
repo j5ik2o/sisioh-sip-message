@@ -15,6 +15,7 @@ import org.sisioh.sip.message.header.impl.ViaList
 class SIPRequestSpec extends Specification with SIPMessageSpecSupport {
 
   "SIPRequest" should {
+    println(createBasicRequest.encodeByJson())
     "トランザクションIDを取得できること" in {
       createBasicRequest.getTransactionId must beMatching( """[a-zA-Z0-9]+-hogehoge-1-invite-localhost""" + Utils.signature)
     }

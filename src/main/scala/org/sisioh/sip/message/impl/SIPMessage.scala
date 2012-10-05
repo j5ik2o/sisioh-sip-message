@@ -24,6 +24,12 @@ import org.sisioh.sip.util.{ParserBase, Utils}
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
+import com.twitter.util.Base64StringEncoder
+import net.liftweb.json.JsonAST.JObject
+import scala.Some
+import net.liftweb.json.JsonAST.JString
+import net.liftweb.json.JsonAST.JArray
+import net.liftweb.json.JsonAST.JField
 
 abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
@@ -342,7 +348,7 @@ abstract class SIPMessage[T]
 
   val messageContent: Option[MessageContent]
 
-  val headerSize: Int = headers.size
+  def headerSize: Int = headers.size
 
   val metaData: Option[MetaData]
 
@@ -585,21 +591,21 @@ abstract class SIPMessage[T]
     builder
   }
 
-  lazy val CONTENT_DISPOSITION_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentDispositionHeader.NAME)
+  protected lazy val CONTENT_DISPOSITION_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentDispositionHeader.NAME)
 
-  lazy val contentDispositionHeader = getHeaderLowerCase(CONTENT_DISPOSITION_LOWERCASE).map(_.asInstanceOf[ContentDispositionHeader])
+  def contentDispositionHeader = getHeaderLowerCase(CONTENT_DISPOSITION_LOWERCASE).map(_.asInstanceOf[ContentDispositionHeader])
 
-  lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
+  protected lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
 
   lazy val contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
 
-  lazy val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
+  protected lazy val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
 
-  lazy val contentEncoding = getHeaderLowerCase(CONTENT_ENCODING_LOWERCASE).map(_.asInstanceOf[ContentEncodingHeader])
+  def contentEncoding = getHeaderLowerCase(CONTENT_ENCODING_LOWERCASE).map(_.asInstanceOf[ContentEncodingHeader])
 
-  lazy val EXPIRES_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME)
+  protected lazy val EXPIRES_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME)
 
-  lazy val expires = getHeaderLowerCase(EXPIRES_LOWERCASE).map(_.asInstanceOf[ExpiresHeader])
+  def expires = getHeaderLowerCase(EXPIRES_LOWERCASE).map(_.asInstanceOf[ExpiresHeader])
 
   private lazy val contentEncodingCharset = DefaultMessageFactory.defaultContentEncodingCharset
 
@@ -630,4 +636,23 @@ abstract class SIPMessage[T]
   }
 
   def validateHeaders: Unit
+
+  def encodeLineAsJField: JField
+
+  def encodeAsJValue() = {
+    val headersAsJValue = JArray(headers.map {
+      header =>
+        JField(header.name, header.encodeAsJValue())
+    })
+    val messageContentAsJValue = messageContent.map {
+      e =>
+        JField("content", JString(Base64StringEncoder.encode(e.contentBytes)))
+    }
+    JObject(
+      (Some(encodeLineAsJField) ::
+        Some(JField("headers", headersAsJValue)) ::
+        messageContentAsJValue :: Nil).flatten
+    )
+  }
+
 }

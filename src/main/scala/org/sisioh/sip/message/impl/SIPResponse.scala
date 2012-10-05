@@ -5,6 +5,7 @@ import org.sisioh.sip.message.header._
 import impl._
 import scala.Some
 import org.sisioh.sip.util.{SIPDecoder, ParseException}
+import net.liftweb.json.JsonAST.JField
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -200,7 +201,9 @@ class SIPResponse
 
   def newBuilder = new SIPResponseBuilder
 
-  def encodeAsJValue() = null
+  def encodeLineAsJField() = {
+    JField("statusLine", statusLine.get.encodeAsJValue())
+  }
 
   val statusCode = statusLine.map(_.statusCode)
 

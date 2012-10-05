@@ -9,6 +9,7 @@ import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.GenericURI
 import scala.Some
 import org.sisioh.sip.util.ParseException
+import net.liftweb.json.JsonAST.JField
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -340,7 +341,9 @@ class SIPRequest
       encodeSIPHeaders(sb)
   }
 
-  def encodeAsJValue() = null
+  def encodeLineAsJField() = {
+    JField("requestLine", requestLine.get.encodeAsJValue())
+  }
 
 
   def validateHeaders: Unit = {
