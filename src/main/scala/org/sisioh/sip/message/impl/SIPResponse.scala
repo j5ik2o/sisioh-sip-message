@@ -155,7 +155,7 @@ class SIPResponse
  headersParam: List[SIPHeader] = List.empty,
  val messageContent: Option[MessageContent] = None,
  val metaData: Option[MetaData])
-  extends SIPMessage[Any](headersParam) with Response {
+  extends SIPMessage(headersParam) with Response {
 
   type A = SIPResponse
   type B = SIPResponseBuilder

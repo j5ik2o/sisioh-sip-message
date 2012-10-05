@@ -31,7 +31,7 @@ import net.liftweb.json.JsonAST.JString
 import net.liftweb.json.JsonAST.JArray
 import net.liftweb.json.JsonAST.JField
 
-abstract class SIPMessageBuilder[T <: SIPMessage[_], S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
+abstract class SIPMessageBuilder[T <: SIPMessage, S <: SIPMessageBuilder[T, S]] extends ValueObjectBuilder[T, S] {
 
   def withHeaders(headers: List[SIPHeader]): S = {
     addConfigurator {
@@ -323,7 +323,7 @@ object SIPMessage {
 }
 
 
-abstract class SIPMessage[T]
+abstract class SIPMessage
 (headersParam: List[Header])
   extends MessageObject with Message with MessageExt {
 
@@ -509,7 +509,7 @@ abstract class SIPMessage[T]
   def newBuilder: SIPMessageBuilder[A, B]
 
 
-  type A <: SIPMessage[T]
+  type A <: SIPMessage
   type B <: SIPMessageBuilder[A, B]
 
   def addHeader(header: Header) = {
@@ -545,7 +545,7 @@ abstract class SIPMessage[T]
   def removeLast(headerName: String) =
     removeHeader(headerName)
 
-  def removeHeader(headerName: String, first: Boolean): SIPMessage[T] = {
+  def removeHeader(headerName: String, first: Boolean): SIPMessage = {
     val headerNameLowerCase = SIPHeaderNamesCache.toLowerCase(headerName)
     headerListMap.remove(headerNameLowerCase, first)
     this
@@ -629,7 +629,7 @@ abstract class SIPMessage[T]
   override def hashCode = 31 * headerListMap.##
 
   override def equals(obj: Any) = obj match {
-    case that: SIPMessage[_] =>
+    case that: SIPMessage =>
       headerListMap == that.headerListMap
     case _ =>
       false

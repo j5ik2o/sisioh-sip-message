@@ -23,13 +23,13 @@ trait Transport {
    *
    * @param sendSIPMessage 送信するSIPMessage
    */
-  def sendMessage(sendSIPMessage: SIPMessage[Any])
+  def sendMessage(sendSIPMessage: SIPMessage)
 
   /**
    * SIPMessageを受信する。
    *
    * @return 受信したSIPMessage
    */
-  def recvMessage(): SIPMessage[Any]
+  def recvMessage(): SIPMessage
 
 }

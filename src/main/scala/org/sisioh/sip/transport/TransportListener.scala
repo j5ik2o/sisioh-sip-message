@@ -9,7 +9,7 @@ trait TransportListener {
    * @param transport 受信したトランスポート
    * @param sipMessage 受信したSIPメッセージ
    */
-  def onReceivedFromTransport(transport: Transport, sipMessage: SIPMessage[Any])
+  def onReceivedFromTransport(transport: Transport, sipMessage: SIPMessage)
 
   /**
    * 接続が確立されたときに呼ばれる

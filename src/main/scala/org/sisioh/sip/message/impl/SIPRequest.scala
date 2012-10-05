@@ -178,7 +178,7 @@ class SIPRequest
  headersParam: List[Header],
  val messageContent: Option[MessageContent],
  val metaData: Option[MetaData] = None
-  ) extends SIPMessage[Any](headersParam) with Request {
+  ) extends SIPMessage(headersParam) with Request {
 
   type A = SIPRequest
   type B = SIPRequestBuilder
