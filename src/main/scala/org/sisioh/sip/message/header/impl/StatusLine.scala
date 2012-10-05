@@ -59,14 +59,16 @@ object StatusLineDecoder extends StatusLineDecoder
 
 class StatusLineDecoder extends SIPDecoder[StatusLine] with StatusLineParser {
 
-  def decode(source: String) = decodeTarget(source, Status_Line)
+  def decode(source: String) = decodeTarget(source, Status_Line_WithCrLfOpt)
 
 }
 
 
 trait StatusLineParser extends ParserBase {
 
-  lazy val Status_Line: Parser[StatusLine] = SIP_Version ~ (SP ~> Status_Code) ~ (SP ~> Reason_Phrase) <~ CRLF ^^ {
+  lazy val Status_Line_WithCrLfOpt = Status_Line <~ opt(CRLF)
+
+  lazy val Status_Line: Parser[StatusLine] = SIP_Version ~ (SP ~> Status_Code) ~ (SP ~> Reason_Phrase) ^^ {
     case sipVersion ~ statusCode ~ reasonPhrase =>
       StatusLine(StatusCode(statusCode), Some(reasonPhrase), Some(sipVersion))
   }

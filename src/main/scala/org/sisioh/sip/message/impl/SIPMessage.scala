@@ -20,7 +20,7 @@ import org.sisioh.sip.message.header._
 import org.sisioh.sip.message.header.impl._
 import org.sisioh.sip.message.{Request, Message}
 import java.net.InetAddress
-import org.sisioh.sip.util.Utils
+import org.sisioh.sip.util.{ParserBase, Utils}
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
@@ -256,10 +256,62 @@ case class MetaData(
                      localPort: Option[Int],
                      applicationData: Any)
 
+trait SIPMessageParser extends ParserBase with CallIdParser
+with CSeqParser
+with FromParser
+with ToParser
+with MaxForwardsParser
+with UserAgentParser
+with ServerParser
+with ExpiresParser
+with ViaListParser
+with ContentTypeParser
+with ContentLengthParser {
+  //  lazy val messageHeader = (Accept | Accept_Encoding | Accept_Language | Alert_Info |
+  //    Allow | Authentication_Info | Authorization | Call_ID |
+  //    Call_Info | Contact | Content_Disposition |
+  //    Content_Encoding | Content_Language | Content_Length | Content_Type |
+  //    CSeq | Date | Error_Info | Expires |
+  //    From | In_Reply_To | Max_Forwards |
+  //    MIME_Version | Min_Expires | Organization |
+  //    Priority | Proxy_Authenticate | Proxy_Authorization |
+  //    Proxy_Require | Record_Route | Reply_To |
+  //    Require | Retry_After | Route |
+  //    Server | Subject | Supported | Timestamp |
+  //    To | Unsupported | User_Agent | Via |
+  //    Warning | WWW_Authenticate | extensionHeader) ~ CRLF
+
+  lazy val messageHeader: Parser[SIPHeader] = (Call_ID | cseq | expires |
+    contentType | Content_Length |
+    from | Max_Forwards | SERVER |
+    to | USER_AGENT | VIA /*| extensionHeader */) <~ CRLF ^^ {
+    e =>
+    //      println("header = " + e)
+      e
+  }
+
+  lazy val TEXT_UTF8_TRIM: Parser[String] = rep1sep(TEXT_UTF8char, rep(LWS)) ^^ {
+    _.mkString
+  }
+  lazy val TEXT_UTF8char: Parser[String] = chrRange(0x21, 0x7E) ^^ {
+    _.toString
+  } | UTF8_NONASCII
+  //  lazy val extensionHeader: Parser[Header] = headerName ~ (HCOLON ~> headerValue) ^^ {
+  //    case n ~ v =>
+  //
+  //  }
+  lazy val headerName = token
+  lazy val headerValue = rep(TEXT_UTF8char | UTF8_CONT | LWS)
+
+  lazy val messageBody = rep1( """.""".r) ^^ {
+    case p =>
+      p.mkString.getBytes
+  }
+
+}
+
 
 object SIPMessage {
-
-
 
 
 }

@@ -19,7 +19,7 @@ class SIPRequestDecoderSpec extends Specification with SIPMessageSpecSupport {
       val dest = SIPRequestDecoder.decode(encode)
       dest must_== source
     }
-    "RequestLine + ContentLength" in {
+    "RequestLine + ContentLength + To" in {
       val source = SIPRequestBuilder().
         withRequestLine(Some(RequestLine(DefaultGenericURI("test:test"), Some(Request.INVITE))))
         .withTo(Some(createTo()))

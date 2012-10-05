@@ -1,11 +1,10 @@
 package org.sisioh.sip.message.impl
 
-import java.net.InetAddress
 import org.sisioh.sip.message.{Response, StatusCode}
 import org.sisioh.sip.message.header._
-import impl.{SIPHeader, ContentLength, StatusLine, StatusLineBuilder}
+import impl._
 import scala.Some
-import org.sisioh.sip.util.ParseException
+import org.sisioh.sip.util.{SIPDecoder, ParseException}
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -107,6 +106,28 @@ class SIPResponseBuilder extends SIPMessageBuilder[SIPResponse, SIPResponseBuild
 
 }
 
+object SIPResponseDecoder extends SIPResponseDecoder
+
+class SIPResponseDecoder extends SIPDecoder[SIPResponse] with SIPResponseParser {
+
+  def decode(source: String) = decodeTarget(source, Response)
+
+}
+
+trait SIPResponseParser extends SIPMessageParser with StatusLineParser {
+
+  lazy val Response = (Status_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ~ opt(messageBody) ^^ {
+    case st ~ mhs ~ mbOpt =>
+      SIPResponseBuilder().
+        withStatusLine(Some(st)).
+        withHeaders(mhs).
+        withMessageContent(mbOpt.map(MessageContent(_))).
+        build
+  }
+
+}
+
+
 object SIPResponse {
 
   def apply
@@ -148,10 +169,15 @@ class SIPResponse
   }
 
   override def encode(builder: StringBuilder) = {
-    builder.append(statusLine.map {
-      e =>
-        e.encode(builder).result + super.encode(builder).result()
-    }.getOrElse(super.encode(builder).result()))
+    if (statusLine.isDefined) {
+      statusLine.foreach {
+        rl =>
+          builder.append(rl.encode())
+      }
+      super.encode(builder)
+    } else {
+      super.encode(builder)
+    }
   }
 
   def encodeMessage(sb: StringBuilder) = {
