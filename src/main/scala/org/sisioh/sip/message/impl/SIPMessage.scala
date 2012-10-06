@@ -26,7 +26,6 @@ import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
 import com.twitter.util.Base64StringEncoder
 import net.liftweb.json.JsonAST.JObject
-import scala.Some
 import net.liftweb.json.JsonAST.JString
 import net.liftweb.json.JsonAST.JArray
 import net.liftweb.json.JsonAST.JField
@@ -153,12 +152,9 @@ class MessageContent
 }
 
 
-case class HeaderListMap
+protected case class HeaderListMap
 (headers: ListBuffer[SIPHeader] = ListBuffer.empty,
  headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty) {
-
-  //  private val headers: ListBuffer[SIPHeader] = ListBuffer.empty
-  //  private val headerTable: scala.collection.mutable.Map[String, SIPHeader] = scala.collection.mutable.Map.empty
 
   def toList = headers.result()
 
@@ -342,15 +338,15 @@ abstract class SIPMessage
 
   headersParam.foreach(addHeader)
 
-  def to = getHeader(ToHeader.NAME).map(_.asInstanceOf[To])
+  def to = header(ToHeader.NAME).map(_.asInstanceOf[To])
 
-  def from = getHeader(FromHeader.NAME).map(_.asInstanceOf[From])
+  def from = header(FromHeader.NAME).map(_.asInstanceOf[From])
 
-  def cSeq = getHeader(CSeqHeader.NAME).map(_.asInstanceOf[CSeq])
+  def cSeq = header(CSeqHeader.NAME).map(_.asInstanceOf[CSeq])
 
-  def callId = getHeader(CallIdHeader.NAME).map(_.asInstanceOf[CallId])
+  def callId = header(CallIdHeader.NAME).map(_.asInstanceOf[CallId])
 
-  def maxForwards = getHeader(MaxForwardsHeader.NAME).map(_.asInstanceOf[MaxForwards])
+  def maxForwards = header(MaxForwardsHeader.NAME).map(_.asInstanceOf[MaxForwards])
 
   def fromTag = from.flatMap(_.tag)
 
@@ -394,7 +390,7 @@ abstract class SIPMessage
       return "\r\n\r\n".getBytes
     }
 
-    val soruceVia = getHeader(ViaHeader.NAME).asInstanceOf[Via]
+    val soruceVia = header(ViaHeader.NAME).asInstanceOf[Via]
     val topVia = Via(soruceVia.sentBy,
       Protocol(soruceVia.sentProtocol.protocolName,
         soruceVia.sentProtocol.protocolVersion, transport.getOrElse(soruceVia.transport)))
@@ -434,7 +430,7 @@ abstract class SIPMessage
       build(this.asInstanceOf[A])
   }
 
-  def getHeader(headerName: String) = getHeaderLowerCase(SIPHeaderNamesCache.toLowerCase(headerName))
+  def header(headerName: String) = getHeaderLowerCase(SIPHeaderNamesCache.toLowerCase(headerName))
 
   def getHeaderLowerCase(lowerCassHeaderName: String) = {
     val headerOpt = headerListMap.get(lowerCassHeaderName)
@@ -565,9 +561,9 @@ abstract class SIPMessage
     removeHeader(headerName, false)
   }
 
-  def getHeaderNames = headers.map(_.name).iterator
+  def headerNames = headers.map(_.name).iterator
 
-  def getHeaders(headerName: String): Iterator[Header] = {
+  def headers(headerName: String): Iterator[Header] = {
     val sipHeader = headerListMap.get(SIPHeaderNamesCache.toLowerCase(headerName))
     sipHeader.map {
       e =>
@@ -652,7 +648,7 @@ abstract class SIPMessage
   def encodeAsJValue() = {
     val headersAsJValue = JArray(headers.map {
       header =>
-        JField(header.name, header.encodeAsJValue())
+        header.encodeAsJValue()
     })
     val messageContentAsJValue = messageContent.map {
       e =>

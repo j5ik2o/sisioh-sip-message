@@ -1,13 +1,15 @@
 package org.sisioh.sip.message.header.impl
 
 import org.sisioh.sip.message.header.{SIPConstants, SIPRequestLine}
-import org.sisioh.sip.message.address.impl.{DefaultGenericURIJsonDecoder, SipUriParser, DefaultGenericURI, GenericURI}
+import org.sisioh.sip.message.address.impl._
 import org.sisioh.sip.core.Separators
 import org.sisioh.sip.util._
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 import scala.Some
 import org.sisioh.dddbase.core.ValueObjectBuilder
+import scala.Some
+import scala.Some
 
 object RequestLineBuilder {
 
@@ -101,9 +103,12 @@ object RequestLineEncoder extends SIPEncoder[RequestLine] {
 object RequestLineJsonDecoder extends JsonDecoder[RequestLine] {
 
   def decode(json: JsonAST.JValue) = {
-    val uriString = (json \ "uri")
-    // TODO SIPURIの場合も考慮する
-    val uri = DefaultGenericURIJsonDecoder.decode(uriString)
+    val JString(uriType) = json \ "uriType"
+    val uri = uriType match {
+      case "sip" => SipUriJsonDecoder.decode(json \ "uri")
+      case "generic" => DefaultGenericURIJsonDecoder.decode(json \ "uri")
+      case "wildcard" => WildCardURI
+    }
     val JString(method) = (json \ "method")
     val sipVersion = (json \ "sipVersion").toOpt.map {
       _.asInstanceOf[JString].s
@@ -115,10 +120,17 @@ object RequestLineJsonDecoder extends JsonDecoder[RequestLine] {
 
 object RequestLineJsonEncoder extends JsonEncoder[RequestLine] {
 
-  def encode(model: RequestLine) =
+  def encode(model: RequestLine) = {
+    val uriType = model.uri match {
+      case uri: SipUri => "sip"
+      case uri: DefaultGenericURI => "generic"
+      case uri: WildCardURI => "wildcard"
+    }
+    ("uriType" -> uriType) ~
     ("uri" -> model.uri.encodeAsJValue()) ~
       ("method" -> model.method) ~
       ("sipVersion" -> model.sipVersion)
+  }
 
 }
 

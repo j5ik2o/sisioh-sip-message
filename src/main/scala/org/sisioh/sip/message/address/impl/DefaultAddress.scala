@@ -99,7 +99,6 @@ object DefaultAddressEncoder extends SIPEncoder[DefaultAddress] {
 object DefaultAddressJsonDecoder extends JsonDecoder[DefaultAddress] {
 
   def decode(json: JsonAST.JValue) = {
-//    println("json = ", json.toString)
     val JString(uriType) = json \ "uriType"
     val uri = uriType match {
       case "sip" => SipUriJsonDecoder.decode(json \ "uri")
@@ -118,7 +117,6 @@ object DefaultAddressJsonDecoder extends JsonDecoder[DefaultAddress] {
 object DefaultAddressJsonEncoder extends JsonEncoder[DefaultAddress] {
 
   def encode(model: DefaultAddress) = {
-    implicit val formats = net.liftweb.json.DefaultFormats + new EnumNameSerializer(AddressType)
     val uriType = model.uri match {
       case uri: SipUri => "sip"
       case uri: DefaultGenericURI => "generic"

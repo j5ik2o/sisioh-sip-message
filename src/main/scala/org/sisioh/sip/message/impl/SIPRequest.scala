@@ -185,7 +185,7 @@ class SIPRequest
 
   messageContent.flatMap(_.contentType).foreach(addHeader)
 
-  val isNullRequest: Boolean = false
+  val isNullRequest: Boolean = requestLine.isEmpty && headers.isEmpty && messageContent.isEmpty && metaData.isEmpty
 
   def newBuilder = SIPRequestBuilder()
 
@@ -220,8 +220,80 @@ class SIPRequest
     // TODO Record-Routeからコピーする
   }
 
+  def createCancelRequest: Option[SIPRequest] = {
+    if (method != Some(Request.INVITE)) {
+      None
+    } else {
+      val newRL = requestLine.map {
+        e =>
+          RequestLine(e.uri, Some(Request.CANCEL), e.sipVersion)
+      }
+      val newCseq = cSeq.map {
+        cs =>
+          new CSeqBuilder().withMethod(Request.ACK).build(cs)
+      }
+      val newHeaders = headers.filterNot(e =>
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(CSeqHeader.NAME) ||
+          SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ProxyAuthorizationHeader.NAME) ||
+          SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME) ||
+          SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContactHeader.NAME) ||
+          SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME) ||
+          SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ViaHeader.NAME)
+      ) ++ newCseq.toList
 
-  def createAckRequest(responseToHeader: To) = {
+      val viaListOpt = getViaHeaders.map {
+        e => ViaList(List(e.headers.head))
+      }
+
+      val newHeaderWithVia = viaListOpt.map {
+        e =>
+          e :: newHeaders
+      }.getOrElse(newHeaders)
+
+
+      Some(new SIPRequest(
+        requestLine = newRL,
+        headersParam = newHeaderWithVia,
+        messageContent = None
+      ))
+    }
+
+  }
+
+  def createErrorAck(responseToHeader: To): SIPRequest = {
+    val newRL = requestLine.map {
+      e =>
+        RequestLine(e.uri, Some(Request.ACK), e.sipVersion)
+    }
+    val newHeaders = headers.filterNot(e =>
+      SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ToHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(RouteHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ProxyAuthorizationHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ContactHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME) ||
+        SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ViaHeader.NAME)
+    ) ++ List(responseToHeader)
+
+    val viaListOpt = getViaHeaders.map {
+      e => ViaList(List(e.headers.head))
+    }
+
+    val newHeaderWithVia = viaListOpt.map {
+      e =>
+        e :: newHeaders
+    }.getOrElse(newHeaders)
+
+
+    new SIPRequest(
+      requestLine = newRL,
+      headersParam = newHeaderWithVia,
+      messageContent = None
+    )
+  }
+
+
+  def createAckRequest(responseToHeader: To): SIPRequest = {
     val newRL = requestLine.map {
       e =>
         RequestLine(e.uri, Some(Request.ACK), e.sipVersion)
@@ -230,16 +302,6 @@ class SIPRequest
       cs =>
         new CSeqBuilder().withMethod(Request.ACK).build(cs)
     }
-
-//    val headersToIncludeInResponse = Set(
-//      FromHeader.NAME.toLowerCase,
-//      ToHeader.NAME.toLowerCase,
-//      ViaHeader.NAME.toLowerCase,
-//      RecordRouteHeader.NAME.toLowerCase,
-//      CallIdHeader.NAME.toLowerCase,
-//      CSeqHeader.NAME.toLowerCase,
-//      TimeStampHeader.NAME.toLowerCase
-//    )
 
     val newHeaders = headers.filterNot(e =>
       SIPHeaderNamesCache.toLowerCase(e.name) == SIPHeaderNamesCache.toLowerCase(ToHeader.NAME) ||
@@ -264,7 +326,7 @@ class SIPRequest
 
     new SIPRequest(
       requestLine = newRL,
-      headersParam = newHeaderWithVia ,
+      headersParam = newHeaderWithVia,
       messageContent = None
     )
   }
@@ -374,9 +436,9 @@ class SIPRequest
       throw new ParseException(Some("No via header in request!"))
     }
     method match {
-      case Some(Request.NOTIFY) if (getHeader(SubscriptionStateHeader.NAME).isEmpty) =>
+      case Some(Request.NOTIFY) if (header(SubscriptionStateHeader.NAME).isEmpty) =>
         throw new ParseException(Some(prefix + SubscriptionStateHeader.NAME))
-      case Some(Request.PUBLISH) if (getHeader(EventHeader.NAME).isEmpty) =>
+      case Some(Request.PUBLISH) if (header(EventHeader.NAME).isEmpty) =>
         throw new ParseException(Some(prefix + EventHeader.NAME))
       case _ =>
     }

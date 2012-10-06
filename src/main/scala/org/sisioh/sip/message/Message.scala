@@ -32,11 +32,11 @@ trait Message {
 
   def removeHeader(headerName: String): Message
 
-  def getHeaderNames: Iterator[String]
+  def headerNames: Iterator[String]
 
-  def getHeaders(headerName: String): Iterator[Header]
+  def headers(headerName: String): Iterator[Header]
 
-  def getHeader(headerName: String): Option[Header]
+  def header(headerName: String): Option[Header]
 
   def unrecognizedHeaders: List[Header]
 

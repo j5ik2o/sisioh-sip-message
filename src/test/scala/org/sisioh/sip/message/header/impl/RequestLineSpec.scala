@@ -48,7 +48,7 @@ class RequestLineSpec extends Specification {
     "エンコード結果が取得できること" in {
       val target = RequestLine(DefaultGenericURI("test:testurl"), Some("INVITE"))
       target.encode() must_== """INVITE test:testurl SIP/2.0""" + Separators.NEWLINE
-      target.encodeByJson() must_== """{"uri":{"uriString":"test:testurl"},"method":"INVITE","sipVersion":"SIP/2.0"}"""
+      target.encodeByJson() must_== """{"uriType":"generic","uri":{"uriString":"test:testurl"},"method":"INVITE","sipVersion":"SIP/2.0"}"""
     }
   }
 }
