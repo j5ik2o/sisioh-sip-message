@@ -16,12 +16,12 @@ trait TransportListener {
    *
    * @param transport 接続されたトランスポート
    */
-  def onConnected(transport: Transport);
+  def onConnected(transport: Transport)
 
   /**
    * 接続が切断されたときに呼ばれる。
    *
    * @param transport 切断されたトランスポート
    */
-  def onDisconnected(transport: Transport);
+  def onDisconnected(transport: Transport)
 }

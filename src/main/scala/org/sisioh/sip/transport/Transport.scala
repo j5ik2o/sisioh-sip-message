@@ -30,6 +30,6 @@ trait Transport {
    *
    * @return 受信したSIPMessage
    */
-  def recvMessage(): SIPMessage
+  def recieveMessage(): SIPMessage
 
 }

@@ -160,7 +160,7 @@ class SIPResponse
   type A = SIPResponse
   type B = SIPResponseBuilder
 
-  override def encodeAsBytes(transport: String) = {
+  override def encodeAsBytes(transport: Option[String] = None) = {
     val slBytes = statusLine.get.encode().getBytes("UTF-8")
     val superBytes = super.encodeAsBytes(transport)
     val retVal = new Array[Byte](slBytes.length + superBytes.length)

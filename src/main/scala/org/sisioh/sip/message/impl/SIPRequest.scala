@@ -279,7 +279,7 @@ class SIPRequest
   }
 
 
-  override def encodeAsBytes(transport: String): Array[Byte] = {
+  override def encodeAsBytes(transport: Option[String] = None): Array[Byte] = {
     if (isNullRequest) {
       "\r\n\r\n".getBytes
     } else if (requestLine.isEmpty) {

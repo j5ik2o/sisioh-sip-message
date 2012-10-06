@@ -20,7 +20,7 @@ import org.sisioh.sip.message.header._
 import org.sisioh.sip.message.header.impl._
 import org.sisioh.sip.message.{Request, Message}
 import java.net.InetAddress
-import org.sisioh.sip.util.{ParserBase, Utils}
+import org.sisioh.sip.util.{SIPDecoder, ParserBase, Utils}
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
@@ -255,12 +255,20 @@ case class HeaderListMap
 
 }
 
-case class MetaData(
-                     remoteAddress: Option[InetAddress],
-                     remotePort: Option[Int],
-                     localAddress: Option[InetAddress],
-                     localPort: Option[Int],
-                     applicationData: Any)
+case class MetaData
+(remoteAddress: Option[InetAddress],
+ remotePort: Option[Int],
+ localAddress: Option[InetAddress],
+ localPort: Option[Int],
+ applicationData: Any)
+
+object SIPMessageDecoder extends SIPMessageDecoder
+
+class SIPMessageDecoder extends SIPDecoder[SIPMessage] with SIPRequestParser with SIPResponseParser {
+  def decode(source: String) = decodeTarget(source, message)
+  lazy val message: Parser[SIPMessage] = Request | Response
+}
+
 
 trait SIPMessageParser extends ParserBase with CallIdParser
 with CSeqParser
@@ -381,13 +389,15 @@ abstract class SIPMessage
   }
 
 
-  def encodeAsBytes(transport: String): Array[Byte] = {
+  def encodeAsBytes(transport: Option[String] = None): Array[Byte] = {
     if (isInstanceOf[SIPRequest] && asInstanceOf[SIPRequest].isNullRequest) {
       return "\r\n\r\n".getBytes
     }
 
     val soruceVia = getHeader(ViaHeader.NAME).asInstanceOf[Via]
-    val topVia = Via(soruceVia.sentBy, Protocol(soruceVia.sentProtocol.protocolName, soruceVia.sentProtocol.protocolVersion, transport))
+    val topVia = Via(soruceVia.sentBy,
+      Protocol(soruceVia.sentProtocol.protocolName,
+        soruceVia.sentProtocol.protocolVersion, transport.getOrElse(soruceVia.transport)))
     headerListMap.addOrUpdate(topVia, false)
 
     val encoding = new StringBuilder()
