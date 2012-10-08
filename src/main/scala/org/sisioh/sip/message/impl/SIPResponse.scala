@@ -3,7 +3,6 @@ package org.sisioh.sip.message.impl
 import org.sisioh.sip.message.{Response, StatusCode}
 import org.sisioh.sip.message.header._
 import impl._
-import scala.Some
 import org.sisioh.sip.util.{SIPDecoder, ParseException}
 import net.liftweb.json.JsonAST.JField
 
@@ -221,12 +220,9 @@ class SIPResponse
   headersParam.
     foreach(addHeader)
 
-  messageContent.foreach {
-    mc =>
-      mc.contentType.foreach {
-        ct =>
-          addHeader(ct)
-      }
+  for {mc <- messageContent
+       ct <- mc.contentType} {
+    addHeader(ct)
   }
 
   def validateHeaders: Unit = {

@@ -313,6 +313,7 @@ with ContentLengthParser {
   lazy val headerName = token
   lazy val headerValue = rep(TEXT_UTF8char | UTF8_CONT | LWS)
 
+  // TODO メッセージのボディはバイナリ用パーサで別途パースすること
   lazy val messageBody = rep1( """.""".r) ^^ {
     case p =>
       p.mkString.getBytes
@@ -410,13 +411,13 @@ abstract class SIPMessage
     val content = getRawContent
     content.map {
       e =>
-        val msgArray = encoding.result().getBytes(getCharset)
+        val msgArray = encoding.result().getBytes(charset)
         val retVal = new Array[Byte](msgArray.size + e.size)
         msgArray.copyToArray[Byte](retVal, 0, msgArray.size)
         e.copyToArray[Byte](retVal, msgArray.size, e.size)
         retVal
     }.getOrElse {
-      encoding.result().getBytes(getCharset)
+      encoding.result().getBytes(charset)
     }
   }
 
@@ -592,7 +593,7 @@ abstract class SIPMessage
     builder.append(Separators.NEWLINE)
     messageContent.foreach {
       e =>
-        builder.append(e.getContentAsString(getCharset))
+        builder.append(e.getContentAsString(charset))
     }
     builder
   }
@@ -615,7 +616,7 @@ abstract class SIPMessage
 
   private lazy val contentEncodingCharset = DefaultMessageFactory.defaultContentEncodingCharset
 
-  protected final def getCharset = {
+  protected final def charset = {
     contentType.flatMap {
       ct => ct.charset
     }.getOrElse(contentEncodingCharset)
