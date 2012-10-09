@@ -13,7 +13,7 @@ class SIPResponseDecoderSpec extends Specification with SIPMessageSpecSupport {
         .withContentLength(Some(ContentLength(0)))
         .build
       val encode = source.encode()
-      println(encode)
+      println("{" + encode + "}")
       val dest = SIPResponseDecoder.decode(encode)
       dest must_== source
     }
@@ -24,6 +24,7 @@ class SIPResponseDecoderSpec extends Specification with SIPMessageSpecSupport {
         .withContentLength(Some(ContentLength(0)))
         .build
       val encode = source.encode()
+      println("{" + encode + "}")
       val dest = SIPResponseDecoder.decode(encode)
       dest must_== source
     }

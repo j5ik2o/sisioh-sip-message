@@ -108,20 +108,19 @@ class SIPResponseBuilder extends SIPMessageBuilder[SIPResponse, SIPResponseBuild
 
 object SIPResponseDecoder extends SIPResponseDecoder
 
-class SIPResponseDecoder extends SIPDecoder[SIPResponse] with SIPResponseParser {
+class SIPResponseDecoder extends SIPMessageDecoder[SIPResponse] with SIPResponseParser {
 
-  def decode(source: String) = decodeTarget(source, Response)
+  protected val message = Response
 
 }
 
 trait SIPResponseParser extends SIPMessageParser with StatusLineParser {
 
-  lazy val Response = (Status_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ~ opt(messageBody) ^^ {
-    case st ~ mhs ~ mbOpt =>
+  lazy val Response = (Status_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ^^ {
+    case st ~ mhs =>
       SIPResponseBuilder().
         withStatusLine(Some(st)).
         withHeaders(mhs).
-        withMessageContent(mbOpt.map(MessageContent(_))).
         build
   }
 

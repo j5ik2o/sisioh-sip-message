@@ -99,21 +99,20 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 
 object SIPRequestDecoder extends SIPRequestDecoder
 
-class SIPRequestDecoder extends SIPDecoder[SIPRequest] with SIPRequestParser {
+class SIPRequestDecoder extends SIPMessageDecoder[SIPRequest] with SIPRequestParser  {
 
-  def decode(source: String) = decodeTarget(source, Request)
+  protected val message = Request
 
 }
 
 
 trait SIPRequestParser extends SIPMessageParser with RequestLineParser {
 
-  lazy val Request: Parser[SIPRequest] = (Request_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ~ opt(messageBody) ^^ {
-    case rl ~ mhs ~ mbOpt =>
+  lazy val Request: Parser[SIPRequest] = (Request_Line <~ CRLF) ~ (rep(messageHeader) <~ CRLF) ^^ {
+    case rl ~ mhs =>
       SIPRequestBuilder().
         withRequestLine(Some(rl)).
         withHeaders(mhs).
-        withMessageContent(mbOpt.map(MessageContent(_))).
         build
   }
 

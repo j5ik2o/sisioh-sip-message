@@ -16,6 +16,7 @@ class SIPRequestDecoderSpec extends Specification with SIPMessageSpecSupport {
         .withContentLength(Some(ContentLength(0)))
         .build
       val encode = source.encode()
+      println("{"+encode+"}")
       val dest = SIPRequestDecoder.decode(encode)
       dest must_== source
     }
@@ -26,6 +27,7 @@ class SIPRequestDecoderSpec extends Specification with SIPMessageSpecSupport {
         .withContentLength(Some(ContentLength(0)))
         .build
       val encode = source.encode()
+      println("{"+encode+"}")
       val dest = SIPRequestDecoder.decode(encode)
       dest must_== source
     }

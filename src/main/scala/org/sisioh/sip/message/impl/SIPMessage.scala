@@ -20,7 +20,7 @@ import org.sisioh.sip.message.header._
 import org.sisioh.sip.message.header.impl._
 import org.sisioh.sip.message.{Request, Message}
 import java.net.InetAddress
-import org.sisioh.sip.util.{SIPDecoder, ParserBase, Utils}
+import org.sisioh.sip.util.{ParseException, SIPDecoder, ParserBase, Utils}
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
@@ -258,11 +258,37 @@ case class MetaData
  localPort: Option[Int],
  applicationData: Any)
 
-object SIPMessageDecoder extends SIPMessageDecoder
+object SIPMessageDecoder extends SIPMessageDecoder[SIPMessage] with SIPRequestParser with SIPResponseParser {
+  protected val message = Request | Response
+}
 
-class SIPMessageDecoder extends SIPDecoder[SIPMessage] with SIPRequestParser with SIPResponseParser {
-  def decode(source: String) = decodeTarget(source, message)
-  lazy val message: Parser[SIPMessage] = Request | Response
+
+trait SIPMessageDecoder[T] extends SIPDecoder[T] {
+
+  val delimiters = List[Byte]('\r', '\n', '\r', '\n')
+
+  def decode(source: Array[Byte]): T = {
+    val index = source.indexOfSlice(delimiters)
+    require(index > 0)
+    val size = source.size
+    val headerEndPos = index + delimiters.size
+    val headers = source.slice(0, headerEndPos)
+    val sourceAsString = new String(headers, "UTF-8")
+    val result = decodeTarget(sourceAsString, message)
+    result.contentLength.flatMap {
+      cl =>
+        if (cl.contentLength > 0 && size - headerEndPos > 0) {
+          val contents = source.slice(headerEndPos, headerEndPos + cl.contentLength)
+          Some(result.withMessageContent(Some(MessageContent(contents))).asInstanceOf[T])
+        } else {
+          None
+        }
+    }.getOrElse(result).asInstanceOf[T]
+  }
+
+  def decode(source: String): T = decode(source.getBytes("UTF-8"))
+
+  protected val message: Parser[SIPMessage]
 }
 
 
@@ -362,6 +388,10 @@ abstract class SIPMessage
   def contentLength: Option[ContentLength] =
     headers.find(_.isInstanceOf[ContentLength]).
       map(_.asInstanceOf[ContentLength])
+
+  def withMessageContent(messageContent: Option[MessageContent]) = {
+    newBuilder.withMessageContent(messageContent).build(this.asInstanceOf[A])
+  }
 
 
   def getMessageAsEncodedStrings(): List[String] = {
