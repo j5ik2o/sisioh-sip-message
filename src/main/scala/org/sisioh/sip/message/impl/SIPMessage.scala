@@ -268,6 +268,7 @@ trait SIPMessageDecoder[T] extends SIPDecoder[T] {
   val delimiters = List[Byte]('\r', '\n', '\r', '\n')
 
   def decode(source: Array[Byte]): T = {
+    println("decode 1 = {" + new String(source) + "}")
     val index = source.indexOfSlice(delimiters)
     require(index > 0)
     val size = source.size
@@ -358,12 +359,13 @@ abstract class SIPMessage
 (headersParam: List[Header])
   extends MessageObject with Message with MessageExt {
 
-  val unrecognizedHeaders: List[Header] = List.empty
   protected val headerListMap: HeaderListMap = new HeaderListMap
 
-  def headers = headerListMap.toList
-
   headersParam.foreach(addHeader)
+
+  val unrecognizedHeaders: List[Header] = List.empty
+
+  def headers = headerListMap.toList
 
   def to = header(ToHeader.NAME).map(_.asInstanceOf[To])
 
@@ -389,10 +391,8 @@ abstract class SIPMessage
     headers.find(_.isInstanceOf[ContentLength]).
       map(_.asInstanceOf[ContentLength])
 
-  def withMessageContent(messageContent: Option[MessageContent]) = {
+  def withMessageContent(messageContent: Option[MessageContent]) =
     newBuilder.withMessageContent(messageContent).build(this.asInstanceOf[A])
-  }
-
 
   def getMessageAsEncodedStrings(): List[String] = {
     headers.flatMap {
@@ -415,18 +415,21 @@ abstract class SIPMessage
     builder
   }
 
-
   def encodeAsBytes(transport: Option[String] = None): Array[Byte] = {
     if (isInstanceOf[SIPRequest] && asInstanceOf[SIPRequest].isNullRequest) {
       return "\r\n\r\n".getBytes
     }
-
-    val soruceVia = header(ViaHeader.NAME).asInstanceOf[Via]
-    val topVia = Via(soruceVia.sentBy,
-      Protocol(soruceVia.sentProtocol.protocolName,
-        soruceVia.sentProtocol.protocolVersion, transport.getOrElse(soruceVia.transport)))
-    headerListMap.addOrUpdate(topVia, false)
-
+    val soruceVia = header(ViaHeader.NAME).map(_.asInstanceOf[Via])
+    val topVia = soruceVia.map {
+      svia =>
+        Via(svia.sentBy,
+          Protocol(svia.sentProtocol.protocolName,
+            svia.sentProtocol.protocolVersion, transport.getOrElse(svia.transport)))
+    }
+    topVia.foreach {
+      tv =>
+        headerListMap.addOrUpdate(tv, false)
+    }
     val encoding = new StringBuilder()
     headers.synchronized {
       headers.filterNot(_.isInstanceOf[ContentLength]).foreach {
@@ -435,11 +438,10 @@ abstract class SIPMessage
       }
     }
     contentLength.foreach {
-      e =>
-        e.encode(encoding).append(Separators.NEWLINE)
+      _.encode(encoding)
     }
-    val content = getRawContent
-    content.map {
+    encoding.append(Separators.NEWLINE)
+    val r = content.map {
       e =>
         val msgArray = encoding.result().getBytes(charset)
         val retVal = new Array[Byte](msgArray.size + e.size)
@@ -449,6 +451,8 @@ abstract class SIPMessage
     }.getOrElse {
       encoding.result().getBytes(charset)
     }
+    println(new String(r))
+    r
   }
 
 
@@ -473,12 +477,21 @@ abstract class SIPMessage
     }
   }
 
-  val CONTENT_TYPE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME)
+  protected lazy val CONTENT_DISPOSITION_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentDispositionHeader.NAME)
+
+  protected lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
+
+  protected lazy val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
+
+  protected lazy val EXPIRES_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME)
+
+  protected lazy val CONTENT_TYPE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentTypeHeader.NAME)
+
+  protected lazy val contentEncodingCharset = DefaultMessageFactory.defaultContentEncodingCharset
 
   def contentType: Option[ContentType] = getHeaderLowerCase(CONTENT_TYPE_LOWERCASE).map(_.asInstanceOf[ContentType])
 
-  def getSIPHeaderListLowerCase(lowerCaseHeaderName: String): Option[SIPHeader] =
-    headerListMap.get(lowerCaseHeaderName)
+  def getSIPHeaderListLowerCase(lowerCaseHeaderName: String): Option[SIPHeader] = headerListMap.get(lowerCaseHeaderName)
 
   def getViaHeaders = getSIPHeaderListLowerCase("via").map(_.asInstanceOf[ViaList])
 
@@ -495,7 +508,6 @@ abstract class SIPMessage
     }
     callId.map(e => (e.callId :: r).mkString(Separators.COLON))
   }
-
 
   def getTransactionId: String = {
     val topVia = getViaHeadHeader
@@ -628,23 +640,14 @@ abstract class SIPMessage
     builder
   }
 
-  protected lazy val CONTENT_DISPOSITION_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentDispositionHeader.NAME)
 
   def contentDispositionHeader = getHeaderLowerCase(CONTENT_DISPOSITION_LOWERCASE).map(_.asInstanceOf[ContentDispositionHeader])
 
-  protected lazy val CONTENT_LANGUAGE_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentLanguageHeader.NAME)
-
-  lazy val contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
-
-  protected lazy val CONTENT_ENCODING_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ContentEncodingHeader.NAME)
+  def contentLanguage = getHeaderLowerCase(CONTENT_LANGUAGE_LOWERCASE).map(_.asInstanceOf[ContentLanguageHeader])
 
   def contentEncoding = getHeaderLowerCase(CONTENT_ENCODING_LOWERCASE).map(_.asInstanceOf[ContentEncodingHeader])
 
-  protected lazy val EXPIRES_LOWERCASE = SIPHeaderNamesCache.toLowerCase(ExpiresHeader.NAME)
-
   def expires = getHeaderLowerCase(EXPIRES_LOWERCASE).map(_.asInstanceOf[ExpiresHeader])
-
-  private lazy val contentEncodingCharset = DefaultMessageFactory.defaultContentEncodingCharset
 
   protected final def charset = {
     contentType.flatMap {
@@ -652,14 +655,12 @@ abstract class SIPMessage
     }.getOrElse(contentEncodingCharset)
   }
 
-  def getRawContent = {
-    messageContent.map(_.contentBytes)
-  }
+  def content = messageContent.map(_.contentBytes)
 
-  def getContent = {
-    messageContent.map(_.contentBytes)
+  def contentAsString = messageContent.map {
+    e =>
+      new String(e.contentBytes, charset)
   }
-
 
   val sipVersion: Option[String] = Some(SIPConstants.SIP_VERSION_STRING)
 
@@ -693,3 +694,5 @@ abstract class SIPMessage
   }
 
 }
+
+

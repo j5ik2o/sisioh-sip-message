@@ -351,6 +351,7 @@ class SIPRequest
       val retVal = new Array[Byte](rlBytes.size + superBytes.size)
       rlBytes.copyToArray[Byte](retVal, 0, rlBytes.size)
       superBytes.copyToArray[Byte](retVal, rlBytes.size, superBytes.size)
+      println(new String(retVal))
       retVal
     }
   }

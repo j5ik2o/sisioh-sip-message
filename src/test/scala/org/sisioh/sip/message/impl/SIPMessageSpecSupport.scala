@@ -36,7 +36,7 @@ trait SIPMessageSpecSupport {
       withCSeq(Some(CSeq(Request.INVITE, 1))).
       withRequestLine(Some(RequestLine(DefaultGenericURI("test:test"), Some(Request.INVITE)))).
       withMaxForwards(Some(MaxForwards(1))).
-      withContentLength(Some(ContentLength(100))).
+      withContentLength(Some(ContentLength("ABC".getBytes().size))).
       withMessageContent(Some(MessageContent("ABC", Some(ContentType("application", "sdp"))))).
       build
 

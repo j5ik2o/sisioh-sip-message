@@ -50,9 +50,9 @@ trait Message {
 
   def expires: Option[ExpiresHeader]
 
-  def getRawContent: Option[Array[Byte]]
+  def content: Option[Array[Byte]]
 
-  def getContent: Option[Any]
+  def contentAsString: Option[String]
 
   def removeContent: Message
 
