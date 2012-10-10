@@ -16,9 +16,15 @@ package org.sisioh.sip.message.header.impl
  * governing permissions and limitations under the License.
  */
 
-import org.sisioh.sip.util.{NameValuePairList, HostParser, NameValuePair, ParserBase}
-import org.sisioh.sip.message.address.impl.AddressType
+import org.sisioh.sip.util._
+import org.sisioh.sip.message.address.impl.{DefaultAddress, DefaultAddressJsonDecoder, AddressType}
 import org.sisioh.sip.core.Separators
+import scala.Some
+import net.liftweb.json._
+import org.sisioh.sip.message.header.FromHeader
+import scala.Some
+import scala.Some
+import scala.Some
 
 trait ToOrFromParser extends ParserBase with HostParser {
 
@@ -35,6 +41,7 @@ trait ToOrFromParser extends ParserBase with HostParser {
 trait ToOrFromHeader extends AddressParametersHeader {
 
   def tag: Option[String]
+
   val parameters: NameValuePairList
 
   def encodeBody(builder: StringBuilder) = {
@@ -66,3 +73,35 @@ trait ToOrFromHeader extends AddressParametersHeader {
   override def toString = encode()
 
 }
+
+trait ToFromJsonFieldNames extends JsonFieldNames {
+  val ADDRESS = "address"
+}
+
+abstract class ToFromJsonDecoder[T <: ToOrFromHeader] extends JsonDecoder[T] with ToFromJsonFieldNames {
+
+  val headerName: String
+  protected def createInstance(address: DefaultAddress, parameters: NameValuePairList): T
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, headerName)
+    val address = DefaultAddressJsonDecoder.decode(json \ ADDRESS)
+    val parameters = NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+    createInstance(address, parameters)
+  }
+
+}
+
+
+abstract class ToFromJsonEncoder[T <: ToOrFromHeader] extends JsonEncoder[T] with ToFromJsonFieldNames {
+
+  def encode(model: T) = {
+    JObject(
+      getHeaderNameAsJValue(model) ::
+        JField(ADDRESS, model.address.encodeAsJValue()) ::
+        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
+    )
+  }
+
+}
+

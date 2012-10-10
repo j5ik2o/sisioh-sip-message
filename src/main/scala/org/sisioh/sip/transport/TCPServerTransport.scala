@@ -47,17 +47,13 @@ class TCPServerTransport(val serverSocket: ServerSocket, val receiveListener: Op
   def accept() = {
     while (true) {
       import org.sisioh.sip.util.Loan._
-      println("start --->")
       val socket = serverSocket.accept()
       using(TCPTransport(socket, receiveListener)) {
         tcp =>
-          println(":::start --->")
           receiveListener.foreach(_.onConnected(tcp))
           tcp.doProcess
-          println(":::<--- end")
           tcp
       }
-      println("<--- end")
     }
   }
 
@@ -70,4 +66,6 @@ class TCPServerTransport(val serverSocket: ServerSocket, val receiveListener: Op
     case _ =>
       false
   }
+
+  override def toString = "TCPServerTransport(%s,%s)".format(serverSocket, receiveListener)
 }

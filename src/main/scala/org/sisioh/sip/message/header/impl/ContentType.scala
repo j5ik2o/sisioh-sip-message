@@ -16,7 +16,7 @@ package org.sisioh.sip.message.header.impl
  * governing permissions and limitations under the License.
  */
 
-import org.sisioh.sip.message.header.ContentTypeHeader
+import org.sisioh.sip.message.header.{CallIdHeader, ContentTypeHeader}
 import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import net.liftweb.json.ext.EnumNameSerializer
@@ -44,6 +44,18 @@ trait ContentTypeJsonFieldNames extends JsonFieldNames {
   val CONTENT_SUB_TYPE = "contentSubType"
 }
 
+object ContentTypeJsonDecoder extends JsonDecoder[ContentType] with ContentTypeJsonFieldNames {
+
+  def decode(json: JsonAST.JValue) = {
+    requireHeaderName(json, ContentTypeHeader.NAME)
+    val JString(contentType) = (json \ CONTENT_TYPE)
+    val JString(contentSubType) = (json \ CONTENT_SUB_TYPE)
+    val parameters = NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+    ContentType(contentType, contentSubType, parameters)
+  }
+
+}
+
 object ContentTypeJsonEncoder extends JsonEncoder[ContentType] with ContentTypeJsonFieldNames {
 
   def encode(model: ContentType) = {
@@ -59,6 +71,8 @@ object ContentTypeJsonEncoder extends JsonEncoder[ContentType] with ContentTypeJ
 object ContentType {
 
   def decode(source: String) = ContentTypeDecoder.decode(source)
+
+  def decodeFromJson(source: String) = ContentTypeJsonDecoder.decode(source)
 
 }
 

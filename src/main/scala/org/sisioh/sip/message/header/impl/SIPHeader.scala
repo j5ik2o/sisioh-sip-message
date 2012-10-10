@@ -17,8 +17,45 @@ package org.sisioh.sip.message.header.impl
  */
 
 import org.sisioh.sip.core.{GenericObject, Separators}
-import org.sisioh.sip.util.Encoder
-import org.sisioh.sip.message.header.Header
+import org.sisioh.sip.util.{JsonDecoder, Encoder}
+import org.sisioh.sip.message.header._
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json.JsonAST.JString
+
+object SIPHeaderJsonDecoder extends SIPHeaderJsonDecoder
+
+class SIPHeaderJsonDecoder extends JsonDecoder[SIPHeader] {
+
+  def decode(json: JValue) = {
+    val JString(headerName) = json \ "headerName"
+    headerName match {
+      case CallIdHeader.NAME =>
+        CallIdJsonDecoder.decode(json)
+      case ContentLengthHeader.NAME =>
+        ContentLengthJsonDecoder.decode(json)
+      case ContentTypeHeader.NAME =>
+        ContentTypeJsonDecoder.decode(json)
+      case CSeqHeader.NAME =>
+        CSeqJsonDecoder.decode(json)
+      case ExpiresHeader.NAME =>
+        ExpiresJsonDecoder.decode(json)
+      case FromHeader.NAME =>
+        FromJsonDecoder.decode(json)
+      case MaxForwardsHeader.NAME =>
+        MaxForwardsJsonDecoder.decode(json)
+      case ServerHeader.NAME =>
+        ServerJsonDecoder.decode(json)
+      case ToHeader.NAME =>
+        ToJsonDecoder.decode(json)
+      case UserAgentHeader.NAME =>
+        UserAgentJsonDecoder.decode(json)
+      case ViaHeader.NAME =>
+        ViaListJsonDecoder.decode(json)
+    }
+  }
+
+}
+
 
 /**
  * SIPヘッダを表すトレイト。
@@ -60,7 +97,7 @@ trait SIPHeader extends GenericObject with Header {
    * @tparam A エンコードするモデルの型
    * @return エンコードされたオブジェクト
    */
-  def encodeBody[A](builder: StringBuilder, encoder: Encoder[A]):StringBuilder = encoder.encode(this.asInstanceOf[A], builder)
+  def encodeBody[A](builder: StringBuilder, encoder: Encoder[A]): StringBuilder = encoder.encode(this.asInstanceOf[A], builder)
 
   /**
    * ヘッダをエンコードする。

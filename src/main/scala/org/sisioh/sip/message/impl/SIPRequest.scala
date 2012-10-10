@@ -7,8 +7,10 @@ import org.sisioh.sip.message.{StatusCode, Request}
 import org.sisioh.sip.message.address.URI
 import org.sisioh.sip.util._
 import org.sisioh.sip.message.address.impl.GenericURI
+import net.liftweb.json.JsonAST._
 import scala.Some
 import org.sisioh.sip.util.ParseException
+import net.liftweb.json.JsonAST.JArray
 import net.liftweb.json.JsonAST.JField
 
 /*
@@ -99,7 +101,7 @@ class SIPRequestBuilder extends SIPMessageBuilder[SIPRequest, SIPRequestBuilder]
 
 object SIPRequestDecoder extends SIPRequestDecoder
 
-class SIPRequestDecoder extends SIPMessageDecoder[SIPRequest] with SIPRequestParser  {
+class SIPRequestDecoder extends SIPMessageDecoder[SIPRequest] with SIPRequestParser {
 
   protected val message = Request
 
@@ -119,6 +121,20 @@ trait SIPRequestParser extends SIPMessageParser with RequestLineParser {
 
 }
 
+trait SIPRequestJsonFieldNames extends SIPMessageJsonFieldNames {
+  val REQUEST_LINE = "requestLine"
+}
+
+object SIPRequestJsonDecoder extends SIPMessageJsonDecoder[SIPRequest, RequestLine] with SIPRequestJsonFieldNames {
+
+  protected def decodeLine(json: JValue) =
+    RequestLineJsonDecoder.decode(json \ REQUEST_LINE)
+
+  protected def createInstance(line: RequestLine, sipHeaders: List[SIPHeader], content: Option[Array[Byte]]) = {
+    SIPRequest(requestLine = Some(line), otherHeaders = sipHeaders, messageContent = content.map(e => MessageContent(e)))
+  }
+
+}
 
 object SIPRequest {
   val headersToIncludeInResponse = Set(
@@ -177,7 +193,7 @@ class SIPRequest
  headersParam: List[Header],
  val messageContent: Option[MessageContent],
  val metaData: Option[MetaData] = None
-  ) extends SIPMessage(headersParam) with Request {
+  ) extends SIPMessage(headersParam) with Request with SIPRequestJsonFieldNames {
 
   type A = SIPRequest
   type B = SIPRequestBuilder
@@ -404,7 +420,7 @@ class SIPRequest
   }
 
   def encodeLineAsJField() = {
-    JField("requestLine", requestLine.get.encodeAsJValue())
+    JField(REQUEST_LINE, requestLine.get.encodeAsJValue())
   }
 
 
@@ -454,13 +470,14 @@ class SIPRequest
 
   override def equals(obj: Any) = obj match {
     case that: SIPRequest =>
-      //      println("requestLine = ", requestLine, that.requestLine, (requestLine == that.requestLine))
-      //      println("headers = ", headers, that.headers, (headers == that.headers))
       requestLine == that.requestLine &&
-        headers == that.headers
+        super.equals(that)
     case _ =>
       false
   }
 
-  override def hashCode = 31 * requestLine.## + 31 * headers.##
+  override def hashCode = 31 * requestLine.## + super.hashCode()
+
+  override def toString = "SIPRequest(%s,%s,%s)".format(requestLine, headers, messageContent)
+
 }

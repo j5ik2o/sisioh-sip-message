@@ -20,11 +20,12 @@ import org.sisioh.sip.message.header._
 import org.sisioh.sip.message.header.impl._
 import org.sisioh.sip.message.{Request, Message}
 import java.net.InetAddress
-import org.sisioh.sip.util.{ParseException, SIPDecoder, ParserBase, Utils}
+import org.sisioh.sip.util._
 import org.sisioh.sip.core.Separators
 import org.sisioh.dddbase.core.ValueObjectBuilder
 import collection.mutable.ListBuffer
 import com.twitter.util.Base64StringEncoder
+import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonAST.JObject
 import net.liftweb.json.JsonAST.JString
 import net.liftweb.json.JsonAST.JArray
@@ -144,11 +145,13 @@ class MessageContent
 
   override def equals(obj: Any) = obj match {
     case that: MessageContent =>
-      contentBytes == that.contentBytes &&
+      contentBytes.sameElements(that.contentBytes) &&
         contentType == that.contentType
     case _ =>
       false
   }
+
+  override def toString() = "MessageConent(%s,%s)".format(getContentAsString(), contentType)
 }
 
 
@@ -268,7 +271,6 @@ trait SIPMessageDecoder[T] extends SIPDecoder[T] {
   val delimiters = List[Byte]('\r', '\n', '\r', '\n')
 
   def decode(source: Array[Byte]): T = {
-    println("decode 1 = {" + new String(source) + "}")
     val index = source.indexOfSlice(delimiters)
     require(index > 0)
     val size = source.size
@@ -321,11 +323,7 @@ with ContentLengthParser {
   lazy val messageHeader: Parser[SIPHeader] = (Call_ID | cseq | expires |
     contentType | Content_Length |
     from | Max_Forwards | SERVER |
-    to | USER_AGENT | VIA /*| extensionHeader */) <~ CRLF ^^ {
-    e =>
-    //      println("header = " + e)
-      e
-  }
+    to | USER_AGENT | VIA /*| extensionHeader */) <~ CRLF
 
   lazy val TEXT_UTF8_TRIM: Parser[String] = rep1sep(TEXT_UTF8char, rep(LWS)) ^^ {
     _.mkString
@@ -340,10 +338,56 @@ with ContentLengthParser {
   lazy val headerName = token
   lazy val headerValue = rep(TEXT_UTF8char | UTF8_CONT | LWS)
 
-  // TODO メッセージのボディはバイナリ用パーサで別途パースすること
-  lazy val messageBody = rep1( """.""".r) ^^ {
-    case p =>
-      p.mkString.getBytes
+  //  lazy val messageBody = rep1( """.""".r) ^^ {
+  //    case p =>
+  //      p.mkString.getBytes
+  //  }
+
+}
+
+trait SIPMessageJsonFieldNames extends JsonFieldNames {
+  val CONTENT = "content"
+  val HEADERS = "headers"
+}
+
+abstract class SIPMessageJsonDecoder[A <: SIPMessage, LINE] extends JsonDecoder[SIPMessage] with SIPMessageJsonFieldNames {
+
+  protected def decodeLine(json: JValue): LINE
+
+  protected def createInstance(line: LINE, sipHeaders: List[SIPHeader], content: Option[Array[Byte]]): A
+
+  def decode(json: JValue) = {
+    val JArray(headersAsJArray) = (json \ HEADERS)
+    val headers = headersAsJArray.map {
+      h =>
+        SIPHeaderJsonDecoder.decode(h)
+    }
+    val contentOpt = (json \ CONTENT).toOpt.map {
+      e =>
+        Base64StringEncoder.decode(e.asInstanceOf[JString].s)
+    }
+    createInstance(decodeLine(json), headers, contentOpt)
+  }
+}
+
+object SIPMessageJsonEncoder extends SIPMessageJsonEncoder
+
+class SIPMessageJsonEncoder extends JsonEncoder[SIPMessage] with SIPMessageJsonFieldNames {
+
+  def encode(model: SIPMessage) = {
+    val headersAsJValue = JArray(model.headers.map {
+      header =>
+        header.encodeAsJValue()
+    })
+    val messageContentAsJValue = model.messageContent.map {
+      e =>
+        JField(CONTENT, JString(Base64StringEncoder.encode(e.contentBytes)))
+    }
+    JObject(
+      (Some(model.encodeLineAsJField) ::
+        Some(JField(HEADERS, headersAsJValue)) ::
+        messageContentAsJValue :: Nil).flatten
+    )
   }
 
 }
@@ -451,7 +495,6 @@ abstract class SIPMessage
     }.getOrElse {
       encoding.result().getBytes(charset)
     }
-    println(new String(r))
     r
   }
 
@@ -668,7 +711,8 @@ abstract class SIPMessage
 
   override def equals(obj: Any) = obj match {
     case that: SIPMessage =>
-      headerListMap == that.headerListMap
+      headers == that.headers &&
+        messageContent == that.messageContent
     case _ =>
       false
   }
@@ -677,21 +721,7 @@ abstract class SIPMessage
 
   def encodeLineAsJField: JField
 
-  def encodeAsJValue() = {
-    val headersAsJValue = JArray(headers.map {
-      header =>
-        header.encodeAsJValue()
-    })
-    val messageContentAsJValue = messageContent.map {
-      e =>
-        JField("content", JString(Base64StringEncoder.encode(e.contentBytes)))
-    }
-    JObject(
-      (Some(encodeLineAsJField) ::
-        Some(JField("headers", headersAsJValue)) ::
-        messageContentAsJValue :: Nil).flatten
-    )
-  }
+  def encodeAsJValue() = SIPMessageJsonEncoder.encode(this)
 
 }
 

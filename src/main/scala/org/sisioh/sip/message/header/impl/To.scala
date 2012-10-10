@@ -38,21 +38,15 @@ trait ToParser extends ToOrFromParser with DefaultAddressParser {
 
 }
 
-trait ToJsonFieldNames extends JsonFieldNames {
-  val ADDRESS = "address"
-}
+object ToJsonDecoder extends ToFromJsonDecoder[To] {
+  val headerName = ToHeader.NAME
 
-object ToJsonEncoder extends JsonEncoder[To] with ToJsonFieldNames {
-
-  def encode(model: To) = {
-    JObject(
-      getHeaderNameAsJValue(model) ::
-        JField(ADDRESS, model.address.encodeAsJValue()) ::
-        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
-    )
-  }
+  protected def createInstance(address: DefaultAddress, parameters: NameValuePairList) =
+    To(address, None, parameters)
 
 }
+
+object ToJsonEncoder extends ToFromJsonEncoder[To]
 
 /**
  * [[org.sisioh.sip.message.header.impl.To]]のためのコンパニオンオブジェクト。

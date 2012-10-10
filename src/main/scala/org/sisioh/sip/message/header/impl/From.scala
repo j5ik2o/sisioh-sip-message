@@ -24,33 +24,18 @@ trait FromParser extends ToOrFromParser with DefaultAddressParser {
 
 }
 
-trait FromJsonFieldNames extends JsonFieldNames {
-  val ADDRESS = "address"
-}
 
-object FromJsonDecoder extends JsonDecoder[From] with FromJsonFieldNames {
 
-  def decode(json: JsonAST.JValue) = {
-    requireHeaderName(json, FromHeader.NAME)
-    val address = DefaultAddressJsonDecoder.decode(json \ ADDRESS)
-    val parameters = NameValuePairListJsonDecoder.decode(json \ PARAMETERS)
+object FromJsonDecoder extends ToFromJsonDecoder[From] {
+
+  val headerName = FromHeader.NAME
+
+  protected def createInstance(address: DefaultAddress, parameters: NameValuePairList) =
     From(address, None, parameters)
-  }
 
 }
 
-
-object FromJsonEncoder extends JsonEncoder[From] with FromJsonFieldNames {
-
-  def encode(model: From) = {
-    JObject(
-      getHeaderNameAsJValue(model) ::
-        JField(ADDRESS, model.address.encodeAsJValue()) ::
-        JField(PARAMETERS, model.parameters.encodeAsJValue()) :: Nil
-    )
-  }
-
-}
+object FromJsonEncoder extends ToFromJsonEncoder[From]
 
 
 object From {

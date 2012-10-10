@@ -4,7 +4,7 @@ import org.sisioh.sip.message.{Response, StatusCode}
 import org.sisioh.sip.message.header._
 import impl._
 import org.sisioh.sip.util.{SIPDecoder, ParseException}
-import net.liftweb.json.JsonAST.JField
+import net.liftweb.json.JsonAST.{JValue, JField}
 
 /*
  * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)
@@ -126,6 +126,21 @@ trait SIPResponseParser extends SIPMessageParser with StatusLineParser {
 
 }
 
+trait SIPResponseJsonFieldNames extends SIPMessageJsonFieldNames {
+  val STATUS_LINE = "requestLine"
+}
+
+object SIPResponseJsonDecoder extends SIPMessageJsonDecoder[SIPResponse, StatusLine] with SIPResponseJsonFieldNames {
+
+  protected def decodeLine(json: JValue) =
+    StatusLineJsonDecoder.decode(json \ STATUS_LINE)
+
+  protected def createInstance(line: StatusLine, sipHeaders: List[SIPHeader], content: Option[Array[Byte]]) = {
+    SIPResponse(statusLine = Some(line), headers = sipHeaders, messageContent = content.map(e => MessageContent(e)))
+  }
+
+}
+
 
 object SIPResponse {
 
@@ -192,7 +207,8 @@ class SIPResponse
 
   override def equals(obj: Any) = obj match {
     case that: SIPResponse =>
-      statusLine == that.statusLine && super.equals(obj)
+      statusLine == that.statusLine &&
+        super.equals(that)
     case _ =>
       false
   }

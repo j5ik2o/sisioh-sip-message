@@ -106,6 +106,12 @@ object ViaJsonEncoder extends JsonEncoder[Via] with ViaJsonFiledNames {
 
 }
 
+object ViaListJsonDecoder extends SIPHeaderListJsonDecoder[ViaList, Via]{
+  protected def createInstance(sipHeaders: List[Via]) =
+    ViaList(sipHeaders)
+}
+
+
 object Via {
 
 
@@ -169,12 +175,15 @@ case class Via
   def encodeAsJValue() = ViaJsonEncoder.encode(this)
 }
 
-case class ViaList(headers: List[Via] = List.empty)
+case class ViaList(override val headers: List[Via] = List.empty)
   extends SIPHeaderList[ViaList, Via](classOf[Via], ViaHeader.NAME, false, headers) {
 
   val name = headerName
 
   protected def createInstance(_headers: List[Via]) = ViaList(_headers)
+
+  override def encodeBody(builder: StringBuilder): StringBuilder =
+    encodeBody(builder, Separators.COMMA)
 
 }
 

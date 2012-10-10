@@ -4,33 +4,64 @@ import org.sisioh.sip.message.header.{SIPHeaderNames, Header}
 import org.sisioh.sip.core.Separators
 import collection.immutable.List
 import net.liftweb.json._
+import org.sisioh.sip.util.{JsonDecoder, JsonEncoder}
+
+trait SIPHeaderListJsonFieldNames extends JsonFieldNames
+
+abstract class SIPHeaderListJsonDecoder[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
+  extends JsonDecoder[A] with SIPHeaderListJsonFieldNames {
+
+  protected def createInstance(sipHeaders: List[HDR]): A
+
+  def decode(json: JsonAST.JValue) = {
+    val JArray(parameters) = json \ PARAMETERS
+    val headers = parameters.map {
+      e =>
+        ViaJsonDecoder.decode(e)
+    }
+    createInstance(headers.map(_.asInstanceOf[HDR]))
+  }
+
+}
+
+class SIPHeaderListJsonEncoder[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
+  extends JsonEncoder[A] with SIPHeaderListJsonFieldNames {
+
+  def encode(model: A) = {
+    JObject(
+      JField(HEADER_NAME, JString(model.headerName)) ::
+        JField(PARAMETERS, JArray(model.headers.map(_.encodeAsJValue()))) :: Nil
+    )
+  }
+
+}
 
 
 abstract class SIPHeaderList[A <: SIPHeaderList[A, HDR], HDR <: SIPHeader]
 (val clazz: Class[_],
  val headerName: String,
  val prettyEncode: Boolean = false,
- private val headers: List[HDR] = List.empty[HDR])
+ private[impl] val headers: List[HDR] = List.empty[HDR])
   extends SIPHeader with Header {
 
   override def toString = encode()
 
+  protected val jsonEncoder = new SIPHeaderListJsonEncoder[A, HDR]
+
   def getHeadersAsEncodedStrings: List[String] =
     headers.map(_.toString())
 
-  def encodeBody(builder: StringBuilder): StringBuilder = {
+  def encodeBody(builder: StringBuilder): StringBuilder =
+    encodeBody(builder, Separators.SEMICOLON)
+
+  def encodeBody(builder: StringBuilder, separator: String) = {
     builder.append(headers.map {
       header =>
         header.encodeBody()
-    }.mkString(Separators.SEMICOLON))
+    }.mkString(separator))
   }
 
-  def encodeAsJValue() = {
-    JObject(
-      JField("headerNamne", JString(headerName)) ::
-        JField("parameters", JArray(headers.map(_.encodeAsJValue()))) :: Nil
-    )
-  }
+  def encodeAsJValue() = jsonEncoder.encode(this.asInstanceOf[A])
 
   override def encode(builder: StringBuilder) =
     headers match {

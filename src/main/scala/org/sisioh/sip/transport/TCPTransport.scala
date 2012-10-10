@@ -49,7 +49,7 @@ class TCPTransport(val socket: Socket, val receiveTransportListener: Option[Tran
 
   def sendMessage(sendSIPMessage: SIPMessage) {
     val buf = sendSIPMessage.encodeAsBytes()
-    println("send size = " + buf.size)
+//    println("send size = " + buf.size)
     outputStream.write(buf, 0, buf.size)
   }
 
@@ -84,15 +84,28 @@ class TCPTransport(val socket: Socket, val receiveTransportListener: Option[Tran
         val contentBytes = new Array[Byte](cl.toInt)
         inputStream.read(contentBytes) match {
           case len if len > 0 =>
-            println("c = {" + new String(contentBytes) + "}")
+//            println("c = {" + new String(contentBytes) + "}")
             bout.write(contentBytes, 0, len)
           case _ =>
             throw new ParseException()
         }
       }
       val messageAsBytes = bout.toByteArray
-      println("receive size = " + messageAsBytes.size)
+//      println("receive size = " + messageAsBytes.size)
       Some(SIPMessageDecoder.decode(messageAsBytes))
     }
   }
+
+  override def hashCode() = 31 * socket.## + 31 * receiveTransportListener.##
+
+  override def equals(obj: Any) = obj match {
+    case that: TCPTransport =>
+      socket == socket &&
+        receiveTransportListener == receiveTransportListener
+    case _ =>
+      false
+  }
+
+  override def toString = "TCPTransport(%s,%s)".format(socket, receiveTransportListener)
+
 }
