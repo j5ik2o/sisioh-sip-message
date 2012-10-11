@@ -173,9 +173,11 @@ class DefaultMessageFactory(userAgent: Option[UserAgentHeader], server: Option[S
     request.asInstanceOf[SIPRequest].createResponse(statusCode)
   }
 
-  def createRequest(requestString: String) = {
-    null
+  def createRequest(requestString: String): SIPRequest = {
+    SIPRequestDecoder.decode(requestString)
   }
 
-  def createResponse(responseString: String) = null
+  def createResponse(responseString: String): SIPResponse = {
+    SIPResponseDecoder.decode(responseString)
+  }
 }

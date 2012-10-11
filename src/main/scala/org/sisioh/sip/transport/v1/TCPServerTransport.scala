@@ -1,4 +1,4 @@
-package org.sisioh.sip.transport
+package org.sisioh.sip.transport.v1
 
 import java.net.ServerSocket
 import java.io.IOException

@@ -1,4 +1,4 @@
-package org.sisioh.sip.transport
+package org.sisioh.sip.transport.v1
 
 import org.sisioh.sip.message.impl.{SIPMessageDecoder, SIPMessage}
 import java.net.Socket

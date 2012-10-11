@@ -267,4 +267,6 @@ class SIPResponse
     }
   }
 
+  def firstLine = statusLine.map(_.encode())
+
 }

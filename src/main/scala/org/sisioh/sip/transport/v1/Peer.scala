@@ -1,4 +1,4 @@
-package org.sisioh.sip.transport
+package org.sisioh.sip.transport.v1
 
 /*
 * Copyright 2012 Sisioh Project and others. (http://www.sisioh.org/)

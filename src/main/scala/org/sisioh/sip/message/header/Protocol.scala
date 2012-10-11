@@ -59,9 +59,9 @@ object Protocol {
 }
 
 case class Protocol
-(protocolName: String,
- protocolVersion: String,
- transport: String)
+(protocolName: String = "SIP",
+ protocolVersion: String = "2.0",
+ transport: String = "UDP")
   extends GenericObject {
 
   def encode(builder: StringBuilder) = {

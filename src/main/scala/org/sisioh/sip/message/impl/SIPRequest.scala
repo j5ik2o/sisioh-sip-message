@@ -210,7 +210,7 @@ class SIPRequest
 
   val viaPort = getViaHeaders.flatMap(_.getHead.port)
 
-  val firstLine = requestLine.map(_.encode())
+  def firstLine = requestLine.map(_.encode())
 
   val method = requestLine.flatMap(_.method)
 

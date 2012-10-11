@@ -403,6 +403,8 @@ abstract class SIPMessage
 (headersParam: List[Header])
   extends MessageObject with Message with MessageExt {
 
+  def firstLine: Option[String]
+
   protected val headerListMap: HeaderListMap = new HeaderListMap
 
   headersParam.foreach(addHeader)
@@ -434,6 +436,9 @@ abstract class SIPMessage
   def contentLength: Option[ContentLength] =
     headers.find(_.isInstanceOf[ContentLength]).
       map(_.asInstanceOf[ContentLength])
+
+  def withMetaData(metaData: Option[MetaData]) =
+    newBuilder.withMetaData(metaData).build(this.asInstanceOf[A])
 
   def withMessageContent(messageContent: Option[MessageContent]) =
     newBuilder.withMessageContent(messageContent).build(this.asInstanceOf[A])
